@@ -1,0 +1,224 @@
+---
+title: "Time Series Clustering with healthyR.ts"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-10-21"
+categories: [code, weeklytip, healthyrts]
+image: healthyrts_logo.png
+---
+
+# Introduction
+
+There are two components to time-series clustering with `{healthyR.ts}`. There is the function that will create the clustering data along with a slew of other information and then there is a plotting function that will plot out the data in a time-series fashion colored by cluster.
+
+The first function as mentioned is the function `ts_feature_cluster()`, and the next is `ts_feature_cluster_plot()`
+
+Function Reference:
+
+-   [`ts_feature_cluster()`](https://www.spsanderson.com/healthyR.ts/reference/ts_feature_cluster.html)
+-   [1ts_feature_cluster_plot()\`](https://www.spsanderson.com/healthyR.ts/reference/ts_feature_cluster_plot.html)
+
+We are going to use the built-in `AirPassengers` data set for this example so let's get right to it!
+
+# Library Load
+
+```{r library_load}
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(healthyR.ts))
+```
+
+# Data
+
+Now that our libraries are loaded we can go ahead and get the data and run it through the function.
+
+```{r data_load}
+data_tbl <- ts_to_tbl(AirPassengers) %>%
+  select(-index) %>%
+  mutate(group_id = rep(1:12, 12))
+
+output <- ts_feature_cluster(
+  .data = data_tbl,
+  .date_col = date_col,
+  .value_col = value,
+  group_id,
+  .features = c("acf_features","entropy"),
+  .scale = TRUE,
+  .prefix = "ts_",
+  .centers = 3
+)
+```
+
+Now that we have our data and our output, lets first take a look at our data so we can see what we passed to it.
+
+```{r glimpse_data}
+glimpse(data_tbl)
+```
+
+Now as mentioned, the output list contains many items. There are both data items and plot items.
+
+First though, you will notice in the `ts_feature_cluster()` function that there is a parameter called `.features`, this allows you to pass in a list of quoted functions to apply to the time-series. This means that you can create a function your self in the `.GlobalEnviron` and pass that as a quoted argument to this parameter.
+
+For example you could create your own function called `my_mean`. Let's see how this would work.
+
+`my_mean <- function(x) ret <- mean(x, na.rm = TRUE) return(ret)`
+
+You can then call this by using `.features = c("my_mean")`.
+
+Pretty simple!
+
+Under the hood this function itself makes use of `timetk::tk_tsfeatures()` which is a `tidyverse` compliant wrapper to `tsfeatures::tsfeatures()`
+
+Here are the links to those functions:
+
+-   [`tk_tsfeatures()`](https://business-science.github.io/timetk/reference/tk_tsfeatures.html)
+-   [`tsfeatures()`](http://pkg.robjhyndman.com/tsfeatures/reference/tsfeatures.html)
+
+Now let's take a look at the output
+
+# Function Output
+
+## ts_feature_cluster()
+
+As mentioned there are several outputs from the `ts_feature_cluster()`. Those are as follows:
+
+_Data Section_
+
+- ts_feature_tbl
+- user_item_matrix_tbl
+- mapped_tbl
+- scree_data_tbl
+- input_data_tbl (the original data)
+
+_Plots_
+
+- static_plot
+- plotly_plot
+
+Now that we have our output, let's take a look at each individual component of the output.
+
+__ts_feature_tbl__
+```{r out1}
+output$data$ts_feature_tbl |> glimpse()
+```
+
+__user_item_matrix_tbl__
+```{r out2}
+output$data$user_item_matrix_tbl |> glimpse()
+```
+
+__mapped_tbl__
+```{r out3}
+output$data$mapped_tbl |> glimpse()
+```
+__scree_data_tbl__
+```{r out4}
+output$data$scree_data_tbl |> glimpse()
+```
+
+__input_data_tbl__
+```{r out5}
+output$data$input_data_tbl |> glimpse()
+```
+
+Now the plots.
+
+__static_plot__
+```{r out6}
+output$plots$static_plot
+```
+
+__plotly_plot__
+```{r out7}
+output$plots$plotly_plot
+```
+
+Now that we have seen the output of the `ts_feature_cluster()` function, let's take a look at the output of the `ts_feature_cluster_plot()` function.
+
+## ts_feature_cluster_plot()
+
+This function itself returns a list object of a multitude of data. First before we get into that lets look at the function call itself:
+
+```{r eval=FALSE}
+ts_feature_cluster_plot(
+  .data,
+  .date_col,
+  .value_col,
+  ...,
+  .center = 3,
+  .facet_ncol = 3,
+  .smooth = FALSE
+)
+```
+
+The data that comes back from this function is:
+
+_Data Section_
+
+- original_data
+- kmm_data_tbl
+- user_item_tbl
+- cluster_tbl
+
+_Plots_
+
+- static_plot
+- plotly_plot
+
+_K-Means Object_
+
+- k-means object
+
+We will go through the same exercise and show the output of all the sections. First we have to create the output. The static plot will automatically print out.
+
+```{r cluster_plot}
+plot_out <- ts_feature_cluster_plot(
+  .data = output,
+  .date_col = date_col,
+  .value_col = value,
+  .center = 2,
+  group_id
+)
+```
+
+### The Data Section:
+
+__original_data__
+```{r}
+plot_out$data$original_data |> glimpse()
+```
+
+__kmm_data_tbl__
+```{r}
+plot_out$data$kmm_data_tbl |> glimpse()
+```
+
+__user_item_data__
+```{r}
+plot_out$data$user_item_data |> glimpse()
+```
+
+__cluster_tbl__
+```{r}
+plot_out$data$cluster_tbl |> glimpse()
+```
+
+### The plot data.
+
+__static_plot__
+```{r}
+plot_out$plot$static_plot
+```
+
+__plotly_plot__
+```{r}
+plot_out$plot$plotly_plot
+```
+
+### The K-Means Object
+
+__kmeans_object__
+```{r}
+plot_out$kmeans_object
+```
+
+
+Thanks for reading!
