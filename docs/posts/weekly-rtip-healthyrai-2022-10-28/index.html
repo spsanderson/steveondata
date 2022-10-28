@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2022-10-28">
+
+<title>Steve’s Data Tips and Tricks - PCA with healthyR.ai</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+<script src="../../site_libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.10.0/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.5.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.5.1/plotly-latest.min.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - PCA with healthyR.ai">
+<meta property="og:description" content="In this post we are going to talk about how you can perform principal component analysis in R with {healthyR.ai} in a tidyverse compliant fashion.">
+<meta property="og:image" content="https://www.spsanderson.com/steveondata/posts\weekly-rtip-healthyrai-2022-10-28\healthyrai_logo.png">
+<meta property="og:site-name" content="Steve's Data Tips and Tricks">
+<meta property="og:image:height" content="600">
+<meta property="og:image:width" content="518">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - PCA with healthyR.ai">
+<meta name="twitter:description" content="In this post we are going to talk about how you can perform principal component analysis in R with {healthyR.ai} in a tidyverse compliant fashion.">
+<meta name="twitter:image" content="https://www.spsanderson.com/steveondata/posts\weekly-rtip-healthyrai-2022-10-28\healthyrai_logo.png">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:image-height" content="600">
+<meta name="twitter:image-width" content="518">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/steveondata/"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"><i class="bi bi-telegram" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div class="quarto-toggle-container">
+                  <a href="" class="quarto-color-scheme-toggle nav-link" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+              </div>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">PCA with healthyR.ai</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+                <div class="quarto-category">healthyrai</div>
+                <div class="quarto-category">weeklytip</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 28, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In this post we are going to talk about how you can perform <strong>principal component analysis</strong> in <strong>R</strong> with <em>{healthyR.ai}</em> in a <code>tidyverse</code> compliant fashion.</p>
+<p>The specific function we are going to discuss on this post is <code>pca_your_recipe()</code></p>
+</section>
+<section id="the-function" class="level1">
+<h1>The Function</h1>
+<p>So lets talk a little bit about the function itself. Firstly, what does the full function call look like? See below (has sensible defaults):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pca_your_recipe</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  .recipe_object, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  .data, </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">.threshold =</span> <span class="fl">0.75</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">.top_n =</span> <span class="dv">5</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As we can see there are four parameters that require arguments to be passed to them for this function. Here is a list of the parameters and the type of arguments that should be passed to them:</p>
+<ul>
+<li><code>.recipe_object</code> which is the recipe object you want to pass that has been previously created. There there is the</li>
+<li><code>.data</code> parameter which is the full data set that is used in the original recipe object passed into .recipe_object in order to obtain the baked data of the transform. Thirdly,</li>
+<li><code>.threshold</code> which is a number between 0 and 1. A fraction of the total variance that should be covered by the components.</li>
+<li><code>.top_n</code> which is how many variables loadings should be returned per PC.</li>
+</ul>
+<p>The function will return a list object with several items in it. We are going to go over each one of those items in this post, but here they are:</p>
+<ul>
+<li>pca_transform - This is the pca recipe.</li>
+<li>variable_loadings</li>
+<li>variable_variance</li>
+<li>pca_estimates</li>
+<li>pca_juiced_estimates</li>
+<li>pca_baked_data</li>
+<li>pca_variance_df</li>
+<li>pca_rotattion_df</li>
+<li>pca_variance_scree_plt</li>
+<li>pca_loadings_plt</li>
+<li>pca_loadings_plotly</li>
+<li>pca_top_n_loadings_plt</li>
+<li>pca_top_n_plotly</li>
+</ul>
+<p>Here is a link to the function <a href="https://www.spsanderson.com/healthyR.ai/reference/pca_your_recipe">pca_your_recipe</a></p>
+<p>Let’s work through an example and show each object in the return.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="library-load" class="level2">
+<h2 class="anchored" data-anchor-id="library-load">Library Load</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"healthyR.ai"</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"healthyR.data"</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"timetk"</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"dplyr"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"purrr"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"rsample"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"recipes"</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now that we have our libraries loaded lets get the data.</p>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data_tbl <span class="ot">&lt;-</span> healthyR_data <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(visit_end_date_time) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise_by_time</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.date_var =</span> visit_end_date_time,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by       =</span> <span class="st">"month"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">value     =</span> <span class="fu">n</span>()</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(<span class="st">"date_col"</span>, <span class="st">"value"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter_by_time</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.date_var =</span> date_col,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.start_date =</span> <span class="st">"2013"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">.end_date =</span> <span class="st">"2020"</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data_tbl, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 2
+  date_col            value
+  &lt;dttm&gt;              &lt;int&gt;
+1 2013-01-01 00:00:00  2082
+2 2013-02-01 00:00:00  1719
+3 2013-03-01 00:00:00  1796
+4 2013-04-01 00:00:00  1865
+5 2013-05-01 00:00:00  2028</code></pre>
+</div>
+</div>
+<p>Now for the splits object.</p>
+</section>
+<section id="splits" class="level2">
+<h2 class="anchored" data-anchor-id="splits">Splits</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(<span class="at">data =</span> data_tbl, <span class="at">prop =</span> <span class="fl">0.8</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>splits</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;Training/Testing/Total&gt;
+&lt;76/19/95&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="recipe-and-output" class="level2">
+<h2 class="anchored" data-anchor-id="recipe-and-output">Recipe and Output</h2>
+<p>Now it is time for the recipe and the output objects.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>rec_obj <span class="ot">&lt;-</span> <span class="fu">recipe</span>(value <span class="sc">~</span> ., <span class="fu">training</span>(splits)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_timeseries_signature</span>(date_col) <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rm</span>(<span class="fu">matches</span>(<span class="st">"(iso$)|(xts$)|(hour)|(min)|(sec)|(am.pm)"</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>output_list <span class="ot">&lt;-</span> <span class="fu">pca_your_recipe</span>(rec_obj, <span class="at">.data =</span> data_tbl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="output-objects" class="level1">
+<h1>Output Objects</h1>
+<p>Now that we have our output, let’s start to explore it all.</p>
+<section id="pca-transform" class="level2">
+<h2 class="anchored" data-anchor-id="pca-transform">PCA Transform</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_transform</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Recipe
+
+Inputs:
+
+      role #variables
+   outcome          1
+ predictor          1
+
+Operations:
+
+Timeseries signature features from date_col
+Variables removed matches("(iso$)|(xts$)|(hour)|(min)|(sec)|(am.pm)")
+Centering for recipes::all_numeric()
+Scaling for recipes::all_numeric()
+Sparse, unbalanced variable filter on recipes::all_numeric()
+PCA extraction with recipes::all_numeric_predictors()</code></pre>
+</div>
+</div>
+</section>
+<section id="variable-loadings" class="level2">
+<h2 class="anchored" data-anchor-id="variable-loadings">Variable Loadings</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>variable_loadings</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 169 × 4
+   terms                 value component id       
+   &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;    
+ 1 date_col_index.num -0.00137 PC1       pca_bVc37
+ 2 date_col_year       0.0529  PC1       pca_bVc37
+ 3 date_col_half      -0.385   PC1       pca_bVc37
+ 4 date_col_quarter   -0.434   PC1       pca_bVc37
+ 5 date_col_month     -0.437   PC1       pca_bVc37
+ 6 date_col_wday      -0.0159  PC1       pca_bVc37
+ 7 date_col_qday      -0.0608  PC1       pca_bVc37
+ 8 date_col_yday      -0.437   PC1       pca_bVc37
+ 9 date_col_mweek      0.0537  PC1       pca_bVc37
+10 date_col_week      -0.438   PC1       pca_bVc37
+# … with 159 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="variable-variance" class="level2">
+<h2 class="anchored" data-anchor-id="variable-variance">Variable Variance</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>variable_variance</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 52 × 4
+   terms       value component id       
+   &lt;chr&gt;       &lt;dbl&gt;     &lt;int&gt; &lt;chr&gt;    
+ 1 variance 5.14             1 pca_bVc37
+ 2 variance 2.08             2 pca_bVc37
+ 3 variance 1.47             3 pca_bVc37
+ 4 variance 1.40             4 pca_bVc37
+ 5 variance 1.07             5 pca_bVc37
+ 6 variance 0.684            6 pca_bVc37
+ 7 variance 0.583            7 pca_bVc37
+ 8 variance 0.519            8 pca_bVc37
+ 9 variance 0.0534           9 pca_bVc37
+10 variance 0.000231        10 pca_bVc37
+# … with 42 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-estimates" class="level2">
+<h2 class="anchored" data-anchor-id="pca-estimates">PCA Estimates</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_estimates</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Recipe
+
+Inputs:
+
+      role #variables
+   outcome          1
+ predictor          1
+
+Training data contained 76 data points and no missing data.
+
+Operations:
+
+Timeseries signature features from date_col [trained]
+Variables removed date_col_year.iso, date_col_month.xts, date_col_hour, d... [trained]
+Centering for value, date_col_index.num, date_col_year, date_... [trained]
+Scaling for value, date_col_index.num, date_col_year, date_... [trained]
+Sparse, unbalanced variable filter removed date_col_day, date_col_mday, date_col_m... [trained]
+PCA extraction with date_col_index.num, date_col_year, date_col_half... [trained]</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-juiced-estimates" class="level2">
+<h2 class="anchored" data-anchor-id="pca-juiced-estimates">PCA Juiced Estimates</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_juiced_estimates</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 76 × 8
+   date_col              value date_col…¹ date_…²     PC1     PC2     PC3    PC4
+   &lt;dttm&gt;                &lt;dbl&gt; &lt;ord&gt;      &lt;ord&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+ 1 2018-06-01 00:00:00  0.676  June       Friday   0.733   1.23   -1.30    0.536
+ 2 2016-01-01 00:00:00 -0.133  January    Friday   3.51   -0.102  -0.500  -0.556
+ 3 2013-05-01 00:00:00  1.67   May        Wednes…  1.15   -2.07   -1.68   -0.319
+ 4 2018-10-01 00:00:00  0.337  October    Monday  -2.30    0.499   1.91   -1.92 
+ 5 2016-09-01 00:00:00 -0.130  September  Thursd… -1.08    0.0972  0.410   2.64 
+ 6 2016-07-01 00:00:00 -0.364  July       Friday  -0.0591  0.0211 -0.333   1.11 
+ 7 2020-02-01 00:00:00 -0.646  February   Saturd…  3.08    2.48   -0.0249  0.214
+ 8 2020-08-01 00:00:00 -1.42   August     Saturd… -0.491   2.60    0.142   1.88 
+ 9 2018-03-01 00:00:00  0.243  March      Thursd…  2.74    0.848  -1.53    0.260
+10 2015-05-01 00:00:00 -0.0148 May        Friday   1.18   -0.636  -1.88   -0.147
+# … with 66 more rows, and abbreviated variable names ¹​date_col_month.lbl,
+#   ²​date_col_wday.lbl</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-baked-data" class="level2">
+<h2 class="anchored" data-anchor-id="pca-baked-data">PCA Baked Data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_baked_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 95 × 8
+   date_col            value date_col_month…¹ date_…²    PC1   PC2    PC3    PC4
+   &lt;dttm&gt;              &lt;dbl&gt; &lt;ord&gt;            &lt;ord&gt;    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+ 1 2013-01-01 00:00:00 1.86  January          Tuesday  3.60  -2.64  1.13  -0.871
+ 2 2013-02-01 00:00:00 0.596 February         Friday   2.93  -1.76 -0.532  0.424
+ 3 2013-03-01 00:00:00 0.864 March            Friday   2.62  -1.95 -2.24   0.643
+ 4 2013-04-01 00:00:00 1.10  April            Monday   2.09  -2.68  1.39  -0.867
+ 5 2013-05-01 00:00:00 1.67  May              Wednes…  1.15  -2.07 -1.68  -0.319
+ 6 2013-06-01 00:00:00 0.923 June             Saturd…  0.612 -1.57 -2.01   0.919
+ 7 2013-07-01 00:00:00 1.29  July             Monday  -0.669 -2.41  2.29  -0.420
+ 8 2013-08-01 00:00:00 1.18  August           Thursd… -0.628 -1.76 -0.165  1.96 
+ 9 2013-09-01 00:00:00 0.714 September        Sunday  -1.11  -2.19  0.910  2.25 
+10 2013-10-01 00:00:00 1.40  October          Tuesday -2.55  -1.91 -0.128 -1.48 
+# … with 85 more rows, and abbreviated variable names ¹​date_col_month.lbl,
+#   ²​date_col_wday.lbl</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-variance-data-frame" class="level2">
+<h2 class="anchored" data-anchor-id="pca-variance-data-frame">PCA Variance Data Frame</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_variance_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 13 × 6
+   PC    var_explained var_pct_txt cum_var_pct cum_var_pct_txt ou_threshold
+   &lt;chr&gt;         &lt;dbl&gt; &lt;chr&gt;             &lt;dbl&gt; &lt;chr&gt;           &lt;fct&gt;       
+ 1 PC1   0.395         39.55%            0.395 39.55%          Under       
+ 2 PC2   0.160         16.02%            0.556 55.57%          Under       
+ 3 PC3   0.113         11.29%            0.669 66.86%          Under       
+ 4 PC4   0.107         10.75%            0.776 77.61%          Over        
+ 5 PC5   0.0824        8.24%             0.858 85.85%          Over        
+ 6 PC6   0.0526        5.26%             0.911 91.11%          Over        
+ 7 PC7   0.0449        4.49%             0.956 95.59%          Over        
+ 8 PC8   0.0400        4.00%             0.996 99.59%          Over        
+ 9 PC9   0.00411       0.41%             1.00  100.00%         Over        
+10 PC10  0.0000178     0.00%             1.00  100.00%         Over        
+11 PC11  0.000000712   0.00%             1.00  100.00%         Over        
+12 PC12  0.000000273   0.00%             1.00  100.00%         Over        
+13 PC13  0.00000000196 0.00%             1     100.00%         Over        </code></pre>
+</div>
+</div>
+</section>
+<section id="pca-rotation-data-frame" class="level2">
+<h2 class="anchored" data-anchor-id="pca-rotation-data-frame">PCA Rotation Data Frame</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_rotation_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 13 × 13
+        PC1      PC2      PC3     PC4     PC5     PC6      PC7     PC8      PC9
+      &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+ 1 -0.00137  0.671    0.116   -0.0521 -0.183   0.0165  0.0471   0.0277 -0.0177 
+ 2  0.0529   0.667    0.116   -0.0610 -0.173   0.0146  0.0466   0.0313  0.00904
+ 3 -0.385    0.0115   0.222    0.173   0.140   0.217   0.250   -0.0112  0.802  
+ 4 -0.434    0.00824  0.0752  -0.0427  0.0615  0.135   0.00843  0.0332 -0.272  
+ 5 -0.437    0.00278 -0.00879  0.0737 -0.0734  0.0167  0.00135 -0.0264 -0.213  
+ 6 -0.0159   0.265   -0.406    0.274   0.468   0.254  -0.520   -0.366   0.0484 
+ 7 -0.0608  -0.0200  -0.325    0.480  -0.542  -0.476  -0.0318  -0.244   0.187  
+ 8 -0.437    0.00435 -0.00655  0.0740 -0.0733  0.0149  0.00231 -0.0303 -0.216  
+ 9  0.0537  -0.164    0.562   -0.0242 -0.414   0.267  -0.572   -0.285   0.0519 
+10 -0.438    0.00638 -0.00736  0.0676 -0.0704  0.0236  0.00470 -0.0266 -0.219  
+11  0.250   -0.0238   0.208    0.420   0.0436  0.301   0.544   -0.492  -0.293  
+12 -0.0474   0.0762   0.516    0.142   0.460  -0.676  -0.108   -0.144  -0.0636 
+13  0.123    0.00776  0.150    0.666   0.0183  0.152  -0.161    0.676  -0.111  
+# … with 4 more variables: PC10 &lt;dbl&gt;, PC11 &lt;dbl&gt;, PC12 &lt;dbl&gt;, PC13 &lt;dbl&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="pca-variance-scree-plot" class="level2">
+<h2 class="anchored" data-anchor-id="pca-variance-scree-plot">PCA Variance Scree Plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_variance_scree_plt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="pca-loadings-plot" class="level2">
+<h2 class="anchored" data-anchor-id="pca-loadings-plot">PCA Loadings Plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_loadings_plt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_loadings_plotly</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-30ab7a3fe07f77917153" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-30ab7a3fe07f77917153">{"x":{"data":[{"orientation":"v","width":[0.00137078403217321,0.38475932189418,0.433889902098045,0.437361710251421,0.0158740466859766,0.0608285921175831,0.43733718212091,0.437622559844157,0.0473791287227542],"base":[1.55,0.55,5.55,2.55,6.55,4.55,11.55,7.55,9.55],"x":[-0.000685392016086605,-0.19237966094709,-0.216944951049022,-0.21868085512571,-0.00793702334298831,-0.0304142960587916,-0.218668591060455,-0.218811279922078,-0.0236895643613771],"y":[0.9,0.9,0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value: -1.370784e-03<br />terms: date_col_index.num<br />pos_neg: Negative","value: -3.847593e-01<br />terms: date_col_half<br />pos_neg: Negative","value: -4.338899e-01<br />terms: date_col_quarter<br />pos_neg: Negative","value: -4.373617e-01<br />terms: date_col_month<br />pos_neg: Negative","value: -1.587405e-02<br />terms: date_col_wday<br />pos_neg: Negative","value: -6.082859e-02<br />terms: date_col_qday<br />pos_neg: Negative","value: -4.373372e-01<br />terms: date_col_yday<br />pos_neg: Negative","value: -4.376226e-01<br />terms: date_col_week<br />pos_neg: Negative","value: -4.737913e-02<br />terms: date_col_week3<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0199778675705191,0.164222094850364,0.023813793913144],"base":[4.55,3.55,8.55],"x":[-0.00998893378525956,-0.082111047425182,-0.011906896956572],"y":[0.9,0.9,0.899999999999999],"text":["value: -1.997787e-02<br />terms: date_col_qday<br />pos_neg: Negative","value: -1.642221e-01<br />terms: date_col_mweek<br />pos_neg: Negative","value: -2.381379e-02<br />terms: date_col_week2<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x2","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.00879350486906985,0.405885647157753,0.325298849422928,0.0065478496848305,0.00735876598505977],"base":[2.55,6.55,4.55,11.55,7.55],"x":[-0.00439675243453492,-0.202942823578877,-0.162649424711464,-0.00327392484241525,-0.00367938299252989],"y":[0.9,0.9,0.9,0.899999999999999,0.899999999999999],"text":["value: -8.793505e-03<br />terms: date_col_month<br />pos_neg: Negative","value: -4.058856e-01<br />terms: date_col_wday<br />pos_neg: Negative","value: -3.252988e-01<br />terms: date_col_qday<br />pos_neg: Negative","value: -6.547850e-03<br />terms: date_col_yday<br />pos_neg: Negative","value: -7.358766e-03<br />terms: date_col_week<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x3","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0521055362793099,0.0609559307347391,0.0427428949557002,0.0241788080144876],"base":[1.55,12.55,5.55,3.55],"x":[-0.026052768139655,-0.0304779653673696,-0.0213714474778501,-0.0120894040072438],"y":[0.9,0.899999999999999,0.9,0.9],"text":["value: -5.210554e-02<br />terms: date_col_index.num<br />pos_neg: Negative","value: -6.095593e-02<br />terms: date_col_year<br />pos_neg: Negative","value: -4.274289e-02<br />terms: date_col_quarter<br />pos_neg: Negative","value: -2.417881e-02<br />terms: date_col_mweek<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x4","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.182959674168784,0.172841783731262,0.0734123548630355,0.541743151239055,0.0732540036588868,0.413500784588693,0.0703695090950176],"base":[1.55,12.55,2.55,4.55,11.55,3.55,7.55],"x":[-0.0914798370843918,-0.0864208918656308,-0.0367061774315177,-0.270871575619528,-0.0366270018294434,-0.206750392294347,-0.0351847545475088],"y":[0.9,0.899999999999999,0.9,0.9,0.899999999999999,0.9,0.899999999999999],"text":["value: -1.829597e-01<br />terms: date_col_index.num<br />pos_neg: Negative","value: -1.728418e-01<br />terms: date_col_year<br />pos_neg: Negative","value: -7.341235e-02<br />terms: date_col_month<br />pos_neg: Negative","value: -5.417432e-01<br />terms: date_col_qday<br />pos_neg: Negative","value: -7.325400e-02<br />terms: date_col_yday<br />pos_neg: Negative","value: -4.135008e-01<br />terms: date_col_mweek<br />pos_neg: Negative","value: -7.036951e-02<br />terms: date_col_week<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.476017483005331,0.675934492400427],"base":[4.55,9.55],"x":[-0.238008741502666,-0.337967246200213],"y":[0.9,0.899999999999999],"text":["value: -4.760175e-01<br />terms: date_col_qday<br />pos_neg: Negative","value: -6.759345e-01<br />terms: date_col_week3<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.520018622250357,0.0318225270135119,0.572409643711496,0.108116024399682,0.161134779926879],"base":[6.55,4.55,3.55,9.55,10.55],"x":[-0.260009311125178,-0.015911263506756,-0.286204821855748,-0.0540580121998412,-0.0805673899634397],"y":[0.9,0.9,0.9,0.899999999999999,0.899999999999999],"text":["value: -5.200186e-01<br />terms: date_col_wday<br />pos_neg: Negative","value: -3.182253e-02<br />terms: date_col_qday<br />pos_neg: Negative","value: -5.724096e-01<br />terms: date_col_mweek<br />pos_neg: Negative","value: -1.081160e-01<br />terms: date_col_week3<br />pos_neg: Negative","value: -1.611348e-01<br />terms: date_col_week4<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x3","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0112046520999516,0.026411994547182,0.365697705662855,0.244172354238572,0.0302996116533527,0.285464687933106,0.026606443665679,0.492257751596444,0.143786388705243],"base":[0.55,2.55,6.55,4.55,11.55,3.55,7.55,8.55,9.55],"x":[-0.00560232604997582,-0.013205997273591,-0.182848852831428,-0.122086177119286,-0.0151498058266763,-0.142732343966553,-0.0133032218328395,-0.246128875798222,-0.0718931943526217],"y":[0.9,0.9,0.9,0.9,0.899999999999999,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value: -1.120465e-02<br />terms: date_col_half<br />pos_neg: Negative","value: -2.641199e-02<br />terms: date_col_month<br />pos_neg: Negative","value: -3.656977e-01<br />terms: date_col_wday<br />pos_neg: Negative","value: -2.441724e-01<br />terms: date_col_qday<br />pos_neg: Negative","value: -3.029961e-02<br />terms: date_col_yday<br />pos_neg: Negative","value: -2.854647e-01<br />terms: date_col_mweek<br />pos_neg: Negative","value: -2.660644e-02<br />terms: date_col_week<br />pos_neg: Negative","value: -4.922578e-01<br />terms: date_col_week2<br />pos_neg: Negative","value: -1.437864e-01<br />terms: date_col_week3<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x4","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0177423984445891,0.271992991462742,0.213439412438199,0.215707807096018,0.218909591531364,0.293444590042768,0.0635698687500092,0.11116092803687],"base":[1.55,5.55,2.55,11.55,7.55,8.55,9.55,10.55],"x":[-0.00887119922229453,-0.135996495731371,-0.1067197062191,-0.107853903548009,-0.109454795765682,-0.146722295021384,-0.0317849343750046,-0.055580464018435],"y":[0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value: -1.774240e-02<br />terms: date_col_index.num<br />pos_neg: Negative","value: -2.719930e-01<br />terms: date_col_quarter<br />pos_neg: Negative","value: -2.134394e-01<br />terms: date_col_month<br />pos_neg: Negative","value: -2.157078e-01<br />terms: date_col_yday<br />pos_neg: Negative","value: -2.189096e-01<br />terms: date_col_week<br />pos_neg: Negative","value: -2.934446e-01<br />terms: date_col_week2<br />pos_neg: Negative","value: -6.356987e-02<br />terms: date_col_week3<br />pos_neg: Negative","value: -1.111609e-01<br />terms: date_col_week4<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0154615599608045,0.301483557428542,0.359217900589988,0.0669527462937838,0.191601965098292,0.00148230834840804],"base":[1.55,5.55,2.55,4.55,11.55,8.55],"x":[-0.00773077998040225,-0.150741778714271,-0.179608950294994,-0.0334763731468919,-0.095800982549146,-0.000741154174204018],"y":[0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999],"text":["value: -1.546156e-02<br />terms: date_col_index.num<br />pos_neg: Negative","value: -3.014836e-01<br />terms: date_col_quarter<br />pos_neg: Negative","value: -3.592179e-01<br />terms: date_col_month<br />pos_neg: Negative","value: -6.695275e-02<br />terms: date_col_qday<br />pos_neg: Negative","value: -1.916020e-01<br />terms: date_col_yday<br />pos_neg: Negative","value: -1.482308e-03<br />terms: date_col_week2<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x2","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0220877329912262,0.0129228517225438,0.643536354348352,8.19813833760575e-06,0.0047200642857637,0.000792732097690756,0.104330077211754,0.00198186751339597,0.00271328265593052],"base":[12.55,5.55,2.55,6.55,4.55,3.55,7.55,8.55,9.55],"x":[-0.0110438664956131,-0.00646142586127188,-0.321768177174176,-4.09906916880288e-06,-0.00236003214288185,-0.000396366048845378,-0.0521650386058771,-0.000990933756697987,-0.00135664132796526],"y":[0.899999999999999,0.9,0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value: -2.208773e-02<br />terms: date_col_year<br />pos_neg: Negative","value: -1.292285e-02<br />terms: date_col_quarter<br />pos_neg: Negative","value: -6.435364e-01<br />terms: date_col_month<br />pos_neg: Negative","value: -8.198138e-06<br />terms: date_col_wday<br />pos_neg: Negative","value: -4.720064e-03<br />terms: date_col_qday<br />pos_neg: Negative","value: -7.927321e-04<br />terms: date_col_mweek<br />pos_neg: Negative","value: -1.043301e-01<br />terms: date_col_week<br />pos_neg: Negative","value: -1.981868e-03<br />terms: date_col_week2<br />pos_neg: Negative","value: -2.713283e-03<br />terms: date_col_week3<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x3","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.00477425630758497,0.00281939906787357,0.784224970521987,0.197774921778506,0.01736097880896],"base":[1.55,0.55,5.55,4.55,7.55],"x":[-0.00238712815379249,-0.00140969953393678,-0.392112485260994,-0.098887460889253,-0.00868048940448],"y":[0.9,0.9,0.9,0.9,0.899999999999999],"text":["value: -4.774256e-03<br />terms: date_col_index.num<br />pos_neg: Negative","value: -2.819399e-03<br />terms: date_col_half<br />pos_neg: Negative","value: -7.842250e-01<br />terms: date_col_quarter<br />pos_neg: Negative","value: -1.977749e-01<br />terms: date_col_qday<br />pos_neg: Negative","value: -1.736098e-02<br />terms: date_col_week<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x4","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.707972089158225,0.000101492518698523,0.0316492022862086,0.00635514670164715,0.00803298276253601,0.0462380872925263,2.11278535960716e-05,0.00252403852135663,6.48299771410094e-06,1.9949635672499e-05],"base":[12.55,0.55,5.55,2.55,4.55,11.55,3.55,7.55,8.55,9.55],"x":[-0.353986044579113,-5.07462593492616e-05,-0.0158246011431043,-0.00317757335082358,-0.00401649138126801,-0.0231190436462631,-1.05639267980358e-05,-0.00126201926067831,-3.24149885705047e-06,-9.97481783624951e-06],"y":[0.899999999999999,0.9,0.9,0.9,0.9,0.899999999999999,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value: -7.079721e-01<br />terms: date_col_year<br />pos_neg: Negative","value: -1.014925e-04<br />terms: date_col_half<br />pos_neg: Negative","value: -3.164920e-02<br />terms: date_col_quarter<br />pos_neg: Negative","value: -6.355147e-03<br />terms: date_col_month<br />pos_neg: Negative","value: -8.032983e-03<br />terms: date_col_qday<br />pos_neg: Negative","value: -4.623809e-02<br />terms: date_col_yday<br />pos_neg: Negative","value: -2.112785e-05<br />terms: date_col_mweek<br />pos_neg: Negative","value: -2.524039e-03<br />terms: date_col_week<br />pos_neg: Negative","value: -6.482998e-06<br />terms: date_col_week2<br />pos_neg: Negative","value: -1.994964e-05<br />terms: date_col_week3<br />pos_neg: Negative"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Negative","legendgroup":"Negative","showlegend":false,"xaxis":"x","yaxis":"y4","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0528538309794491,0.053697930921499,0.25028901874555,0.122950736985064],"base":[12.55,3.55,8.55,10.55],"x":[0.0264269154897246,0.0268489654607495,0.125144509372775,0.0614753684925321],"y":[0.899999999999999,0.9,0.899999999999999,0.899999999999999],"text":["value:  5.285383e-02<br />terms: date_col_year<br />pos_neg: Positive","value:  5.369793e-02<br />terms: date_col_mweek<br />pos_neg: Positive","value:  2.502890e-01<br />terms: date_col_week2<br />pos_neg: Positive","value:  1.229507e-01<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.671325851209003,0.667028390263604,0.011484661830902,0.00823950616090566,0.00277847978739773,0.265176229257142,0.00435273184927436,0.00637804015218309,0.0762481263428138,0.00776387770203774],"base":[1.55,12.55,0.55,5.55,2.55,6.55,11.55,7.55,9.55,10.55],"x":[0.335662925604501,0.333514195131802,0.00574233091545099,0.00411975308045283,0.00138923989369887,0.132588114628571,0.00217636592463718,0.00318902007609154,0.0381240631714069,0.00388193885101887],"y":[0.9,0.899999999999999,0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  6.713259e-01<br />terms: date_col_index.num<br />pos_neg: Positive","value:  6.670284e-01<br />terms: date_col_year<br />pos_neg: Positive","value:  1.148466e-02<br />terms: date_col_half<br />pos_neg: Positive","value:  8.239506e-03<br />terms: date_col_quarter<br />pos_neg: Positive","value:  2.778480e-03<br />terms: date_col_month<br />pos_neg: Positive","value:  2.651762e-01<br />terms: date_col_wday<br />pos_neg: Positive","value:  4.352732e-03<br />terms: date_col_yday<br />pos_neg: Positive","value:  6.378040e-03<br />terms: date_col_week<br />pos_neg: Positive","value:  7.624813e-02<br />terms: date_col_week3<br />pos_neg: Positive","value:  7.763878e-03<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x2","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.115503121212152,0.115674692239824,0.222469322122262,0.075196790513878,0.561552109732916,0.207610828480618,0.516177783288296,0.150039509674217],"base":[1.55,12.55,0.55,5.55,3.55,8.55,9.55,10.55],"x":[0.0577515606060761,0.0578373461199118,0.111234661061131,0.037598395256939,0.280776054866458,0.103805414240309,0.258088891644148,0.0750197548371085],"y":[0.9,0.899999999999999,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  1.155031e-01<br />terms: date_col_index.num<br />pos_neg: Positive","value:  1.156747e-01<br />terms: date_col_year<br />pos_neg: Positive","value:  2.224693e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  7.519679e-02<br />terms: date_col_quarter<br />pos_neg: Positive","value:  5.615521e-01<br />terms: date_col_mweek<br />pos_neg: Positive","value:  2.076108e-01<br />terms: date_col_week2<br />pos_neg: Positive","value:  5.161778e-01<br />terms: date_col_week3<br />pos_neg: Positive","value:  1.500395e-01<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x3","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.17306334629555,0.0737063213314643,0.273996362784779,0.480218024689624,0.0739628464991727,0.067579263287772,0.41966392228491,0.142083830212447,0.666144004037878],"base":[0.55,2.55,6.55,4.55,11.55,7.55,8.55,9.55,10.55],"x":[0.0865316731477752,0.0368531606657321,0.136998181392389,0.240109012344812,0.0369814232495863,0.033789631643886,0.209831961142455,0.0710419151062237,0.333072002018939],"y":[0.9,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  1.730633e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  7.370632e-02<br />terms: date_col_month<br />pos_neg: Positive","value:  2.739964e-01<br />terms: date_col_wday<br />pos_neg: Positive","value:  4.802180e-01<br />terms: date_col_qday<br />pos_neg: Positive","value:  7.396285e-02<br />terms: date_col_yday<br />pos_neg: Positive","value:  6.757926e-02<br />terms: date_col_week<br />pos_neg: Positive","value:  4.196639e-01<br />terms: date_col_week2<br />pos_neg: Positive","value:  1.420838e-01<br />terms: date_col_week3<br />pos_neg: Positive","value:  6.661440e-01<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x4","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.140364899688462,0.0615473956578514,0.467721349535748,0.0435577784982445,0.460425317419094,0.018252209985653],"base":[0.55,5.55,6.55,8.55,9.55,10.55],"x":[0.0701824498442312,0.0307736978289257,0.233860674767874,0.0217788892491223,0.230212658709547,0.00912610499282649],"y":[0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  1.403649e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  6.154740e-02<br />terms: date_col_quarter<br />pos_neg: Positive","value:  4.677213e-01<br />terms: date_col_wday<br />pos_neg: Positive","value:  4.355778e-02<br />terms: date_col_week2<br />pos_neg: Positive","value:  4.604253e-01<br />terms: date_col_week3<br />pos_neg: Positive","value:  1.825221e-02<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0164740224018142,0.0145634179238784,0.217152931562293,0.134824758959568,0.0166674006398387,0.253685061080702,0.0148572412331228,0.267211751698741,0.0235706860200198,0.301432087995237,0.15175529233316],"base":[1.55,12.55,0.55,5.55,2.55,6.55,11.55,3.55,7.55,8.55,10.55],"x":[0.00823701120090712,0.0072817089619392,0.108576465781147,0.067412379479784,0.00833370031991936,0.126842530540351,0.00742862061656138,0.13360587584937,0.0117853430100099,0.150716043997618,0.0758776461665801],"y":[0.9,0.899999999999999,0.9,0.9,0.9,0.9,0.899999999999999,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  1.647402e-02<br />terms: date_col_index.num<br />pos_neg: Positive","value:  1.456342e-02<br />terms: date_col_year<br />pos_neg: Positive","value:  2.171529e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  1.348248e-01<br />terms: date_col_quarter<br />pos_neg: Positive","value:  1.666740e-02<br />terms: date_col_month<br />pos_neg: Positive","value:  2.536851e-01<br />terms: date_col_wday<br />pos_neg: Positive","value:  1.485724e-02<br />terms: date_col_yday<br />pos_neg: Positive","value:  2.672118e-01<br />terms: date_col_mweek<br />pos_neg: Positive","value:  2.357069e-02<br />terms: date_col_week<br />pos_neg: Positive","value:  3.014321e-01<br />terms: date_col_week2<br />pos_neg: Positive","value:  1.517553e-01<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0471365028878731,0.0466121843490269,0.249783044626594,0.00842827715437728,0.00135159708176736,0.00230835619780474,0.00470131039026276,0.544403580557582],"base":[1.55,12.55,0.55,5.55,2.55,11.55,7.55,8.55],"x":[0.0235682514439366,0.0233060921745134,0.124891522313297,0.00421413857718864,0.000675798540883681,0.00115417809890237,0.00235065519513138,0.272201790278791],"y":[0.9,0.899999999999999,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  4.713650e-02<br />terms: date_col_index.num<br />pos_neg: Positive","value:  4.661218e-02<br />terms: date_col_year<br />pos_neg: Positive","value:  2.497830e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  8.428277e-03<br />terms: date_col_quarter<br />pos_neg: Positive","value:  1.351597e-03<br />terms: date_col_month<br />pos_neg: Positive","value:  2.308356e-03<br />terms: date_col_yday<br />pos_neg: Positive","value:  4.701310e-03<br />terms: date_col_week<br />pos_neg: Positive","value:  5.444036e-01<br />terms: date_col_week2<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x3","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0276684526754266,0.0312809331173675,0.0332162359306668,0.675918838680371],"base":[1.55,12.55,5.55,10.55],"x":[0.0138342263377133,0.0156404665586838,0.0166081179653334,0.337959419340186],"y":[0.9,0.899999999999999,0.9,0.899999999999999],"text":["value:  2.766845e-02<br />terms: date_col_index.num<br />pos_neg: Positive","value:  3.128093e-02<br />terms: date_col_year<br />pos_neg: Positive","value:  3.321624e-02<br />terms: date_col_quarter<br />pos_neg: Positive","value:  6.759188e-01<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x4","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.00903972327971925,0.801873655455487,0.0483614851961868,0.187287423322703,0.051877491727909],"base":[12.55,0.55,6.55,4.55,3.55],"x":[0.00451986163985962,0.400936827727743,0.0241807425980934,0.0936437116613513,0.0259387458639545],"y":[0.899999999999999,0.9,0.9,0.9,0.9],"text":["value:  9.039723e-03<br />terms: date_col_year<br />pos_neg: Positive","value:  8.018737e-01<br />terms: date_col_half<br />pos_neg: Positive","value:  4.836149e-02<br />terms: date_col_wday<br />pos_neg: Positive","value:  1.872874e-01<br />terms: date_col_qday<br />pos_neg: Positive","value:  5.187749e-02<br />terms: date_col_mweek<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.011538648421474,0.000397805800142405,0.00011129640757265,0.00150550295747453,0.859344697203149,0.00444907697761502,0.00249873481268024],"base":[12.55,0.55,6.55,3.55,7.55,9.55,10.55],"x":[0.00576932421073701,0.000198902900071202,5.5648203786325e-05,0.000752751478737266,0.429672348601575,0.00222453848880751,0.00124936740634012],"y":[0.899999999999999,0.9,0.9,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  1.153865e-02<br />terms: date_col_year<br />pos_neg: Positive","value:  3.978058e-04<br />terms: date_col_half<br />pos_neg: Positive","value:  1.112964e-04<br />terms: date_col_wday<br />pos_neg: Positive","value:  1.505503e-03<br />terms: date_col_mweek<br />pos_neg: Positive","value:  8.593447e-01<br />terms: date_col_week<br />pos_neg: Positive","value:  4.449077e-03<br />terms: date_col_week3<br />pos_neg: Positive","value:  2.498735e-03<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x2","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.0207250294630794,0.000744583448044745,0.757532121054794,0.00146105964705285],"base":[1.55,0.55,11.55,10.55],"x":[0.0103625147315397,0.000372291724022372,0.378766060527397,0.000730529823526427],"y":[0.9,0.9,0.899999999999999,0.899999999999999],"text":["value:  2.072503e-02<br />terms: date_col_index.num<br />pos_neg: Positive","value:  7.445834e-04<br />terms: date_col_half<br />pos_neg: Positive","value:  7.575321e-01<br />terms: date_col_yday<br />pos_neg: Positive","value:  1.461060e-03<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x3","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.00430898885944155,0.456132831989604,0.000143305138566327,0.370755361391433,0.000414904177618253,0.000926158214350286,0.00182389057648534,0.00211824777637946],"base":[12.55,2.55,6.55,11.55,3.55,8.55,9.55,10.55],"x":[0.00215449442972077,0.228066415994802,7.16525692831637e-05,0.185377680695717,0.000207452088809127,0.000463079107175143,0.000911945288242671,0.00105912388818973],"y":[0.899999999999999,0.9,0.9,0.899999999999999,0.9,0.899999999999999,0.899999999999999,0.899999999999999],"text":["value:  4.308989e-03<br />terms: date_col_year<br />pos_neg: Positive","value:  4.561328e-01<br />terms: date_col_month<br />pos_neg: Positive","value:  1.433051e-04<br />terms: date_col_wday<br />pos_neg: Positive","value:  3.707554e-01<br />terms: date_col_yday<br />pos_neg: Positive","value:  4.149042e-04<br />terms: date_col_mweek<br />pos_neg: Positive","value:  9.261582e-04<br />terms: date_col_week2<br />pos_neg: Positive","value:  1.823891e-03<br />terms: date_col_week3<br />pos_neg: Positive","value:  2.118248e-03<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x4","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"v","width":[0.703935055709277,2.94591219153484e-06,0.000164093741951503],"base":[1.55,6.55,10.55],"x":[0.351967527854639,1.47295609576742e-06,8.20468709757513e-05],"y":[0.9,0.9,0.899999999999999],"text":["value:  7.039351e-01<br />terms: date_col_index.num<br />pos_neg: Positive","value:  2.945912e-06<br />terms: date_col_wday<br />pos_neg: Positive","value:  1.640937e-04<br />terms: date_col_week4<br />pos_neg: Positive"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Positive","legendgroup":"Positive","showlegend":false,"xaxis":"x","yaxis":"y4","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":37.9178082191781,"r":7.30593607305936,"b":40.1826484018265,"l":116.164383561644},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,0.245923026744945],"automargin":true,"type":"linear","autorange":false,"range":[-0.945279166923464,0.945279166923464],"tickmode":"array","ticktext":["-0.5","0.0","0.5"],"tickvals":[-0.5,0,0.5],"categoryorder":"array","categoryarray":["-0.5","0.0","0.5"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y4","title":"","hoverformat":".2f"},"annotations":[{"text":"Coefficient Value","x":0.5,"y":0,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"top","annotationType":"axis","yshift":-21.9178082191781},{"text":"PC1","x":0.122961513372472,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC2","x":0.375,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC3","x":0.625,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC4","x":0.877038486627528,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC5","x":0.122961513372472,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC6","x":0.375,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC7","x":0.625,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC8","x":0.877038486627528,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC9","x":0.122961513372472,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC10","x":0.375,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC11","x":0.625,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC12","x":0.877038486627528,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC13","x":0.122961513372472,"y":0.235159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"}],"yaxis":{"domain":[0.764840182648402,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13],"categoryorder":"array","categoryarray":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.254076973255055,"x1":0.495923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.504076973255055,"x1":0.745923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.754076973255055,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0,"y1":0.235159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.245923026744945,"y0":0,"y1":23.37899543379,"yanchor":0.235159817351598,"ysizemode":"pixel"}],"xaxis2":{"type":"linear","autorange":false,"range":[-0.945279166923464,0.945279166923464],"tickmode":"array","ticktext":["-0.5","0.0","0.5"],"tickvals":[-0.5,0,0.5],"categoryorder":"array","categoryarray":["-0.5","0.0","0.5"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.254076973255055,0.495923026744945],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y3","title":"","hoverformat":".2f"},"xaxis3":{"type":"linear","autorange":false,"range":[-0.945279166923464,0.945279166923464],"tickmode":"array","ticktext":["-0.5","0.0","0.5"],"tickvals":[-0.5,0,0.5],"categoryorder":"array","categoryarray":["-0.5","0.0","0.5"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.504076973255055,0.745923026744945],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y3","title":"","hoverformat":".2f"},"xaxis4":{"type":"linear","autorange":false,"range":[-0.945279166923464,0.945279166923464],"tickmode":"array","ticktext":["-0.5","0.0","0.5"],"tickvals":[-0.5,0,0.5],"categoryorder":"array","categoryarray":["-0.5","0.0","0.5"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.754076973255055,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y3","title":"","hoverformat":".2f"},"yaxis2":{"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13],"categoryorder":"array","categoryarray":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.514840182648402,0.735159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"yaxis3":{"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13],"categoryorder":"array","categoryarray":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.264840182648402,0.485159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"yaxis4":{"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13],"categoryorder":"array","categoryarray":["date_col_half","date_col_index.num","date_col_month","date_col_mweek","date_col_qday","date_col_quarter","date_col_wday","date_col_week","date_col_week2","date_col_week3","date_col_week4","date_col_yday","date_col_year"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.235159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"showlegend":true,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"title":{"text":"","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"11bc6e70238f":{"x":{},"y":{},"fill":{},"type":"bar"}},"cur_data":"11bc6e70238f","visdat":{"11bc6e70238f":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="top-n-loadings-plots" class="level2">
+<h2 class="anchored" data-anchor-id="top-n-loadings-plots">Top N Loadings Plots</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_top_n_loadings_plt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>output_list<span class="sc">$</span>pca_top_n_plotly</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-e4112a49ad41728245e1" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e4112a49ad41728245e1">{"x":{"data":[{"orientation":"h","width":[0.9,0.9,0.9,0.9,0.9],"base":[0,0,0,0,0],"x":[0.38475932189418,0.433889902098045,0.43733718212091,0.437361710251421,0.437622559844157],"y":[1,2,3,4,5],"text":["order:  1<br />abs_value: 0.384759322<br />Positive?: FALSE","order:  2<br />abs_value: 0.433889902<br />Positive?: FALSE","order:  3<br />abs_value: 0.437337182<br />Positive?: FALSE","order:  4<br />abs_value: 0.437361710<br />Positive?: FALSE","order:  5<br />abs_value: 0.437622560<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"h","width":0.9,"base":0,"x":[0.164222094850364],"y":[7],"text":"order:  7<br />abs_value: 0.164222095<br />Positive?: FALSE","type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999],"base":[0,0],"x":[0.325298849422928,0.405885647157753],"y":[12,13],"text":["order: 12<br />abs_value: 0.325298849<br />Positive?: FALSE","order: 13<br />abs_value: 0.405885647<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x3","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0],"x":[0.182959674168784,0.413500784588693,0.541743151239055],"y":[21,22,25],"text":["order: 21<br />abs_value: 0.182959674<br />Positive?: FALSE","order: 22<br />abs_value: 0.413500785<br />Positive?: FALSE","order: 25<br />abs_value: 0.541743151<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x","yaxis":"y5","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999],"base":[0,0],"x":[0.476017483005331,0.675934492400427],"y":[29,30],"text":["order: 29<br />abs_value: 0.476017483<br />Positive?: FALSE","order: 30<br />abs_value: 0.675934492<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x2","yaxis":"y6","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.900000000000006,0.900000000000006],"base":[0,0,0],"x":[0.161134779926879,0.520018622250357,0.572409643711496],"y":[31,33,35],"text":["order: 31<br />abs_value: 0.161134780<br />Positive?: FALSE","order: 33<br />abs_value: 0.520018622<br />Positive?: FALSE","order: 35<br />abs_value: 0.572409644<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x3","yaxis":"y7","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0,0],"x":[0.244172354238572,0.285464687933106,0.365697705662855,0.492257751596444],"y":[36,37,38,39],"text":["order: 36<br />abs_value: 0.244172354<br />Positive?: FALSE","order: 37<br />abs_value: 0.285464688<br />Positive?: FALSE","order: 38<br />abs_value: 0.365697706<br />Positive?: FALSE","order: 39<br />abs_value: 0.492257752<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x4","yaxis":"y8","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0,0],"x":[0.215707807096018,0.218909591531364,0.271992991462742,0.293444590042768],"y":[41,42,43,44],"text":["order: 41<br />abs_value: 0.215707807<br />Positive?: FALSE","order: 42<br />abs_value: 0.218909592<br />Positive?: FALSE","order: 43<br />abs_value: 0.271992991<br />Positive?: FALSE","order: 44<br />abs_value: 0.293444590<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x","yaxis":"y9","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0,0],"x":[0.0669527462937838,0.191601965098292,0.301483557428542,0.359217900589988],"y":[46,47,48,49],"text":["order: 46<br />abs_value: 0.066952746<br />Positive?: FALSE","order: 47<br />abs_value: 0.191601965<br />Positive?: FALSE","order: 48<br />abs_value: 0.301483557<br />Positive?: FALSE","order: 49<br />abs_value: 0.359217901<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x2","yaxis":"y10","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0],"x":[0.0220877329912262,0.104330077211754,0.643536354348352],"y":[52,53,54],"text":["order: 52<br />abs_value: 0.022087733<br />Positive?: FALSE","order: 53<br />abs_value: 0.104330077<br />Positive?: FALSE","order: 54<br />abs_value: 0.643536354<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x3","yaxis":"y11","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0],"x":[0.01736097880896,0.197774921778506,0.784224970521987],"y":[56,57,60],"text":["order: 56<br />abs_value: 0.017360979<br />Positive?: FALSE","order: 57<br />abs_value: 0.197774922<br />Positive?: FALSE","order: 60<br />abs_value: 0.784224971<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x4","yaxis":"y12","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006,0.900000000000006,0.900000000000006],"base":[0,0,0,0],"x":[0.00803298276253601,0.0316492022862086,0.0462380872925263,0.707972089158225],"y":[61,62,63,65],"text":["order: 61<br />abs_value: 0.008032983<br />Positive?: FALSE","order: 62<br />abs_value: 0.031649202<br />Positive?: FALSE","order: 63<br />abs_value: 0.046238087<br />Positive?: FALSE","order: 65<br />abs_value: 0.707972089<br />Positive?: FALSE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"FALSE","legendgroup":"FALSE","showlegend":false,"xaxis":"x","yaxis":"y13","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.9,0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0,0],"x":[0.0762481263428138,0.265176229257142,0.667028390263604,0.671325851209003],"y":[6,8,9,10],"text":["order:  6<br />abs_value: 0.076248126<br />Positive?:  TRUE","order:  8<br />abs_value: 0.265176229<br />Positive?:  TRUE","order:  9<br />abs_value: 0.667028390<br />Positive?:  TRUE","order: 10<br />abs_value: 0.671325851<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":true,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0],"x":[0.222469322122262,0.516177783288296,0.561552109732916],"y":[11,14,15],"text":["order: 11<br />abs_value: 0.222469322<br />Positive?:  TRUE","order: 14<br />abs_value: 0.516177783<br />Positive?:  TRUE","order: 15<br />abs_value: 0.561552110<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x3","yaxis":"y3","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0,0,0],"x":[0.17306334629555,0.273996362784779,0.41966392228491,0.480218024689624,0.666144004037878],"y":[16,17,18,19,20],"text":["order: 16<br />abs_value: 0.173063346<br />Positive?:  TRUE","order: 17<br />abs_value: 0.273996363<br />Positive?:  TRUE","order: 18<br />abs_value: 0.419663922<br />Positive?:  TRUE","order: 19<br />abs_value: 0.480218025<br />Positive?:  TRUE","order: 20<br />abs_value: 0.666144004<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x4","yaxis":"y4","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999],"base":[0,0],"x":[0.460425317419094,0.467721349535748],"y":[23,24],"text":["order: 23<br />abs_value: 0.460425317<br />Positive?:  TRUE","order: 24<br />abs_value: 0.467721350<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x","yaxis":"y5","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.899999999999999,0.899999999999999,0.899999999999999],"base":[0,0,0],"x":[0.253685061080702,0.267211751698741,0.301432087995237],"y":[26,27,28],"text":["order: 26<br />abs_value: 0.253685061<br />Positive?:  TRUE","order: 27<br />abs_value: 0.267211752<br />Positive?:  TRUE","order: 28<br />abs_value: 0.301432088<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x2","yaxis":"y6","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000002,0.900000000000006],"base":[0,0],"x":[0.249783044626594,0.544403580557582],"y":[32,34],"text":["order: 32<br />abs_value: 0.249783045<br />Positive?:  TRUE","order: 34<br />abs_value: 0.544403581<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x3","yaxis":"y7","hoverinfo":"text","frame":null},{"orientation":"h","width":0.900000000000006,"base":0,"x":[0.675918838680371],"y":[40],"text":"order: 40<br />abs_value: 0.675918839<br />Positive?:  TRUE","type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x4","yaxis":"y8","hoverinfo":"text","frame":null},{"orientation":"h","width":0.900000000000006,"base":0,"x":[0.801873655455487],"y":[45],"text":"order: 45<br />abs_value: 0.801873655<br />Positive?:  TRUE","type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x","yaxis":"y9","hoverinfo":"text","frame":null},{"orientation":"h","width":0.900000000000006,"base":0,"x":[0.859344697203149],"y":[50],"text":"order: 50<br />abs_value: 0.859344697<br />Positive?:  TRUE","type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x2","yaxis":"y10","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006],"base":[0,0],"x":[0.0207250294630794,0.757532121054794],"y":[51,55],"text":["order: 51<br />abs_value: 0.020725029<br />Positive?:  TRUE","order: 55<br />abs_value: 0.757532121<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x3","yaxis":"y11","hoverinfo":"text","frame":null},{"orientation":"h","width":[0.900000000000006,0.900000000000006],"base":[0,0],"x":[0.370755361391433,0.456132831989604],"y":[58,59],"text":["order: 58<br />abs_value: 0.370755361<br />Positive?:  TRUE","order: 59<br />abs_value: 0.456132832<br />Positive?:  TRUE"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x4","yaxis":"y12","hoverinfo":"text","frame":null},{"orientation":"h","width":0.900000000000006,"base":0,"x":[0.703935055709277],"y":[64],"text":"order: 64<br />abs_value: 0.703935056<br />Positive?:  TRUE","type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,100,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"TRUE","legendgroup":"TRUE","showlegend":false,"xaxis":"x","yaxis":"y13","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":37.9178082191781,"r":7.30593607305936,"b":40.1826484018265,"l":104.474885844749},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,0.187214611872146],"automargin":true,"type":"linear","autorange":false,"range":[-0.0429672348601575,0.902311932063307],"tickmode":"array","ticktext":["0.00","0.25","0.50","0.75"],"tickvals":[0,0.25,0.5,0.75],"categoryorder":"array","categoryarray":["0.00","0.25","0.50","0.75"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y13","title":"","hoverformat":".2f"},"annotations":[{"text":"Abs. Coefficient Value","x":0.5,"y":0,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"top","annotationType":"axis","yshift":-21.9178082191781},{"text":"PC1","x":0.0936073059360731,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC2","x":0.375,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC3","x":0.625,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC4","x":0.906392694063927,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC5","x":0.0936073059360731,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC6","x":0.375,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC7","x":0.625,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC8","x":0.906392694063927,"y":0.735159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC9","x":0.0936073059360731,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC10","x":0.375,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC11","x":0.625,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC12","x":0.906392694063927,"y":0.485159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"PC13","x":0.0936073059360731,"y":0.235159817351598,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"}],"yaxis":{"domain":[0.764840182648402,1],"automargin":true,"type":"linear","autorange":false,"range":[0.55,5.45],"tickmode":"array","ticktext":["date_col_half","date_col_quarter","date_col_yday","date_col_month","date_col_week"],"tickvals":[1,2,3,4,5],"categoryorder":"array","categoryarray":["date_col_half","date_col_quarter","date_col_yday","date_col_month","date_col_week"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0.764840182648402,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0.514840182648402,"y1":0.735159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":0.735159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.312785388127854,"x1":0.437214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.562785388127854,"x1":0.687214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0.264840182648402,"y1":0.485159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.812785388127854,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":0.485159817351598,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0,"y1":0.235159817351598},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.187214611872146,"y0":0,"y1":23.37899543379,"yanchor":0.235159817351598,"ysizemode":"pixel"}],"xaxis2":{"type":"linear","autorange":false,"range":[-0.0429672348601575,0.902311932063307],"tickmode":"array","ticktext":["0.00","0.25","0.50","0.75"],"tickvals":[0,0.25,0.5,0.75],"categoryorder":"array","categoryarray":["0.00","0.25","0.50","0.75"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.312785388127854,0.437214611872146],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y10","title":"","hoverformat":".2f"},"yaxis2":{"type":"linear","autorange":false,"range":[5.55,10.45],"tickmode":"array","ticktext":["date_col_week3","date_col_mweek","date_col_wday","date_col_year","date_col_index.num"],"tickvals":[6,7,8,9,10],"categoryorder":"array","categoryarray":["date_col_week3","date_col_mweek","date_col_wday","date_col_year","date_col_index.num"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.764840182648402,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x2","title":"","hoverformat":".2f"},"xaxis3":{"type":"linear","autorange":false,"range":[-0.0429672348601575,0.902311932063307],"tickmode":"array","ticktext":["0.00","0.25","0.50","0.75"],"tickvals":[0,0.25,0.5,0.75],"categoryorder":"array","categoryarray":["0.00","0.25","0.50","0.75"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.562785388127854,0.687214611872146],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y11","title":"","hoverformat":".2f"},"yaxis3":{"type":"linear","autorange":false,"range":[10.55,15.45],"tickmode":"array","ticktext":["date_col_half","date_col_qday","date_col_wday","date_col_week3","date_col_mweek"],"tickvals":[11,12,13,14,15],"categoryorder":"array","categoryarray":["date_col_half","date_col_qday","date_col_wday","date_col_week3","date_col_mweek"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.764840182648402,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x3","title":"","hoverformat":".2f"},"xaxis4":{"type":"linear","autorange":false,"range":[-0.0429672348601575,0.902311932063307],"tickmode":"array","ticktext":["0.00","0.25","0.50","0.75"],"tickvals":[0,0.25,0.5,0.75],"categoryorder":"array","categoryarray":["0.00","0.25","0.50","0.75"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.812785388127854,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y12","title":"","hoverformat":".2f"},"yaxis4":{"type":"linear","autorange":false,"range":[15.55,20.45],"tickmode":"array","ticktext":["date_col_half","date_col_wday","date_col_week2","date_col_qday","date_col_week4"],"tickvals":[16,17,18,19,20],"categoryorder":"array","categoryarray":["date_col_half","date_col_wday","date_col_week2","date_col_qday","date_col_week4"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.764840182648402,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x4","title":"","hoverformat":".2f"},"yaxis5":{"type":"linear","autorange":false,"range":[20.55,25.45],"tickmode":"array","ticktext":["date_col_index.num","date_col_mweek","date_col_week3","date_col_wday","date_col_qday"],"tickvals":[21,22,23,24,25],"categoryorder":"array","categoryarray":["date_col_index.num","date_col_mweek","date_col_week3","date_col_wday","date_col_qday"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.514840182648402,0.735159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"yaxis6":{"type":"linear","autorange":false,"range":[25.55,30.45],"tickmode":"array","ticktext":["date_col_wday","date_col_mweek","date_col_week2","date_col_qday","date_col_week3"],"tickvals":[26,27,28,29,30],"categoryorder":"array","categoryarray":["date_col_wday","date_col_mweek","date_col_week2","date_col_qday","date_col_week3"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.514840182648402,0.735159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x2","title":"","hoverformat":".2f"},"yaxis7":{"type":"linear","autorange":false,"range":[30.55,35.45],"tickmode":"array","ticktext":["date_col_week4","date_col_half","date_col_wday","date_col_week2","date_col_mweek"],"tickvals":[31,32,33,34,35],"categoryorder":"array","categoryarray":["date_col_week4","date_col_half","date_col_wday","date_col_week2","date_col_mweek"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.514840182648402,0.735159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x3","title":"","hoverformat":".2f"},"yaxis8":{"type":"linear","autorange":false,"range":[35.55,40.45],"tickmode":"array","ticktext":["date_col_qday","date_col_mweek","date_col_wday","date_col_week2","date_col_week4"],"tickvals":[36,37,38,39,40],"categoryorder":"array","categoryarray":["date_col_qday","date_col_mweek","date_col_wday","date_col_week2","date_col_week4"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.514840182648402,0.735159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x4","title":"","hoverformat":".2f"},"yaxis9":{"type":"linear","autorange":false,"range":[40.55,45.45],"tickmode":"array","ticktext":["date_col_yday","date_col_week","date_col_quarter","date_col_week2","date_col_half"],"tickvals":[41,42,43,44,45],"categoryorder":"array","categoryarray":["date_col_yday","date_col_week","date_col_quarter","date_col_week2","date_col_half"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.264840182648402,0.485159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"yaxis10":{"type":"linear","autorange":false,"range":[45.55,50.45],"tickmode":"array","ticktext":["date_col_qday","date_col_yday","date_col_quarter","date_col_month","date_col_week"],"tickvals":[46,47,48,49,50],"categoryorder":"array","categoryarray":["date_col_qday","date_col_yday","date_col_quarter","date_col_month","date_col_week"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.264840182648402,0.485159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x2","title":"","hoverformat":".2f"},"yaxis11":{"type":"linear","autorange":false,"range":[50.55,55.45],"tickmode":"array","ticktext":["date_col_index.num","date_col_year","date_col_week","date_col_month","date_col_yday"],"tickvals":[51,52,53,54,55],"categoryorder":"array","categoryarray":["date_col_index.num","date_col_year","date_col_week","date_col_month","date_col_yday"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.264840182648402,0.485159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x3","title":"","hoverformat":".2f"},"yaxis12":{"type":"linear","autorange":false,"range":[55.55,60.45],"tickmode":"array","ticktext":["date_col_week","date_col_qday","date_col_yday","date_col_month","date_col_quarter"],"tickvals":[56,57,58,59,60],"categoryorder":"array","categoryarray":["date_col_week","date_col_qday","date_col_yday","date_col_month","date_col_quarter"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.264840182648402,0.485159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x4","title":"","hoverformat":".2f"},"yaxis13":{"type":"linear","autorange":false,"range":[60.55,65.45],"tickmode":"array","ticktext":["date_col_qday","date_col_quarter","date_col_yday","date_col_index.num","date_col_year"],"tickvals":[61,62,63,64,65],"categoryorder":"array","categoryarray":["date_col_qday","date_col_quarter","date_col_yday","date_col_index.num","date_col_year"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.235159817351598],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"showlegend":true,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"title":{"text":"Positive?","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"11bc664014f1":{"x":{},"y":{},"fill":{},"type":"bar"}},"cur_data":"11bc664014f1","visdat":{"11bc664014f1":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'alternate';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } 
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

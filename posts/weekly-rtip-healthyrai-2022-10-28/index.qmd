@@ -1,0 +1,187 @@
+---
+title: "PCA with healthyR.ai"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-10-28"
+categories: [code, rtip, healthyrai, weeklytip]
+image: healthyrai_logo.png
+---
+
+# Introduction
+
+In this post we are going to talk about how you can perform **principal component analysis** in **R** with *{healthyR.ai}* in a `tidyverse` compliant fashion.
+
+The specific function we are going to discuss on this post is `pca_your_recipe()`
+
+# The Function
+
+So lets talk a little bit about the function itself. Firstly, what does the full function call look like? See below (has sensible defaults):
+
+```{r fns, eval=FALSE}
+pca_your_recipe(
+  .recipe_object, 
+  .data, 
+  .threshold = 0.75, 
+  .top_n = 5
+)
+```
+
+As we can see there are four parameters that require arguments to be passed to them for this function. Here is a list of the parameters and the type of arguments that should be passed to them:
+
+-   `.recipe_object` which is the recipe object you want to pass that has been previously created. There there is the
+-   `.data` parameter which is the full data set that is used in the original recipe object passed into .recipe_object in order to obtain the baked data of the transform. Thirdly,
+-   `.threshold` which is a number between 0 and 1. A fraction of the total variance that should be covered by the components.
+-   `.top_n` which is how many variables loadings should be returned per PC.
+
+The function will return a list object with several items in it. We are going to go over each one of those items in this post, but here they are:
+
+-   pca_transform - This is the pca recipe.
+-   variable_loadings
+-   variable_variance
+-   pca_estimates
+-   pca_juiced_estimates
+-   pca_baked_data
+-   pca_variance_df
+-   pca_rotattion_df
+-   pca_variance_scree_plt
+-   pca_loadings_plt
+-   pca_loadings_plotly
+-   pca_top_n\_loadings_plt
+-   pca_top_n\_plotly
+
+Here is a link to the function [pca_your_recipe](https://www.spsanderson.com/healthyR.ai/reference/pca_your_recipe)
+
+Let's work through an example and show each object in the return.
+
+# Example
+
+## Library Load
+
+```{r lib_load}
+pacman::p_load(
+  "healthyR.ai",
+  "healthyR.data",
+  "timetk",
+  "dplyr",
+  "purrr",
+  "rsample",
+  "recipes"
+)
+```
+
+Now that we have our libraries loaded lets get the data.
+
+## Data
+
+```{r data}
+data_tbl <- healthyR_data %>%
+  select(visit_end_date_time) %>%
+  summarise_by_time(
+    .date_var = visit_end_date_time,
+    .by       = "month",
+    value     = n()
+  ) %>%
+  set_names("date_col", "value") %>%
+  filter_by_time(
+    .date_var = date_col,
+    .start_date = "2013",
+    .end_date = "2020"
+  )
+
+head(data_tbl, 5)
+```
+
+Now for the splits object.
+
+## Splits
+
+```{r splits}
+splits <- initial_split(data = data_tbl, prop = 0.8)
+
+splits
+```
+
+## Recipe and Output
+
+Now it is time for the recipe and the output objects.
+
+```{r rec_output, warning=FALSE, message=FALSE}
+rec_obj <- recipe(value ~ ., training(splits)) %>%
+  step_timeseries_signature(date_col) %>%
+  step_rm(matches("(iso$)|(xts$)|(hour)|(min)|(sec)|(am.pm)"))
+
+output_list <- pca_your_recipe(rec_obj, .data = data_tbl)
+```
+
+# Output Objects
+
+Now that we have our output, let's start to explore it all.
+
+## PCA Transform
+
+```{r}
+output_list$pca_transform
+```
+
+## Variable Loadings
+
+```{r}
+output_list$variable_loadings
+```
+
+## Variable Variance
+
+```{r}
+output_list$variable_variance
+```
+
+## PCA Estimates
+
+```{r}
+output_list$pca_estimates
+```
+
+## PCA Juiced Estimates
+
+```{r}
+output_list$pca_juiced_estimates
+```
+
+## PCA Baked Data
+
+```{r}
+output_list$pca_baked_data
+```
+
+## PCA Variance Data Frame
+
+```{r}
+output_list$pca_variance_df
+```
+
+## PCA Rotation Data Frame
+
+```{r}
+output_list$pca_rotation_df
+```
+
+## PCA Variance Scree Plot
+
+```{r}
+output_list$pca_variance_scree_plt
+```
+
+## PCA Loadings Plot
+
+```{r}
+output_list$pca_loadings_plt
+
+output_list$pca_loadings_plotly
+```
+
+## Top N Loadings Plots
+
+```{r}
+output_list$pca_top_n_loadings_plt
+
+output_list$pca_top_n_plotly
+```
