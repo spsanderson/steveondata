@@ -1,0 +1,81 @@
+---
+title: "Discrete Fourier Vec with healthyR.ai"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-07"
+categories: [code, rtip, healthyrai]
+---
+
+# Introduction
+
+Sometimes in modeling you may want to get a discrete `1/0` vector of a `fourier` transform of some input vector. With `{healthyR.ai}` we can do this easily.
+
+# Function
+
+Here is the full function call:
+
+```{r fns, eval=FALSE}
+hai_fourier_discrete_vec(
+  .x,
+  .period,
+  .order,
+  .scale_type = c("sin", "cos", "sincos")
+)
+```
+
+Here are the parameters to the function and what they expect:
+
+*  `.x` - A numeric vector
+*  `.period` - The number of observations that complete a cycle
+*  `.order` - The fourier term order
+*  `.scale_type` - A character of one of the following: `sin`,`cos`,`sincos`
+
+The internal caluclation is straightforward:
+
+*  `sin = sin(2 * pi * h * x), where h = .order/.period`
+*  `cos = cos(2 * pi * h * x), where h = .order/.period`
+*  `sincos = sin(2 * pi * h * x) * cos(2 * pi * h * x) where h = .order/.period`
+
+# Example
+
+Let's work throught a quick and simple example.
+
+```{r exmp, warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(healthyR.ai)
+library(tidyr)
+
+len_out <- 24
+by_unit <- "month"
+start_date <- as.Date("2021-01-01")
+
+data_tbl <- tibble(
+  date_col = seq.Date(
+    from = start_date, 
+    length.out = len_out, 
+    by = by_unit
+  ),
+  a = rnorm(len_out, sd = 2),
+  fv_sin = hai_fourier_discrete_vec(a, 12, 1, "sin"),
+  fv_cos = hai_fourier_discrete_vec(a, 12, 1, "cos"),
+  fv_sc  = hai_fourier_discrete_vec(a, 12, 1, "sincos")
+)
+
+data_tbl
+```
+
+# Visual
+
+Let's visualize.
+
+```{r plt}
+data_tbl %>% 
+  pivot_longer(cols = -date_col) %>% 
+  ggplot(aes(x = date_col, y = value, color = name)) + 
+  geom_line() + 
+  facet_wrap(~ name, scales = "free") +
+  theme_minimal() +
+  labs(color = "")
+```
+
+Voila!
