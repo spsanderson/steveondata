@@ -1,0 +1,63 @@
+---
+title: "Hyperbolic Transform with healthyR.ai"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-08"
+categories: [code, rtip, healthyrai]
+---
+
+# Introduction
+
+In data modeling there can be instanes where you will want some sort of hyperbolic transformation of your data. In `{healthyR.ai}` this is easy with the use of the [function `hai_hyperbolic_vec()`](https://www.spsanderson.com/healthyR.ai/reference/hai_hyperbolic_vec.html) along with it's corresponding `augment` and `step` functions.
+
+# Function
+
+The function takes in a numeric vector as it's argument and will transform the data with one of the following:
+
+*  `sin`
+*  `cos`
+*  `tan`
+*  `sincos` This will do: `value = sin(x) * cos(x)`
+
+The full function call is:
+```{r fns, eval=FALSE}
+hai_hyperbolic_vec(.x, .scale_type = c("sin", "cos", "tan", "sincos"))
+```
+
+# Example
+
+```{r example, message=FALSE, warning=FALSE}
+library(dplyr)
+library(healthyR.ai)
+library(tidyr)
+library(ggplot2)
+
+len_out <- 25
+by_unit <- "month"
+start_date <- as.Date("2021-01-01")
+
+data_tbl <- tibble(
+  date_col = seq.Date(
+    from = start_date, 
+    length.out = len_out, 
+    by = by_unit
+    ),
+  b = runif(len_out),
+  fv_sin = hai_hyperbolic_vec(b, .scale_type = "sin"),
+  fv_cos = hai_hyperbolic_vec(b, .scale_type = "cos"),
+  fv_sc  = hai_hyperbolic_vec(b, .scale_type = "sincos")
+)
+
+data_tbl
+```
+
+# Visual 
+
+```{r viz}
+data_tbl %>% 
+  pivot_longer(cols = -date_col) %>% 
+  ggplot(aes(x = date_col, y = value, color = name)) + 
+  geom_line() + 
+  facet_wrap(~ name, scales = "free") +
+  theme_minimal() +
+  labs(color = "")
+```
