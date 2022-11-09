@@ -1,0 +1,83 @@
+---
+title: "Mapping K-Means with healthyR.ai"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-09"
+categories: [code, rtip, healthyrai, kmeans]
+image: healthyrai_logo.png
+---
+
+# Introduction
+
+K-Means is a [clustering algorithm](https://en.wikipedia.org/wiki/K-means_clustering) that can be used to find potential clusters in your data.
+
+The algorithm does require that you look at different values of `K` in order to assess which is the optimal value.
+
+In the `R` package `{healthyR.ai}` there is a utility to do this.
+
+# Function
+
+Let's take a look at the full function call.
+
+```{r fns, eval=FALSE}
+hai_kmeans_mapped_tbl(.data, .centers = 15)
+
+kmeans_mapped_tbl(.data, .centers = 15)
+```
+
+You will notice that there are two, they are synonyms to each other as this functionality is moving out of the `{healthyR}` package.
+
+## Parameters
+
+The parameters take the following arguments:
+
+*  `.data` - This is the data that should be an output of the `hai_user_item_tbl()` or it's synonym, or should at least be in the `user item` matrix format.
+*  `.centers` - The maximum amount of centers you want to map to the `k-means` function. The default is 15.
+
+# Example
+
+Let's run an example.
+
+```{r example, warning=FALSE, message=FALSE}
+library(healthyR.data)
+library(healthyR.ai)
+library(dplyr)
+
+data_tbl <- healthyR_data %>%
+  filter(ip_op_flag == "I") %>%
+  filter(payer_grouping != "Medicare B") %>%
+  filter(payer_grouping != "?") %>%
+  select(service_line, payer_grouping) %>%
+  mutate(record = 1) %>%
+  as_tibble()
+
+ui_tbl <- hai_kmeans_user_item_tbl(
+  .data = data_tbl,
+  .row_input = service_line,
+  .col_input = payer_grouping,
+  .record_input = record
+)
+
+kmeans_mapped_tbl <- hai_kmeans_mapped_tbl(ui_tbl)
+
+```
+
+Let's take a look at our data, user item matrix and our kmeans mapped tibble.
+
+```{r data_tbl}
+data_tbl
+```
+
+```{r uit}
+ui_tbl
+```
+
+```{r kmt}
+kmeans_mapped_tbl
+```
+
+```{r unnest}
+kmeans_mapped_tbl %>%
+  tidyr::unnest(glance)
+```
+
+Voila!
