@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2022-11-11">
+
+<title>Steve’s Data Tips and Tricks - Time Series Lag Correlation Plots</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+<script src="../../site_libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.10.1/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - Time Series Lag Correlation Plots">
+<meta property="og:description" content="In time series analysis there is something called a lag. This simply means we take a look at some past event from some point in time t.">
+<meta property="og:image" content="https://www.spsanderson.com/steveondata/posts\weekly-rtip-healthyrts-2022-11-11\healthyrts_logo.png">
+<meta property="og:site-name" content="Steve's Data Tips and Tricks">
+<meta property="og:image:height" content="600">
+<meta property="og:image:width" content="518">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Time Series Lag Correlation Plots">
+<meta name="twitter:description" content="In time series analysis there is something called a lag. This simply means we take a look at some past event from some point in time t.">
+<meta name="twitter:image" content="https://www.spsanderson.com/steveondata/posts\weekly-rtip-healthyrts-2022-11-11\healthyrts_logo.png">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:image-height" content="600">
+<meta name="twitter:image-width" content="518">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/steveondata/"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"><i class="bi bi-telegram" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div class="quarto-toggle-container">
+                  <a href="" class="quarto-color-scheme-toggle nav-link" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+              </div>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Time Series Lag Correlation Plots</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+                <div class="quarto-category">healthyrts</div>
+                <div class="quarto-category">weeklytip</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 11, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In time series analysis there is something called a lag. This simply means we take a look at some past event from some point in time <em>t</em>. This is a non-statistical method for looking at a relationship between a timeseries and its lags.</p>
+<p><a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> has a function called <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_lag_correlation.html"><code>ts_lag_correlation()</code></a>. This function, as described by it’s name, provides more than just a simple lag plot.</p>
+<p>This function provides a lot of extra information for the end user. First let’s go over the function call.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<section id="function-call" class="level2">
+<h2 class="anchored" data-anchor-id="function-call">Function Call</h2>
+<p>Here is the full call:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ts_lag_correlation</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  .data,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  .date_col,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  .value_col,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">.lags =</span> <span class="dv">1</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">.heatmap_color_low =</span> <span class="st">"white"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">.heatmap_color_hi =</span> <span class="st">"steelblue"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here are the arguments that get supplied to the different parameters.</p>
+<ul>
+<li><code>.data</code> - A tibble of time series data</li>
+<li><code>.date_col</code> - A date column</li>
+<li><code>.value_col</code> - The value column being analyzed</li>
+<li><code>.lags</code> - This is a vector of integer lags, ie 1 or c(1,6,12)</li>
+<li><code>.heatmap_color_low</code> - What color should the low values of the heatmap of the correlation matrix be, the default is <strong>‘white’</strong></li>
+<li><code>.heatmap_color_hi</code> - What color should the low values of the heatmap of the correlation matrix be, the default is <strong>‘steelblue’</strong></li>
+</ul>
+</section>
+<section id="function-return" class="level2">
+<h2 class="anchored" data-anchor-id="function-return">Function Return</h2>
+<p>The function itself returns a list object. The list has the following elements in it:</p>
+<p><em>Data Elements</em></p>
+<ul>
+<li><code>lag_list</code></li>
+<li><code>lag_tbl</code></li>
+<li><code>correlation_lag_matrix</code></li>
+<li><code>correlation_lag_tbl</code></li>
+</ul>
+<p><em>Plot Elements</em></p>
+<ul>
+<li><code>lag_plot</code></li>
+<li><code>plotly_lag_plot</code></li>
+<li><code>correlation_heatmap</code></li>
+<li><code>plotly_heatmap</code></li>
+</ul>
+</section>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Let’s take a look at an example. We are going to use the built in data set of <strong>AirPassengers</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(healthyR.ts)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">ts_to_tbl</span>(AirPassengers) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>index)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>lags <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">12</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>output <span class="ot">&lt;-</span> <span class="fu">ts_lag_correlation</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">.data =</span> df,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">.date_col =</span> date_col,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">.value_col =</span> value,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">.lags =</span> lags</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now that we have our output, let’s examine each piece of it.</p>
+<section id="data-elements" class="level2">
+<h2 class="anchored" data-anchor-id="data-elements">Data Elements</h2>
+<p>Here are the data elements.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>data<span class="sc">$</span>lag_list</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 143 × 3
+   lag   value lagged_value
+   &lt;fct&gt; &lt;dbl&gt;        &lt;dbl&gt;
+ 1 1       118          112
+ 2 1       132          118
+ 3 1       129          132
+ 4 1       121          129
+ 5 1       135          121
+ 6 1       148          135
+ 7 1       148          148
+ 8 1       136          148
+ 9 1       119          136
+10 1       104          119
+# … with 133 more rows
+
+[[2]]
+# A tibble: 141 × 3
+   lag   value lagged_value
+   &lt;fct&gt; &lt;dbl&gt;        &lt;dbl&gt;
+ 1 3       129          112
+ 2 3       121          118
+ 3 3       135          132
+ 4 3       148          129
+ 5 3       148          121
+ 6 3       136          135
+ 7 3       119          148
+ 8 3       104          148
+ 9 3       118          136
+10 3       115          119
+# … with 131 more rows
+
+[[3]]
+# A tibble: 138 × 3
+   lag   value lagged_value
+   &lt;fct&gt; &lt;dbl&gt;        &lt;dbl&gt;
+ 1 6       148          112
+ 2 6       148          118
+ 3 6       136          132
+ 4 6       119          129
+ 5 6       104          121
+ 6 6       118          135
+ 7 6       115          148
+ 8 6       126          148
+ 9 6       141          136
+10 6       135          119
+# … with 128 more rows
+
+[[4]]
+# A tibble: 132 × 3
+   lag   value lagged_value
+   &lt;fct&gt; &lt;dbl&gt;        &lt;dbl&gt;
+ 1 12      115          112
+ 2 12      126          118
+ 3 12      141          132
+ 4 12      135          129
+ 5 12      125          121
+ 6 12      149          135
+ 7 12      170          148
+ 8 12      170          148
+ 9 12      158          136
+10 12      133          119
+# … with 122 more rows</code></pre>
+</div>
+</div>
+<p>This is a list of all the tibbles of the different lags that were chosen.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>data<span class="sc">$</span>lag_tbl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 554 × 4
+   lag   value lagged_value lag_title
+   &lt;fct&gt; &lt;dbl&gt;        &lt;dbl&gt; &lt;fct&gt;    
+ 1 1       118          112 Lag: 1   
+ 2 1       132          118 Lag: 1   
+ 3 1       129          132 Lag: 1   
+ 4 1       121          129 Lag: 1   
+ 5 1       135          121 Lag: 1   
+ 6 1       148          135 Lag: 1   
+ 7 1       148          148 Lag: 1   
+ 8 1       136          148 Lag: 1   
+ 9 1       119          136 Lag: 1   
+10 1       104          119 Lag: 1   
+# … with 544 more rows</code></pre>
+</div>
+</div>
+<p>This is the long lag <code>tibble</code> with all of the lags in it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>data<span class="sc">$</span>correlation_lag_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                value value_lag1 value_lag3 value_lag6 value_lag12
+value       1.0000000  0.9542938  0.8186636  0.7657001   0.9905274
+value_lag1  0.9542938  1.0000000  0.8828054  0.7726530   0.9492382
+value_lag3  0.8186636  0.8828054  1.0000000  0.8349550   0.8218493
+value_lag6  0.7657001  0.7726530  0.8349550  1.0000000   0.7780911
+value_lag12 0.9905274  0.9492382  0.8218493  0.7780911   1.0000000</code></pre>
+</div>
+</div>
+<p>This is the correlation matrix.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>data<span class="sc">$</span>correlation_lag_tbl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 25 × 3
+   name        data_names value
+   &lt;fct&gt;       &lt;fct&gt;      &lt;dbl&gt;
+ 1 value       value      1    
+ 2 value_lag1  value      0.954
+ 3 value_lag3  value      0.819
+ 4 value_lag6  value      0.766
+ 5 value_lag12 value      0.991
+ 6 value       value_lag1 0.954
+ 7 value_lag1  value_lag1 1    
+ 8 value_lag3  value_lag1 0.883
+ 9 value_lag6  value_lag1 0.773
+10 value_lag12 value_lag1 0.949
+# … with 15 more rows</code></pre>
+</div>
+</div>
+<p>This is the correlation lag <code>tibble</code></p>
+</section>
+<section id="plot-elements" class="level2">
+<h2 class="anchored" data-anchor-id="plot-elements">Plot Elements</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>plots<span class="sc">$</span>lag_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The Lag Plot itself.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>plots<span class="sc">$</span>plotly_lag_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-2ab03afc70382d2780ce" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2ab03afc70382d2780ce">{"x":{"data":[{"x":[118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432],"y":[112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390],"text":["value: 118<br />lagged_value: 112<br />lag: 1","value: 132<br />lagged_value: 118<br />lag: 1","value: 129<br />lagged_value: 132<br />lag: 1","value: 121<br />lagged_value: 129<br />lag: 1","value: 135<br />lagged_value: 121<br />lag: 1","value: 148<br />lagged_value: 135<br />lag: 1","value: 148<br />lagged_value: 148<br />lag: 1","value: 136<br />lagged_value: 148<br />lag: 1","value: 119<br />lagged_value: 136<br />lag: 1","value: 104<br />lagged_value: 119<br />lag: 1","value: 118<br />lagged_value: 104<br />lag: 1","value: 115<br />lagged_value: 118<br />lag: 1","value: 126<br />lagged_value: 115<br />lag: 1","value: 141<br />lagged_value: 126<br />lag: 1","value: 135<br />lagged_value: 141<br />lag: 1","value: 125<br />lagged_value: 135<br />lag: 1","value: 149<br />lagged_value: 125<br />lag: 1","value: 170<br />lagged_value: 149<br />lag: 1","value: 170<br />lagged_value: 170<br />lag: 1","value: 158<br />lagged_value: 170<br />lag: 1","value: 133<br />lagged_value: 158<br />lag: 1","value: 114<br />lagged_value: 133<br />lag: 1","value: 140<br />lagged_value: 114<br />lag: 1","value: 145<br />lagged_value: 140<br />lag: 1","value: 150<br />lagged_value: 145<br />lag: 1","value: 178<br />lagged_value: 150<br />lag: 1","value: 163<br />lagged_value: 178<br />lag: 1","value: 172<br />lagged_value: 163<br />lag: 1","value: 178<br />lagged_value: 172<br />lag: 1","value: 199<br />lagged_value: 178<br />lag: 1","value: 199<br />lagged_value: 199<br />lag: 1","value: 184<br />lagged_value: 199<br />lag: 1","value: 162<br />lagged_value: 184<br />lag: 1","value: 146<br />lagged_value: 162<br />lag: 1","value: 166<br />lagged_value: 146<br />lag: 1","value: 171<br />lagged_value: 166<br />lag: 1","value: 180<br />lagged_value: 171<br />lag: 1","value: 193<br />lagged_value: 180<br />lag: 1","value: 181<br />lagged_value: 193<br />lag: 1","value: 183<br />lagged_value: 181<br />lag: 1","value: 218<br />lagged_value: 183<br />lag: 1","value: 230<br />lagged_value: 218<br />lag: 1","value: 242<br />lagged_value: 230<br />lag: 1","value: 209<br />lagged_value: 242<br />lag: 1","value: 191<br />lagged_value: 209<br />lag: 1","value: 172<br />lagged_value: 191<br />lag: 1","value: 194<br />lagged_value: 172<br />lag: 1","value: 196<br />lagged_value: 194<br />lag: 1","value: 196<br />lagged_value: 196<br />lag: 1","value: 236<br />lagged_value: 196<br />lag: 1","value: 235<br />lagged_value: 236<br />lag: 1","value: 229<br />lagged_value: 235<br />lag: 1","value: 243<br />lagged_value: 229<br />lag: 1","value: 264<br />lagged_value: 243<br />lag: 1","value: 272<br />lagged_value: 264<br />lag: 1","value: 237<br />lagged_value: 272<br />lag: 1","value: 211<br />lagged_value: 237<br />lag: 1","value: 180<br />lagged_value: 211<br />lag: 1","value: 201<br />lagged_value: 180<br />lag: 1","value: 204<br />lagged_value: 201<br />lag: 1","value: 188<br />lagged_value: 204<br />lag: 1","value: 235<br />lagged_value: 188<br />lag: 1","value: 227<br />lagged_value: 235<br />lag: 1","value: 234<br />lagged_value: 227<br />lag: 1","value: 264<br />lagged_value: 234<br />lag: 1","value: 302<br />lagged_value: 264<br />lag: 1","value: 293<br />lagged_value: 302<br />lag: 1","value: 259<br />lagged_value: 293<br />lag: 1","value: 229<br />lagged_value: 259<br />lag: 1","value: 203<br />lagged_value: 229<br />lag: 1","value: 229<br />lagged_value: 203<br />lag: 1","value: 242<br />lagged_value: 229<br />lag: 1","value: 233<br />lagged_value: 242<br />lag: 1","value: 267<br />lagged_value: 233<br />lag: 1","value: 269<br />lagged_value: 267<br />lag: 1","value: 270<br />lagged_value: 269<br />lag: 1","value: 315<br />lagged_value: 270<br />lag: 1","value: 364<br />lagged_value: 315<br />lag: 1","value: 347<br />lagged_value: 364<br />lag: 1","value: 312<br />lagged_value: 347<br />lag: 1","value: 274<br />lagged_value: 312<br />lag: 1","value: 237<br />lagged_value: 274<br />lag: 1","value: 278<br />lagged_value: 237<br />lag: 1","value: 284<br />lagged_value: 278<br />lag: 1","value: 277<br />lagged_value: 284<br />lag: 1","value: 317<br />lagged_value: 277<br />lag: 1","value: 313<br />lagged_value: 317<br />lag: 1","value: 318<br />lagged_value: 313<br />lag: 1","value: 374<br />lagged_value: 318<br />lag: 1","value: 413<br />lagged_value: 374<br />lag: 1","value: 405<br />lagged_value: 413<br />lag: 1","value: 355<br />lagged_value: 405<br />lag: 1","value: 306<br />lagged_value: 355<br />lag: 1","value: 271<br />lagged_value: 306<br />lag: 1","value: 306<br />lagged_value: 271<br />lag: 1","value: 315<br />lagged_value: 306<br />lag: 1","value: 301<br />lagged_value: 315<br />lag: 1","value: 356<br />lagged_value: 301<br />lag: 1","value: 348<br />lagged_value: 356<br />lag: 1","value: 355<br />lagged_value: 348<br />lag: 1","value: 422<br />lagged_value: 355<br />lag: 1","value: 465<br />lagged_value: 422<br />lag: 1","value: 467<br />lagged_value: 465<br />lag: 1","value: 404<br />lagged_value: 467<br />lag: 1","value: 347<br />lagged_value: 404<br />lag: 1","value: 305<br />lagged_value: 347<br />lag: 1","value: 336<br />lagged_value: 305<br />lag: 1","value: 340<br />lagged_value: 336<br />lag: 1","value: 318<br />lagged_value: 340<br />lag: 1","value: 362<br />lagged_value: 318<br />lag: 1","value: 348<br />lagged_value: 362<br />lag: 1","value: 363<br />lagged_value: 348<br />lag: 1","value: 435<br />lagged_value: 363<br />lag: 1","value: 491<br />lagged_value: 435<br />lag: 1","value: 505<br />lagged_value: 491<br />lag: 1","value: 404<br />lagged_value: 505<br />lag: 1","value: 359<br />lagged_value: 404<br />lag: 1","value: 310<br />lagged_value: 359<br />lag: 1","value: 337<br />lagged_value: 310<br />lag: 1","value: 360<br />lagged_value: 337<br />lag: 1","value: 342<br />lagged_value: 360<br />lag: 1","value: 406<br />lagged_value: 342<br />lag: 1","value: 396<br />lagged_value: 406<br />lag: 1","value: 420<br />lagged_value: 396<br />lag: 1","value: 472<br />lagged_value: 420<br />lag: 1","value: 548<br />lagged_value: 472<br />lag: 1","value: 559<br />lagged_value: 548<br />lag: 1","value: 463<br />lagged_value: 559<br />lag: 1","value: 407<br />lagged_value: 463<br />lag: 1","value: 362<br />lagged_value: 407<br />lag: 1","value: 405<br />lagged_value: 362<br />lag: 1","value: 417<br />lagged_value: 405<br />lag: 1","value: 391<br />lagged_value: 417<br />lag: 1","value: 419<br />lagged_value: 391<br />lag: 1","value: 461<br />lagged_value: 419<br />lag: 1","value: 472<br />lagged_value: 461<br />lag: 1","value: 535<br />lagged_value: 472<br />lag: 1","value: 622<br />lagged_value: 535<br />lag: 1","value: 606<br />lagged_value: 622<br />lag: 1","value: 508<br />lagged_value: 606<br />lag: 1","value: 461<br />lagged_value: 508<br />lag: 1","value: 390<br />lagged_value: 461<br />lag: 1","value: 432<br />lagged_value: 390<br />lag: 1"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(248,118,109,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(248,118,109,1)"}},"hoveron":"points","name":"1","legendgroup":"1","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432],"y":[112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508],"text":["value: 129<br />lagged_value: 112<br />lag: 3","value: 121<br />lagged_value: 118<br />lag: 3","value: 135<br />lagged_value: 132<br />lag: 3","value: 148<br />lagged_value: 129<br />lag: 3","value: 148<br />lagged_value: 121<br />lag: 3","value: 136<br />lagged_value: 135<br />lag: 3","value: 119<br />lagged_value: 148<br />lag: 3","value: 104<br />lagged_value: 148<br />lag: 3","value: 118<br />lagged_value: 136<br />lag: 3","value: 115<br />lagged_value: 119<br />lag: 3","value: 126<br />lagged_value: 104<br />lag: 3","value: 141<br />lagged_value: 118<br />lag: 3","value: 135<br />lagged_value: 115<br />lag: 3","value: 125<br />lagged_value: 126<br />lag: 3","value: 149<br />lagged_value: 141<br />lag: 3","value: 170<br />lagged_value: 135<br />lag: 3","value: 170<br />lagged_value: 125<br />lag: 3","value: 158<br />lagged_value: 149<br />lag: 3","value: 133<br />lagged_value: 170<br />lag: 3","value: 114<br />lagged_value: 170<br />lag: 3","value: 140<br />lagged_value: 158<br />lag: 3","value: 145<br />lagged_value: 133<br />lag: 3","value: 150<br />lagged_value: 114<br />lag: 3","value: 178<br />lagged_value: 140<br />lag: 3","value: 163<br />lagged_value: 145<br />lag: 3","value: 172<br />lagged_value: 150<br />lag: 3","value: 178<br />lagged_value: 178<br />lag: 3","value: 199<br />lagged_value: 163<br />lag: 3","value: 199<br />lagged_value: 172<br />lag: 3","value: 184<br />lagged_value: 178<br />lag: 3","value: 162<br />lagged_value: 199<br />lag: 3","value: 146<br />lagged_value: 199<br />lag: 3","value: 166<br />lagged_value: 184<br />lag: 3","value: 171<br />lagged_value: 162<br />lag: 3","value: 180<br />lagged_value: 146<br />lag: 3","value: 193<br />lagged_value: 166<br />lag: 3","value: 181<br />lagged_value: 171<br />lag: 3","value: 183<br />lagged_value: 180<br />lag: 3","value: 218<br />lagged_value: 193<br />lag: 3","value: 230<br />lagged_value: 181<br />lag: 3","value: 242<br />lagged_value: 183<br />lag: 3","value: 209<br />lagged_value: 218<br />lag: 3","value: 191<br />lagged_value: 230<br />lag: 3","value: 172<br />lagged_value: 242<br />lag: 3","value: 194<br />lagged_value: 209<br />lag: 3","value: 196<br />lagged_value: 191<br />lag: 3","value: 196<br />lagged_value: 172<br />lag: 3","value: 236<br />lagged_value: 194<br />lag: 3","value: 235<br />lagged_value: 196<br />lag: 3","value: 229<br />lagged_value: 196<br />lag: 3","value: 243<br />lagged_value: 236<br />lag: 3","value: 264<br />lagged_value: 235<br />lag: 3","value: 272<br />lagged_value: 229<br />lag: 3","value: 237<br />lagged_value: 243<br />lag: 3","value: 211<br />lagged_value: 264<br />lag: 3","value: 180<br />lagged_value: 272<br />lag: 3","value: 201<br />lagged_value: 237<br />lag: 3","value: 204<br />lagged_value: 211<br />lag: 3","value: 188<br />lagged_value: 180<br />lag: 3","value: 235<br />lagged_value: 201<br />lag: 3","value: 227<br />lagged_value: 204<br />lag: 3","value: 234<br />lagged_value: 188<br />lag: 3","value: 264<br />lagged_value: 235<br />lag: 3","value: 302<br />lagged_value: 227<br />lag: 3","value: 293<br />lagged_value: 234<br />lag: 3","value: 259<br />lagged_value: 264<br />lag: 3","value: 229<br />lagged_value: 302<br />lag: 3","value: 203<br />lagged_value: 293<br />lag: 3","value: 229<br />lagged_value: 259<br />lag: 3","value: 242<br />lagged_value: 229<br />lag: 3","value: 233<br />lagged_value: 203<br />lag: 3","value: 267<br />lagged_value: 229<br />lag: 3","value: 269<br />lagged_value: 242<br />lag: 3","value: 270<br />lagged_value: 233<br />lag: 3","value: 315<br />lagged_value: 267<br />lag: 3","value: 364<br />lagged_value: 269<br />lag: 3","value: 347<br />lagged_value: 270<br />lag: 3","value: 312<br />lagged_value: 315<br />lag: 3","value: 274<br />lagged_value: 364<br />lag: 3","value: 237<br />lagged_value: 347<br />lag: 3","value: 278<br />lagged_value: 312<br />lag: 3","value: 284<br />lagged_value: 274<br />lag: 3","value: 277<br />lagged_value: 237<br />lag: 3","value: 317<br />lagged_value: 278<br />lag: 3","value: 313<br />lagged_value: 284<br />lag: 3","value: 318<br />lagged_value: 277<br />lag: 3","value: 374<br />lagged_value: 317<br />lag: 3","value: 413<br />lagged_value: 313<br />lag: 3","value: 405<br />lagged_value: 318<br />lag: 3","value: 355<br />lagged_value: 374<br />lag: 3","value: 306<br />lagged_value: 413<br />lag: 3","value: 271<br />lagged_value: 405<br />lag: 3","value: 306<br />lagged_value: 355<br />lag: 3","value: 315<br />lagged_value: 306<br />lag: 3","value: 301<br />lagged_value: 271<br />lag: 3","value: 356<br />lagged_value: 306<br />lag: 3","value: 348<br />lagged_value: 315<br />lag: 3","value: 355<br />lagged_value: 301<br />lag: 3","value: 422<br />lagged_value: 356<br />lag: 3","value: 465<br />lagged_value: 348<br />lag: 3","value: 467<br />lagged_value: 355<br />lag: 3","value: 404<br />lagged_value: 422<br />lag: 3","value: 347<br />lagged_value: 465<br />lag: 3","value: 305<br />lagged_value: 467<br />lag: 3","value: 336<br />lagged_value: 404<br />lag: 3","value: 340<br />lagged_value: 347<br />lag: 3","value: 318<br />lagged_value: 305<br />lag: 3","value: 362<br />lagged_value: 336<br />lag: 3","value: 348<br />lagged_value: 340<br />lag: 3","value: 363<br />lagged_value: 318<br />lag: 3","value: 435<br />lagged_value: 362<br />lag: 3","value: 491<br />lagged_value: 348<br />lag: 3","value: 505<br />lagged_value: 363<br />lag: 3","value: 404<br />lagged_value: 435<br />lag: 3","value: 359<br />lagged_value: 491<br />lag: 3","value: 310<br />lagged_value: 505<br />lag: 3","value: 337<br />lagged_value: 404<br />lag: 3","value: 360<br />lagged_value: 359<br />lag: 3","value: 342<br />lagged_value: 310<br />lag: 3","value: 406<br />lagged_value: 337<br />lag: 3","value: 396<br />lagged_value: 360<br />lag: 3","value: 420<br />lagged_value: 342<br />lag: 3","value: 472<br />lagged_value: 406<br />lag: 3","value: 548<br />lagged_value: 396<br />lag: 3","value: 559<br />lagged_value: 420<br />lag: 3","value: 463<br />lagged_value: 472<br />lag: 3","value: 407<br />lagged_value: 548<br />lag: 3","value: 362<br />lagged_value: 559<br />lag: 3","value: 405<br />lagged_value: 463<br />lag: 3","value: 417<br />lagged_value: 407<br />lag: 3","value: 391<br />lagged_value: 362<br />lag: 3","value: 419<br />lagged_value: 405<br />lag: 3","value: 461<br />lagged_value: 417<br />lag: 3","value: 472<br />lagged_value: 391<br />lag: 3","value: 535<br />lagged_value: 419<br />lag: 3","value: 622<br />lagged_value: 461<br />lag: 3","value: 606<br />lagged_value: 472<br />lag: 3","value: 508<br />lagged_value: 535<br />lag: 3","value: 461<br />lagged_value: 622<br />lag: 3","value: 390<br />lagged_value: 606<br />lag: 3","value: 432<br />lagged_value: 508<br />lag: 3"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(124,174,0,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(124,174,0,1)"}},"hoveron":"points","name":"3","legendgroup":"3","showlegend":true,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432],"y":[112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535],"text":["value: 148<br />lagged_value: 112<br />lag: 6","value: 148<br />lagged_value: 118<br />lag: 6","value: 136<br />lagged_value: 132<br />lag: 6","value: 119<br />lagged_value: 129<br />lag: 6","value: 104<br />lagged_value: 121<br />lag: 6","value: 118<br />lagged_value: 135<br />lag: 6","value: 115<br />lagged_value: 148<br />lag: 6","value: 126<br />lagged_value: 148<br />lag: 6","value: 141<br />lagged_value: 136<br />lag: 6","value: 135<br />lagged_value: 119<br />lag: 6","value: 125<br />lagged_value: 104<br />lag: 6","value: 149<br />lagged_value: 118<br />lag: 6","value: 170<br />lagged_value: 115<br />lag: 6","value: 170<br />lagged_value: 126<br />lag: 6","value: 158<br />lagged_value: 141<br />lag: 6","value: 133<br />lagged_value: 135<br />lag: 6","value: 114<br />lagged_value: 125<br />lag: 6","value: 140<br />lagged_value: 149<br />lag: 6","value: 145<br />lagged_value: 170<br />lag: 6","value: 150<br />lagged_value: 170<br />lag: 6","value: 178<br />lagged_value: 158<br />lag: 6","value: 163<br />lagged_value: 133<br />lag: 6","value: 172<br />lagged_value: 114<br />lag: 6","value: 178<br />lagged_value: 140<br />lag: 6","value: 199<br />lagged_value: 145<br />lag: 6","value: 199<br />lagged_value: 150<br />lag: 6","value: 184<br />lagged_value: 178<br />lag: 6","value: 162<br />lagged_value: 163<br />lag: 6","value: 146<br />lagged_value: 172<br />lag: 6","value: 166<br />lagged_value: 178<br />lag: 6","value: 171<br />lagged_value: 199<br />lag: 6","value: 180<br />lagged_value: 199<br />lag: 6","value: 193<br />lagged_value: 184<br />lag: 6","value: 181<br />lagged_value: 162<br />lag: 6","value: 183<br />lagged_value: 146<br />lag: 6","value: 218<br />lagged_value: 166<br />lag: 6","value: 230<br />lagged_value: 171<br />lag: 6","value: 242<br />lagged_value: 180<br />lag: 6","value: 209<br />lagged_value: 193<br />lag: 6","value: 191<br />lagged_value: 181<br />lag: 6","value: 172<br />lagged_value: 183<br />lag: 6","value: 194<br />lagged_value: 218<br />lag: 6","value: 196<br />lagged_value: 230<br />lag: 6","value: 196<br />lagged_value: 242<br />lag: 6","value: 236<br />lagged_value: 209<br />lag: 6","value: 235<br />lagged_value: 191<br />lag: 6","value: 229<br />lagged_value: 172<br />lag: 6","value: 243<br />lagged_value: 194<br />lag: 6","value: 264<br />lagged_value: 196<br />lag: 6","value: 272<br />lagged_value: 196<br />lag: 6","value: 237<br />lagged_value: 236<br />lag: 6","value: 211<br />lagged_value: 235<br />lag: 6","value: 180<br />lagged_value: 229<br />lag: 6","value: 201<br />lagged_value: 243<br />lag: 6","value: 204<br />lagged_value: 264<br />lag: 6","value: 188<br />lagged_value: 272<br />lag: 6","value: 235<br />lagged_value: 237<br />lag: 6","value: 227<br />lagged_value: 211<br />lag: 6","value: 234<br />lagged_value: 180<br />lag: 6","value: 264<br />lagged_value: 201<br />lag: 6","value: 302<br />lagged_value: 204<br />lag: 6","value: 293<br />lagged_value: 188<br />lag: 6","value: 259<br />lagged_value: 235<br />lag: 6","value: 229<br />lagged_value: 227<br />lag: 6","value: 203<br />lagged_value: 234<br />lag: 6","value: 229<br />lagged_value: 264<br />lag: 6","value: 242<br />lagged_value: 302<br />lag: 6","value: 233<br />lagged_value: 293<br />lag: 6","value: 267<br />lagged_value: 259<br />lag: 6","value: 269<br />lagged_value: 229<br />lag: 6","value: 270<br />lagged_value: 203<br />lag: 6","value: 315<br />lagged_value: 229<br />lag: 6","value: 364<br />lagged_value: 242<br />lag: 6","value: 347<br />lagged_value: 233<br />lag: 6","value: 312<br />lagged_value: 267<br />lag: 6","value: 274<br />lagged_value: 269<br />lag: 6","value: 237<br />lagged_value: 270<br />lag: 6","value: 278<br />lagged_value: 315<br />lag: 6","value: 284<br />lagged_value: 364<br />lag: 6","value: 277<br />lagged_value: 347<br />lag: 6","value: 317<br />lagged_value: 312<br />lag: 6","value: 313<br />lagged_value: 274<br />lag: 6","value: 318<br />lagged_value: 237<br />lag: 6","value: 374<br />lagged_value: 278<br />lag: 6","value: 413<br />lagged_value: 284<br />lag: 6","value: 405<br />lagged_value: 277<br />lag: 6","value: 355<br />lagged_value: 317<br />lag: 6","value: 306<br />lagged_value: 313<br />lag: 6","value: 271<br />lagged_value: 318<br />lag: 6","value: 306<br />lagged_value: 374<br />lag: 6","value: 315<br />lagged_value: 413<br />lag: 6","value: 301<br />lagged_value: 405<br />lag: 6","value: 356<br />lagged_value: 355<br />lag: 6","value: 348<br />lagged_value: 306<br />lag: 6","value: 355<br />lagged_value: 271<br />lag: 6","value: 422<br />lagged_value: 306<br />lag: 6","value: 465<br />lagged_value: 315<br />lag: 6","value: 467<br />lagged_value: 301<br />lag: 6","value: 404<br />lagged_value: 356<br />lag: 6","value: 347<br />lagged_value: 348<br />lag: 6","value: 305<br />lagged_value: 355<br />lag: 6","value: 336<br />lagged_value: 422<br />lag: 6","value: 340<br />lagged_value: 465<br />lag: 6","value: 318<br />lagged_value: 467<br />lag: 6","value: 362<br />lagged_value: 404<br />lag: 6","value: 348<br />lagged_value: 347<br />lag: 6","value: 363<br />lagged_value: 305<br />lag: 6","value: 435<br />lagged_value: 336<br />lag: 6","value: 491<br />lagged_value: 340<br />lag: 6","value: 505<br />lagged_value: 318<br />lag: 6","value: 404<br />lagged_value: 362<br />lag: 6","value: 359<br />lagged_value: 348<br />lag: 6","value: 310<br />lagged_value: 363<br />lag: 6","value: 337<br />lagged_value: 435<br />lag: 6","value: 360<br />lagged_value: 491<br />lag: 6","value: 342<br />lagged_value: 505<br />lag: 6","value: 406<br />lagged_value: 404<br />lag: 6","value: 396<br />lagged_value: 359<br />lag: 6","value: 420<br />lagged_value: 310<br />lag: 6","value: 472<br />lagged_value: 337<br />lag: 6","value: 548<br />lagged_value: 360<br />lag: 6","value: 559<br />lagged_value: 342<br />lag: 6","value: 463<br />lagged_value: 406<br />lag: 6","value: 407<br />lagged_value: 396<br />lag: 6","value: 362<br />lagged_value: 420<br />lag: 6","value: 405<br />lagged_value: 472<br />lag: 6","value: 417<br />lagged_value: 548<br />lag: 6","value: 391<br />lagged_value: 559<br />lag: 6","value: 419<br />lagged_value: 463<br />lag: 6","value: 461<br />lagged_value: 407<br />lag: 6","value: 472<br />lagged_value: 362<br />lag: 6","value: 535<br />lagged_value: 405<br />lag: 6","value: 622<br />lagged_value: 417<br />lag: 6","value: 606<br />lagged_value: 391<br />lag: 6","value: 508<br />lagged_value: 419<br />lag: 6","value: 461<br />lagged_value: 461<br />lag: 6","value: 390<br />lagged_value: 472<br />lag: 6","value: 432<br />lagged_value: 535<br />lag: 6"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,191,196,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,191,196,1)"}},"hoveron":"points","name":"6","legendgroup":"6","showlegend":true,"xaxis":"x3","yaxis":"y3","hoverinfo":"text","frame":null},{"x":[115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432],"y":[112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405],"text":["value: 115<br />lagged_value: 112<br />lag: 12","value: 126<br />lagged_value: 118<br />lag: 12","value: 141<br />lagged_value: 132<br />lag: 12","value: 135<br />lagged_value: 129<br />lag: 12","value: 125<br />lagged_value: 121<br />lag: 12","value: 149<br />lagged_value: 135<br />lag: 12","value: 170<br />lagged_value: 148<br />lag: 12","value: 170<br />lagged_value: 148<br />lag: 12","value: 158<br />lagged_value: 136<br />lag: 12","value: 133<br />lagged_value: 119<br />lag: 12","value: 114<br />lagged_value: 104<br />lag: 12","value: 140<br />lagged_value: 118<br />lag: 12","value: 145<br />lagged_value: 115<br />lag: 12","value: 150<br />lagged_value: 126<br />lag: 12","value: 178<br />lagged_value: 141<br />lag: 12","value: 163<br />lagged_value: 135<br />lag: 12","value: 172<br />lagged_value: 125<br />lag: 12","value: 178<br />lagged_value: 149<br />lag: 12","value: 199<br />lagged_value: 170<br />lag: 12","value: 199<br />lagged_value: 170<br />lag: 12","value: 184<br />lagged_value: 158<br />lag: 12","value: 162<br />lagged_value: 133<br />lag: 12","value: 146<br />lagged_value: 114<br />lag: 12","value: 166<br />lagged_value: 140<br />lag: 12","value: 171<br />lagged_value: 145<br />lag: 12","value: 180<br />lagged_value: 150<br />lag: 12","value: 193<br />lagged_value: 178<br />lag: 12","value: 181<br />lagged_value: 163<br />lag: 12","value: 183<br />lagged_value: 172<br />lag: 12","value: 218<br />lagged_value: 178<br />lag: 12","value: 230<br />lagged_value: 199<br />lag: 12","value: 242<br />lagged_value: 199<br />lag: 12","value: 209<br />lagged_value: 184<br />lag: 12","value: 191<br />lagged_value: 162<br />lag: 12","value: 172<br />lagged_value: 146<br />lag: 12","value: 194<br />lagged_value: 166<br />lag: 12","value: 196<br />lagged_value: 171<br />lag: 12","value: 196<br />lagged_value: 180<br />lag: 12","value: 236<br />lagged_value: 193<br />lag: 12","value: 235<br />lagged_value: 181<br />lag: 12","value: 229<br />lagged_value: 183<br />lag: 12","value: 243<br />lagged_value: 218<br />lag: 12","value: 264<br />lagged_value: 230<br />lag: 12","value: 272<br />lagged_value: 242<br />lag: 12","value: 237<br />lagged_value: 209<br />lag: 12","value: 211<br />lagged_value: 191<br />lag: 12","value: 180<br />lagged_value: 172<br />lag: 12","value: 201<br />lagged_value: 194<br />lag: 12","value: 204<br />lagged_value: 196<br />lag: 12","value: 188<br />lagged_value: 196<br />lag: 12","value: 235<br />lagged_value: 236<br />lag: 12","value: 227<br />lagged_value: 235<br />lag: 12","value: 234<br />lagged_value: 229<br />lag: 12","value: 264<br />lagged_value: 243<br />lag: 12","value: 302<br />lagged_value: 264<br />lag: 12","value: 293<br />lagged_value: 272<br />lag: 12","value: 259<br />lagged_value: 237<br />lag: 12","value: 229<br />lagged_value: 211<br />lag: 12","value: 203<br />lagged_value: 180<br />lag: 12","value: 229<br />lagged_value: 201<br />lag: 12","value: 242<br />lagged_value: 204<br />lag: 12","value: 233<br />lagged_value: 188<br />lag: 12","value: 267<br />lagged_value: 235<br />lag: 12","value: 269<br />lagged_value: 227<br />lag: 12","value: 270<br />lagged_value: 234<br />lag: 12","value: 315<br />lagged_value: 264<br />lag: 12","value: 364<br />lagged_value: 302<br />lag: 12","value: 347<br />lagged_value: 293<br />lag: 12","value: 312<br />lagged_value: 259<br />lag: 12","value: 274<br />lagged_value: 229<br />lag: 12","value: 237<br />lagged_value: 203<br />lag: 12","value: 278<br />lagged_value: 229<br />lag: 12","value: 284<br />lagged_value: 242<br />lag: 12","value: 277<br />lagged_value: 233<br />lag: 12","value: 317<br />lagged_value: 267<br />lag: 12","value: 313<br />lagged_value: 269<br />lag: 12","value: 318<br />lagged_value: 270<br />lag: 12","value: 374<br />lagged_value: 315<br />lag: 12","value: 413<br />lagged_value: 364<br />lag: 12","value: 405<br />lagged_value: 347<br />lag: 12","value: 355<br />lagged_value: 312<br />lag: 12","value: 306<br />lagged_value: 274<br />lag: 12","value: 271<br />lagged_value: 237<br />lag: 12","value: 306<br />lagged_value: 278<br />lag: 12","value: 315<br />lagged_value: 284<br />lag: 12","value: 301<br />lagged_value: 277<br />lag: 12","value: 356<br />lagged_value: 317<br />lag: 12","value: 348<br />lagged_value: 313<br />lag: 12","value: 355<br />lagged_value: 318<br />lag: 12","value: 422<br />lagged_value: 374<br />lag: 12","value: 465<br />lagged_value: 413<br />lag: 12","value: 467<br />lagged_value: 405<br />lag: 12","value: 404<br />lagged_value: 355<br />lag: 12","value: 347<br />lagged_value: 306<br />lag: 12","value: 305<br />lagged_value: 271<br />lag: 12","value: 336<br />lagged_value: 306<br />lag: 12","value: 340<br />lagged_value: 315<br />lag: 12","value: 318<br />lagged_value: 301<br />lag: 12","value: 362<br />lagged_value: 356<br />lag: 12","value: 348<br />lagged_value: 348<br />lag: 12","value: 363<br />lagged_value: 355<br />lag: 12","value: 435<br />lagged_value: 422<br />lag: 12","value: 491<br />lagged_value: 465<br />lag: 12","value: 505<br />lagged_value: 467<br />lag: 12","value: 404<br />lagged_value: 404<br />lag: 12","value: 359<br />lagged_value: 347<br />lag: 12","value: 310<br />lagged_value: 305<br />lag: 12","value: 337<br />lagged_value: 336<br />lag: 12","value: 360<br />lagged_value: 340<br />lag: 12","value: 342<br />lagged_value: 318<br />lag: 12","value: 406<br />lagged_value: 362<br />lag: 12","value: 396<br />lagged_value: 348<br />lag: 12","value: 420<br />lagged_value: 363<br />lag: 12","value: 472<br />lagged_value: 435<br />lag: 12","value: 548<br />lagged_value: 491<br />lag: 12","value: 559<br />lagged_value: 505<br />lag: 12","value: 463<br />lagged_value: 404<br />lag: 12","value: 407<br />lagged_value: 359<br />lag: 12","value: 362<br />lagged_value: 310<br />lag: 12","value: 405<br />lagged_value: 337<br />lag: 12","value: 417<br />lagged_value: 360<br />lag: 12","value: 391<br />lagged_value: 342<br />lag: 12","value: 419<br />lagged_value: 406<br />lag: 12","value: 461<br />lagged_value: 396<br />lag: 12","value: 472<br />lagged_value: 420<br />lag: 12","value: 535<br />lagged_value: 472<br />lag: 12","value: 622<br />lagged_value: 548<br />lag: 12","value: 606<br />lagged_value: 559<br />lag: 12","value: 508<br />lagged_value: 463<br />lag: 12","value: 461<br />lagged_value: 407<br />lag: 12","value: 390<br />lagged_value: 362<br />lag: 12","value: 432<br />lagged_value: 405<br />lag: 12"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(199,124,255,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(199,124,255,1)"}},"hoveron":"points","name":"12","legendgroup":"12","showlegend":true,"xaxis":"x4","yaxis":"y4","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":37.9178082191781,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,0.486138290932811],"automargin":true,"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":"","hoverformat":".2f"},"annotations":[{"text":"Original Value","x":0.5,"y":0,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"top","annotationType":"axis","yshift":-21.9178082191781},{"text":"Lagged Value","x":0,"y":0.5,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-90,"xanchor":"right","yanchor":"center","annotationType":"axis","xshift":-27.7625570776256},{"text":"Lag: 1","x":0.243069145466406,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"Lag: 3","x":0.756930854533594,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"Lag: 6","x":0.243069145466406,"y":0.476027397260274,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"Lag: 12","x":0.756930854533594,"y":0.476027397260274,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"}],"yaxis":{"domain":[0.523972602739726,1],"automargin":true,"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.486138290932811,"y0":0.523972602739726,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.486138290932811,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.513861709067189,"x1":1,"y0":0.523972602739726,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.513861709067189,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.486138290932811,"y0":0,"y1":0.476027397260274},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.486138290932811,"y0":0,"y1":23.37899543379,"yanchor":0.476027397260274,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.513861709067189,"x1":1,"y0":0,"y1":0.476027397260274},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.513861709067189,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":0.476027397260274,"ysizemode":"pixel"}],"xaxis2":{"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.513861709067189,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y2","title":"","hoverformat":".2f"},"yaxis2":{"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.523972602739726,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x2","title":"","hoverformat":".2f"},"xaxis3":{"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.486138290932811],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y3","title":"","hoverformat":".2f"},"yaxis3":{"type":"linear","autorange":false,"range":[81.25,581.75],"tickmode":"array","ticktext":["100","200","300","400","500"],"tickvals":[100,200,300,400,500],"categoryorder":"array","categoryarray":["100","200","300","400","500"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.476027397260274],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x3","title":"","hoverformat":".2f"},"xaxis4":{"type":"linear","autorange":false,"range":[88.6,647.4],"tickmode":"array","ticktext":["100","200","300","400","500","600"],"tickvals":[100,200,300,400,500,600],"categoryorder":"array","categoryarray":["100","200","300","400","500","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.513861709067189,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y4","title":"","hoverformat":".2f"},"yaxis4":{"type":"linear","autorange":false,"range":[81.25,581.75],"tickmode":"array","ticktext":["100","200","300","400","500"],"tickvals":[100,200,300,400,500],"categoryorder":"array","categoryarray":["100","200","300","400","500"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,0.476027397260274],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x4","title":"","hoverformat":".2f"},"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"d543bbe771d":{"x":{},"y":{},"colour":{},"type":"scatter"}},"cur_data":"d543bbe771d","visdat":{"d543bbe771d":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>A plotly version of the lag plot.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>plots<span class="sc">$</span>correlation_heatmap</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>A heatmap of the correlations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>output<span class="sc">$</span>plots<span class="sc">$</span>plotly_heatmap</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-76f1fe6d587312f5ab2a" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-76f1fe6d587312f5ab2a">{"x":{"data":[{"x":[1,2,3,4,5],"y":[1,2,3,4,5],"z":[[1,0.80492439925537,0.226050085010417,0,0.959570487009092],[0.80492439925537,1,0.499809604579061,0.029675212192311,0.783346726886175],[0.226050085010417,0.499809604579061,1,0.295582428364099,0.23964651370852],[0,0.029675212192311,0.295582428364099,1,0.0528852780613667],[0.959570487009092,0.783346726886175,0.23964651370852,0.0528852780613667,1]],"text":[["name: value<br />data_names: value<br />value: 1.0000000","name: value_lag1<br />data_names: value<br />value: 0.9542938","name: value_lag3<br />data_names: value<br />value: 0.8186636","name: value_lag6<br />data_names: value<br />value: 0.7657001","name: value_lag12<br />data_names: value<br />value: 0.9905274"],["name: value<br />data_names: value_lag1<br />value: 0.9542938","name: value_lag1<br />data_names: value_lag1<br />value: 1.0000000","name: value_lag3<br />data_names: value_lag1<br />value: 0.8828054","name: value_lag6<br />data_names: value_lag1<br />value: 0.7726530","name: value_lag12<br />data_names: value_lag1<br />value: 0.9492382"],["name: value<br />data_names: value_lag3<br />value: 0.8186636","name: value_lag1<br />data_names: value_lag3<br />value: 0.8828054","name: value_lag3<br />data_names: value_lag3<br />value: 1.0000000","name: value_lag6<br />data_names: value_lag3<br />value: 0.8349550","name: value_lag12<br />data_names: value_lag3<br />value: 0.8218493"],["name: value<br />data_names: value_lag6<br />value: 0.7657001","name: value_lag1<br />data_names: value_lag6<br />value: 0.7726530","name: value_lag3<br />data_names: value_lag6<br />value: 0.8349550","name: value_lag6<br />data_names: value_lag6<br />value: 1.0000000","name: value_lag12<br />data_names: value_lag6<br />value: 0.7780911"],["name: value<br />data_names: value_lag12<br />value: 0.9905274","name: value_lag1<br />data_names: value_lag12<br />value: 0.9492382","name: value_lag3<br />data_names: value_lag12<br />value: 0.8218493","name: value_lag6<br />data_names: value_lag12<br />value: 0.7780911","name: value_lag12<br />data_names: value_lag12<br />value: 1.0000000"]],"colorscale":[[0,"#FFFFFF"],[0.029675212192311,"#FAFBFD"],[0.0528852780613667,"#F6F8FB"],[0.226050085010417,"#D7E1EE"],[0.23964651370852,"#D5E0ED"],[0.295582428364099,"#CBD8E9"],[0.499809604579061,"#A7BED9"],[0.783346726886175,"#739CC4"],[0.80492439925537,"#6F99C3"],[0.959570487009092,"#4F87B7"],[1,"#4682B4"]],"type":"heatmap","showscale":false,"autocolorscale":false,"showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1],"y":[1],"name":"99_a0d69953c3e7df3449968e1112b1fa7e","type":"scatter","mode":"markers","opacity":0,"hoverinfo":"skip","showlegend":false,"marker":{"color":[0,1],"colorscale":[[0,"#FFFFFF"],[0.00334448160535118,"#FEFFFF"],[0.00668896321070237,"#FEFEFE"],[0.0100334448160536,"#FDFEFE"],[0.0133779264214047,"#FDFDFE"],[0.0167224080267559,"#FCFDFE"],[0.0200668896321071,"#FBFCFD"],[0.0234113712374583,"#FBFCFD"],[0.0267558528428095,"#FAFBFD"],[0.0301003344481607,"#FAFBFD"],[0.0334448160535118,"#F9FBFC"],[0.036789297658863,"#F9FAFC"],[0.0401337792642142,"#F8FAFC"],[0.0434782608695654,"#F7F9FC"],[0.0468227424749166,"#F7F9FB"],[0.0501672240802677,"#F6F8FB"],[0.0535117056856189,"#F6F8FB"],[0.0568561872909701,"#F5F7FB"],[0.0602006688963213,"#F4F7FA"],[0.0635451505016725,"#F4F7FA"],[0.0668896321070232,"#F3F6FA"],[0.0702341137123744,"#F3F6FA"],[0.0735785953177256,"#F2F5F9"],[0.0769230769230767,"#F2F5F9"],[0.0802675585284279,"#F1F4F9"],[0.0836120401337791,"#F0F4F9"],[0.0869565217391303,"#F0F4F8"],[0.0903010033444815,"#EFF3F8"],[0.0936454849498327,"#EFF3F8"],[0.0969899665551838,"#EEF2F8"],[0.100334448160535,"#EDF2F7"],[0.103678929765886,"#EDF1F7"],[0.107023411371237,"#ECF1F7"],[0.110367892976589,"#ECF0F7"],[0.11371237458194,"#EBF0F6"],[0.117056856187291,"#EAF0F6"],[0.120401337792642,"#EAEFF6"],[0.123745819397993,"#E9EFF6"],[0.127090301003344,"#E9EEF5"],[0.130434782608696,"#E8EEF5"],[0.133779264214047,"#E8EDF5"],[0.137123745819398,"#E7EDF5"],[0.140468227424749,"#E6ECF4"],[0.1438127090301,"#E6ECF4"],[0.147157190635452,"#E5ECF4"],[0.150501672240803,"#E5EBF4"],[0.153846153846154,"#E4EBF3"],[0.157190635451505,"#E3EAF3"],[0.160535117056856,"#E3EAF3"],[0.163879598662207,"#E2E9F3"],[0.167224080267559,"#E2E9F2"],[0.17056856187291,"#E1E9F2"],[0.173913043478261,"#E1E8F2"],[0.177257525083612,"#E0E8F2"],[0.180602006688963,"#DFE7F1"],[0.183946488294315,"#DFE7F1"],[0.187290969899665,"#DEE6F1"],[0.190635451505016,"#DEE6F1"],[0.193979933110368,"#DDE5F0"],[0.197324414715719,"#DCE5F0"],[0.20066889632107,"#DCE5F0"],[0.204013377926421,"#DBE4F0"],[0.207357859531772,"#DBE4EF"],[0.210702341137124,"#DAE3EF"],[0.214046822742475,"#D9E3EF"],[0.217391304347826,"#D9E2EF"],[0.220735785953177,"#D8E2EE"],[0.224080267558528,"#D8E2EE"],[0.22742474916388,"#D7E1EE"],[0.230769230769231,"#D7E1EE"],[0.234113712374582,"#D6E0ED"],[0.237458193979933,"#D5E0ED"],[0.240802675585284,"#D5DFED"],[0.244147157190635,"#D4DFED"],[0.247491638795987,"#D4DFEC"],[0.250836120401338,"#D3DEEC"],[0.254180602006689,"#D2DEEC"],[0.25752508361204,"#D2DDEC"],[0.260869565217391,"#D1DDEB"],[0.264214046822743,"#D1DCEB"],[0.267558528428094,"#D0DCEB"],[0.270903010033445,"#D0DCEB"],[0.274247491638796,"#CFDBEA"],[0.277591973244147,"#CEDBEA"],[0.280936454849498,"#CEDAEA"],[0.28428093645485,"#CDDAEA"],[0.287625418060201,"#CDD9E9"],[0.290969899665552,"#CCD9E9"],[0.294314381270903,"#CBD9E9"],[0.297658862876254,"#CBD8E9"],[0.301003344481606,"#CAD8E8"],[0.304347826086957,"#CAD7E8"],[0.307692307692308,"#C9D7E8"],[0.311036789297659,"#C8D6E8"],[0.31438127090301,"#C8D6E7"],[0.317725752508361,"#C7D6E7"],[0.321070234113713,"#C7D5E7"],[0.324414715719064,"#C6D5E7"],[0.327759197324415,"#C6D4E6"],[0.331103678929766,"#C5D4E6"],[0.334448160535117,"#C4D3E6"],[0.337792642140468,"#C4D3E6"],[0.341137123745819,"#C3D3E5"],[0.34448160535117,"#C3D2E5"],[0.347826086956522,"#C2D2E5"],[0.351170568561873,"#C1D1E5"],[0.354515050167224,"#C1D1E4"],[0.357859531772575,"#C0D0E4"],[0.361204013377926,"#C0D0E4"],[0.364548494983278,"#BFD0E4"],[0.367892976588629,"#BFCFE3"],[0.37123745819398,"#BECFE3"],[0.374581939799331,"#BDCEE3"],[0.377926421404682,"#BDCEE3"],[0.381270903010033,"#BCCDE2"],[0.384615384615385,"#BCCDE2"],[0.387959866220736,"#BBCDE2"],[0.391304347826087,"#BACCE2"],[0.394648829431438,"#BACCE1"],[0.397993311036789,"#B9CBE1"],[0.401337792642141,"#B9CBE1"],[0.404682274247492,"#B8CAE0"],[0.408026755852843,"#B7CAE0"],[0.411371237458194,"#B7CAE0"],[0.414715719063545,"#B6C9E0"],[0.418060200668896,"#B6C9DF"],[0.421404682274248,"#B5C8DF"],[0.424749163879599,"#B5C8DF"],[0.42809364548495,"#B4C7DF"],[0.431438127090301,"#B3C7DE"],[0.434782608695652,"#B3C7DE"],[0.438127090301003,"#B2C6DE"],[0.441471571906354,"#B2C6DE"],[0.444816053511706,"#B1C5DD"],[0.448160535117057,"#B0C5DD"],[0.451505016722408,"#B0C5DD"],[0.454849498327759,"#AFC4DD"],[0.45819397993311,"#AFC4DC"],[0.461538461538461,"#AEC3DC"],[0.464882943143813,"#ADC3DC"],[0.468227424749164,"#ADC2DC"],[0.471571906354515,"#ACC2DB"],[0.474916387959866,"#ACC2DB"],[0.478260869565217,"#ABC1DB"],[0.481605351170569,"#AAC1DB"],[0.48494983277592,"#AAC0DA"],[0.488294314381271,"#A9C0DA"],[0.491638795986622,"#A9BFDA"],[0.494983277591973,"#A8BFDA"],[0.498327759197324,"#A7BFD9"],[0.501672240802676,"#A7BED9"],[0.505016722408027,"#A6BED9"],[0.508361204013378,"#A6BDD9"],[0.511705685618729,"#A5BDD8"],[0.51505016722408,"#A5BDD8"],[0.518394648829432,"#A4BCD8"],[0.521739130434783,"#A3BCD8"],[0.525083612040134,"#A3BBD7"],[0.528428093645485,"#A2BBD7"],[0.531772575250836,"#A2BAD7"],[0.535117056856187,"#A1BAD7"],[0.538461538461539,"#A0BAD6"],[0.54180602006689,"#A0B9D6"],[0.545150501672241,"#9FB9D6"],[0.548494983277592,"#9FB8D6"],[0.551839464882943,"#9EB8D5"],[0.555183946488294,"#9DB8D5"],[0.558528428093646,"#9DB7D5"],[0.561872909698997,"#9CB7D5"],[0.565217391304348,"#9CB6D4"],[0.568561872909699,"#9BB6D4"],[0.57190635451505,"#9AB5D4"],[0.575250836120402,"#9AB5D4"],[0.578595317725753,"#99B5D3"],[0.581939799331104,"#99B4D3"],[0.585284280936455,"#98B4D3"],[0.588628762541806,"#97B3D3"],[0.591973244147157,"#97B3D2"],[0.595317725752508,"#96B3D2"],[0.598662207357859,"#96B2D2"],[0.602006688963211,"#95B2D2"],[0.605351170568562,"#94B1D1"],[0.608695652173913,"#94B1D1"],[0.612040133779264,"#93B0D1"],[0.615384615384615,"#93B0D1"],[0.618729096989966,"#92B0D0"],[0.622073578595318,"#91AFD0"],[0.625418060200669,"#91AFD0"],[0.62876254180602,"#90AED0"],[0.632107023411371,"#90AECF"],[0.635451505016722,"#8FAECF"],[0.638795986622074,"#8EADCF"],[0.642140468227425,"#8EADCF"],[0.645484949832776,"#8DACCE"],[0.648829431438127,"#8CACCE"],[0.652173913043478,"#8CACCE"],[0.65551839464883,"#8BABCE"],[0.658862876254181,"#8BABCD"],[0.662207357859532,"#8AAACD"],[0.665551839464883,"#89AACD"],[0.668896321070234,"#89A9CD"],[0.672240802675586,"#88A9CC"],[0.675585284280937,"#88A9CC"],[0.678929765886288,"#87A8CC"],[0.682274247491639,"#86A8CC"],[0.68561872909699,"#86A7CB"],[0.688963210702341,"#85A7CB"],[0.692307692307692,"#84A7CB"],[0.695652173913043,"#84A6CB"],[0.698996655518394,"#83A6CA"],[0.702341137123746,"#83A5CA"],[0.705685618729097,"#82A5CA"],[0.709030100334448,"#81A5CA"],[0.712374581939799,"#81A4C9"],[0.71571906354515,"#80A4C9"],[0.719063545150502,"#80A3C9"],[0.722408026755853,"#7FA3C9"],[0.725752508361204,"#7EA3C8"],[0.729096989966555,"#7EA2C8"],[0.732441471571906,"#7DA2C8"],[0.735785953177257,"#7CA1C8"],[0.739130434782609,"#7CA1C7"],[0.74247491638796,"#7BA1C7"],[0.745819397993311,"#7BA0C7"],[0.749163879598662,"#7AA0C7"],[0.752508361204013,"#799FC6"],[0.755852842809365,"#799FC6"],[0.759197324414716,"#789FC6"],[0.762541806020067,"#779EC6"],[0.765886287625418,"#779EC5"],[0.769230769230769,"#769DC5"],[0.77257525083612,"#759DC5"],[0.775919732441472,"#759CC5"],[0.779264214046823,"#749CC4"],[0.782608695652174,"#749CC4"],[0.785953177257525,"#739BC4"],[0.789297658862876,"#729BC4"],[0.792642140468228,"#729AC3"],[0.795986622073579,"#719AC3"],[0.79933110367893,"#709AC3"],[0.802675585284281,"#7099C3"],[0.806020066889632,"#6F99C2"],[0.809364548494984,"#6E98C2"],[0.812709030100335,"#6E98C2"],[0.816053511705686,"#6D98C2"],[0.819397993311037,"#6C97C1"],[0.822742474916388,"#6C97C1"],[0.826086956521739,"#6B96C1"],[0.829431438127091,"#6A96C1"],[0.832775919732442,"#6A96C0"],[0.836120401337793,"#6995C0"],[0.839464882943144,"#6895C0"],[0.842809364548495,"#6894C0"],[0.846153846153846,"#6794BF"],[0.849498327759197,"#6794BF"],[0.852842809364548,"#6693BF"],[0.8561872909699,"#6593BF"],[0.859531772575251,"#6492BE"],[0.862876254180602,"#6492BE"],[0.866220735785953,"#6392BE"],[0.869565217391304,"#6291BE"],[0.872909698996655,"#6291BD"],[0.876254180602007,"#6191BD"],[0.879598662207358,"#6090BD"],[0.882943143812709,"#6090BD"],[0.88628762541806,"#5F8FBC"],[0.889632107023411,"#5E8FBC"],[0.892976588628763,"#5E8FBC"],[0.896321070234114,"#5D8EBC"],[0.899665551839465,"#5C8EBB"],[0.903010033444816,"#5C8DBB"],[0.906354515050167,"#5B8DBB"],[0.909698996655519,"#5A8DBB"],[0.91304347826087,"#598CBA"],[0.916387959866221,"#598CBA"],[0.919732441471572,"#588BBA"],[0.923076923076923,"#578BBA"],[0.926421404682274,"#578BB9"],[0.929765886287626,"#568AB9"],[0.933110367892977,"#558AB9"],[0.936454849498327,"#5489B9"],[0.939799331103679,"#5489B8"],[0.94314381270903,"#5389B8"],[0.946488294314381,"#5288B8"],[0.949832775919732,"#5288B8"],[0.953177257525083,"#5187B7"],[0.956521739130435,"#5087B7"],[0.959866220735786,"#4F87B7"],[0.963210702341137,"#4F86B7"],[0.966555183946488,"#4E86B6"],[0.969899665551839,"#4D85B6"],[0.973244147157191,"#4C85B6"],[0.976588628762542,"#4C85B6"],[0.979933110367893,"#4B84B5"],[0.983277591973244,"#4A84B5"],[0.986622073578595,"#4984B5"],[0.989966555183946,"#4883B5"],[0.993311036789298,"#4883B4"],[0.996655518394649,"#4782B4"],[1,"#4682B4"]],"colorbar":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"thickness":23.04,"title":"Correlation","titlefont":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"tickmode":"array","ticktext":["0.80","0.85","0.90","0.95","1.00"],"tickvals":[0.146393142919157,0.359794857189367,0.573196571459578,0.786598285729789,1],"tickfont":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"ticklen":2,"len":0.5}},"xaxis":"x","yaxis":"y","frame":null}],"layout":{"margin":{"t":26.2283105022831,"r":7.30593607305936,"b":25.5707762557078,"l":75.2511415525114},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,5.6],"tickmode":"array","ticktext":["value","value_lag1","value_lag3","value_lag6","value_lag12"],"tickvals":[1,2,3,4,5],"categoryorder":"array","categoryarray":["value","value_lag1","value_lag3","value_lag6","value_lag12"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,5.6],"tickmode":"array","ticktext":["value","value_lag1","value_lag3","value_lag6","value_lag12"],"tickvals":[1,2,3,4,5],"categoryorder":"array","categoryarray":["value","value_lag1","value_lag3","value_lag6","value_lag12"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"title":{"text":"","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"d5436d71e53":{"x":{},"y":{},"fill":{},"type":"heatmap"}},"cur_data":"d5436d71e53","visdat":{"d5436d71e53":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>A plotly version of the correlation heatmap.</p>
+<p><em>Voila!</em></p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'alternate';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } 
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
