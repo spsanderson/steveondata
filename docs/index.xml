@@ -10,7 +10,110 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.1.189</generator>
-<lastBuildDate>Wed, 16 Nov 2022 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 17 Nov 2022 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Bootstrap Modeling with {purrr} and {modler}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-17/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Many times in modeling we want to get the uncertainty in the model, well, bootstrapping to the rescue!</p>
+<p>I am going to go over a very simple example on how to use <code>purrr</code> and <code>modelr</code> for this situation. We will use the mtcars dataset.</p>
+</section>
+<section id="functions" class="level1">
+<h1>Functions</h1>
+<p>The main functions that we are going to showcase are <a href="https://purrr.tidyverse.org/reference/map.html"><code>purrr::map()</code></a> and <a href="https://modelr.tidyverse.org/reference/bootstrap.html"><code>modelr::bootstrap()</code></a></p>
+</section>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+<p>Let’s get right into it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidymodels)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">df <span class="ot" style="color: #003B4F;">&lt;-</span> mtcars</span>
+<span id="cb1-5"></span>
+<span id="cb1-6">fit_boots <span class="ot" style="color: #003B4F;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb1-7">  modelr<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">bootstrap</span>(<span class="at" style="color: #657422;">n =</span> <span class="dv" style="color: #AD0000;">200</span>, <span class="at" style="color: #657422;">id =</span> <span class="st" style="color: #20794D;">'boot_num'</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;">group_by</span>(boot_num) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">fit =</span> <span class="fu" style="color: #4758AB;">map</span>(strap, <span class="sc" style="color: #5E5E5E;">~</span><span class="fu" style="color: #4758AB;">lm</span>(mpg <span class="sc" style="color: #5E5E5E;">~</span> ., <span class="at" style="color: #657422;">data =</span> <span class="fu" style="color: #4758AB;">data.frame</span>(.))))</span>
+<span id="cb1-10"></span>
+<span id="cb1-11">fit_boots</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 200 × 3
+# Groups:   boot_num [200]
+   strap                boot_num fit   
+   &lt;list&gt;               &lt;chr&gt;    &lt;list&gt;
+ 1 &lt;resample [32 x 11]&gt; 001      &lt;lm&gt;  
+ 2 &lt;resample [32 x 11]&gt; 002      &lt;lm&gt;  
+ 3 &lt;resample [32 x 11]&gt; 003      &lt;lm&gt;  
+ 4 &lt;resample [32 x 11]&gt; 004      &lt;lm&gt;  
+ 5 &lt;resample [32 x 11]&gt; 005      &lt;lm&gt;  
+ 6 &lt;resample [32 x 11]&gt; 006      &lt;lm&gt;  
+ 7 &lt;resample [32 x 11]&gt; 007      &lt;lm&gt;  
+ 8 &lt;resample [32 x 11]&gt; 008      &lt;lm&gt;  
+ 9 &lt;resample [32 x 11]&gt; 009      &lt;lm&gt;  
+10 &lt;resample [32 x 11]&gt; 010      &lt;lm&gt;  
+# … with 190 more rows</code></pre>
+</div>
+</div>
+<p>Now lets get our parameter estimates.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;"># get parameters ####</span></span>
+<span id="cb3-2">params_boot <span class="ot" style="color: #003B4F;">&lt;-</span> fit_boots <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">tidy_fit =</span> <span class="fu" style="color: #4758AB;">map</span>(fit, tidy)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;">unnest</span>(<span class="at" style="color: #657422;">cols =</span> tidy_fit) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-5">  <span class="fu" style="color: #4758AB;">ungroup</span>()</span>
+<span id="cb3-6"></span>
+<span id="cb3-7"><span class="co" style="color: #5E5E5E;"># get predictions</span></span>
+<span id="cb3-8">preds_boot <span class="ot" style="color: #003B4F;">&lt;-</span> fit_boots <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">augment_fit =</span> <span class="fu" style="color: #4758AB;">map</span>(fit, augment)) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-10">  <span class="fu" style="color: #4758AB;">unnest</span>(<span class="at" style="color: #657422;">cols =</span> augment_fit) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-11">  <span class="fu" style="color: #4758AB;">ungroup</span>()</span></code></pre></div>
+</div>
+<p>Time to visualize.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">library</span>(patchwork)</span>
+<span id="cb4-2"></span>
+<span id="cb4-3"><span class="co" style="color: #5E5E5E;"># plot distribution of estimated parameters</span></span>
+<span id="cb4-4">p1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ggplot</span>(params_boot, <span class="fu" style="color: #4758AB;">aes</span>(estimate)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-5">  <span class="fu" style="color: #4758AB;">geom_histogram</span>(<span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">'black'</span>, <span class="at" style="color: #657422;">fill =</span> <span class="st" style="color: #20794D;">'white'</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-6">  <span class="fu" style="color: #4758AB;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;">~</span> term, <span class="at" style="color: #657422;">scales =</span> <span class="st" style="color: #20794D;">'free'</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-7">  <span class="fu" style="color: #4758AB;">theme_minimal</span>()</span>
+<span id="cb4-8"></span>
+<span id="cb4-9"><span class="co" style="color: #5E5E5E;"># plot points with predictions</span></span>
+<span id="cb4-10">p2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ggplot</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-11">  <span class="fu" style="color: #4758AB;">geom_line</span>(<span class="fu" style="color: #4758AB;">aes</span>(mpg, .fitted, <span class="at" style="color: #657422;">group =</span> boot_num), preds_boot, <span class="at" style="color: #657422;">alpha =</span> .<span class="dv" style="color: #AD0000;">03</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-12">  <span class="fu" style="color: #4758AB;">geom_point</span>(<span class="fu" style="color: #4758AB;">aes</span>(mpg, .fitted), preds_boot, <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">'steelblue'</span>, <span class="at" style="color: #657422;">alpha =</span> <span class="fl" style="color: #AD0000;">0.05</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb4-13">  <span class="fu" style="color: #4758AB;">theme_minimal</span>()</span>
+<span id="cb4-14">  </span>
+<span id="cb4-15"><span class="co" style="color: #5E5E5E;"># plot both</span></span>
+<span id="cb4-16">p1 <span class="sc" style="color: #5E5E5E;">+</span> p2</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2022-11-17/index_files/figure-html/viz-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>purrr</category>
+  <category>modelr</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-17/index.html</guid>
+  <pubDate>Thu, 17 Nov 2022 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Cumulative Harmonic Mean with {TidyDensity}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>

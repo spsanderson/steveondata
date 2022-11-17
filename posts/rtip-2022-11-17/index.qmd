@@ -1,0 +1,72 @@
+---
+title: "Bootstrap Modeling with {purrr} and {modler}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-17"
+categories: [code, rtip, purrr, modelr]
+---
+
+# Introduction
+
+Many times in modeling we want to get the uncertainty in the model, well, bootstrapping to the rescue!
+
+I am going to go over a very simple example on how to use `purrr` and `modelr` for this situation. We will use the mtcars dataset.
+
+# Functions
+The main functions that we are going to showcase are [`purrr::map()`](https://purrr.tidyverse.org/reference/map.html) and [`modelr::bootstrap()`](https://modelr.tidyverse.org/reference/bootstrap.html)
+
+# Examples
+
+Let's get right into it.
+
+```{r example, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+
+df <- mtcars
+
+fit_boots <- df %>% 
+  modelr::bootstrap(n = 200, id = 'boot_num') %>%
+  group_by(boot_num) %>%
+  mutate(fit = map(strap, ~lm(mpg ~ ., data = data.frame(.))))
+
+fit_boots
+```
+
+Now lets get our parameter estimates.
+
+```{r params, warning=FALSE, message=FALSE}
+# get parameters ####
+params_boot <- fit_boots %>%
+  mutate(tidy_fit = map(fit, tidy)) %>%
+  unnest(cols = tidy_fit) %>%
+  ungroup()
+
+# get predictions
+preds_boot <- fit_boots %>%
+  mutate(augment_fit = map(fit, augment)) %>%
+  unnest(cols = augment_fit) %>%
+  ungroup()
+```
+
+Time to visualize.
+
+```{r viz}
+library(patchwork)
+
+# plot distribution of estimated parameters
+p1 <- ggplot(params_boot, aes(estimate)) +
+  geom_histogram(col = 'black', fill = 'white') +
+  facet_wrap(~ term, scales = 'free') +
+  theme_minimal()
+
+# plot points with predictions
+p2 <- ggplot() +
+  geom_line(aes(mpg, .fitted, group = boot_num), preds_boot, alpha = .03) +
+  geom_point(aes(mpg, .fitted), preds_boot, col = 'steelblue', alpha = 0.05) +
+  theme_minimal()
+  
+# plot both
+p1 + p2
+```
+
+Voila!

@@ -1,0 +1,16 @@
+{
+  "hash": "20f64d084635a65cb128fe320f09c3fa",
+  "result": {
+    "markdown": "---\ntitle: \"Bootstrap Modeling with {purrr} and {modler}\"\nauthor: \"Steven P. Sanderson II, MPH\"\ndate: \"2022-11-17\"\ncategories: [code, rtip, purrr, modelr]\n---\n\n\n# Introduction\n\nMany times in modeling we want to get the uncertainty in the model, well, bootstrapping to the rescue!\n\nI am going to go over a very simple example on how to use `purrr` and `modelr` for this situation. We will use the mtcars dataset.\n\n# Functions\nThe main functions that we are going to showcase are [`purrr::map()`](https://purrr.tidyverse.org/reference/map.html) and [`modelr::bootstrap()`](https://modelr.tidyverse.org/reference/bootstrap.html)\n\n# Examples\n\nLet's get right into it.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(tidymodels)\n\ndf <- mtcars\n\nfit_boots <- df %>% \n  modelr::bootstrap(n = 200, id = 'boot_num') %>%\n  group_by(boot_num) %>%\n  mutate(fit = map(strap, ~lm(mpg ~ ., data = data.frame(.))))\n\nfit_boots\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n# A tibble: 200 × 3\n# Groups:   boot_num [200]\n   strap                boot_num fit   \n   <list>               <chr>    <list>\n 1 <resample [32 x 11]> 001      <lm>  \n 2 <resample [32 x 11]> 002      <lm>  \n 3 <resample [32 x 11]> 003      <lm>  \n 4 <resample [32 x 11]> 004      <lm>  \n 5 <resample [32 x 11]> 005      <lm>  \n 6 <resample [32 x 11]> 006      <lm>  \n 7 <resample [32 x 11]> 007      <lm>  \n 8 <resample [32 x 11]> 008      <lm>  \n 9 <resample [32 x 11]> 009      <lm>  \n10 <resample [32 x 11]> 010      <lm>  \n# … with 190 more rows\n```\n:::\n:::\n\n\nNow lets get our parameter estimates.\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# get parameters ####\nparams_boot <- fit_boots %>%\n  mutate(tidy_fit = map(fit, tidy)) %>%\n  unnest(cols = tidy_fit) %>%\n  ungroup()\n\n# get predictions\npreds_boot <- fit_boots %>%\n  mutate(augment_fit = map(fit, augment)) %>%\n  unnest(cols = augment_fit) %>%\n  ungroup()\n```\n:::\n\n\nTime to visualize.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(patchwork)\n\n# plot distribution of estimated parameters\np1 <- ggplot(params_boot, aes(estimate)) +\n  geom_histogram(col = 'black', fill = 'white') +\n  facet_wrap(~ term, scales = 'free') +\n  theme_minimal()\n\n# plot points with predictions\np2 <- ggplot() +\n  geom_line(aes(mpg, .fitted, group = boot_num), preds_boot, alpha = .03) +\n  geom_point(aes(mpg, .fitted), preds_boot, col = 'steelblue', alpha = 0.05) +\n  theme_minimal()\n  \n# plot both\np1 + p2\n```\n\n::: {.cell-output .cell-output-stderr}\n```\n`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.\n```\n:::\n\n::: {.cell-output-display}\n![](index_files/figure-html/viz-1.png){width=672}\n:::\n:::\n\n\nVoila!\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
