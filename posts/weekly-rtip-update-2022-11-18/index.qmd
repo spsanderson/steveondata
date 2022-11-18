@@ -1,0 +1,107 @@
+---
+title: "Updates to {healthyverse} packages"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-18"
+categories: [code, weeklytip, healthyverse]
+---
+
+# Introduction
+
+I have made several updates to [`{healthyverse}`](https://www.spsanderson.com/healthyverse/), this has resulted in new releases to CRAN for [`{healthyR.ai}`](https://www.spsanderson.com/healthyR.ai/), [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/), and [`{TidyDesnsity}`](https://www.spsanderson.com/TidyDensity/).
+
+# TidyDensity
+
+![TidyDensity](tidydensity.png)
+
+# healthyR.ai
+
+![healthyR.ai](healthyr_ai.png)
+
+# healthyR.ts
+
+![healthyR.ts](healthyr_ts.png)
+
+# Some New Functions
+
+Let's take a look at some new functions.
+
+## TidyDensity
+
+For TidyDensity a new distribution was added, welcome [`tidy_bernoulli()`](https://www.spsanderson.com/TidyDensity/reference/tidy_bernoulli.html?q=ber#null). This distribution also comes with the standard [`util_distname_param_estimate()`](https://www.spsanderson.com/TidyDensity/reference/util_bernoulli_param_estimate.html) and the [`util_distname_stats_tbl()`](https://www.spsanderson.com/TidyDensity/reference/util_bernoulli_stats_tbl.html) functions. Let's take a look at the function calls.
+
+```{r fns, eval=FALSE}
+tidy_bernoulli(.n = 50, .prob = 0.1, .num_sims = 1)
+
+util_bernoulli_param_estimate(.x, .auto_gen_empirical = TRUE)
+
+util_bernoulli_stats_tbl(.data)
+```
+
+Let's see them in use.
+
+```{r tidydensity_example, message=FALSE, warning=FALSE}
+library(TidyDensity)
+library(dplyr)
+
+tb <- tidy_bernoulli()
+
+tb
+
+util_bernoulli_param_estimate(tb$y)
+
+util_bernoulli_stats_tbl(tb) %>%
+  glimpse()
+```
+
+## healthyR.ai
+
+This was a minor patch release that exported some previously internal only functions and fixed an error with the custom recipe steps. One of the functions that has been exported is [`hai_data_impute()`](https://www.spsanderson.com/healthyR.ai/reference/hai_data_impute.html?q=hai_data#null)
+
+Let's take a look.
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+hai_data_impute(
+  .recipe_object = NULL,
+  ...,
+  .seed_value = 123,
+  .type_of_imputation = "mean",
+  .number_of_trees = 25,
+  .neighbors = 5,
+  .mean_trim = 0,
+  .roll_statistic,
+  .roll_window = 5
+)
+```
+
+Let's take a look at an example of it's use.
+
+```{r healthyr_ai_example, warning=FALSE, message=FALSE}
+library(dplyr)
+library(recipes)
+library(healthyR.ai)
+
+date_seq <- seq.Date(from = as.Date("2013-01-01"), length.out = 100, by = "month")
+val_seq <- rep(c(rnorm(9), NA), times = 10)
+df_tbl <- tibble(
+  date_col = date_seq,
+  value    = val_seq
+)
+
+df_tbl
+
+rec_obj <- recipe(value ~ ., df_tbl)
+
+hai_data_impute(
+  .recipe_object = rec_obj,
+  value,
+  .type_of_imputation = "roll",
+  .roll_statistic = median
+)$impute_rec_obj %>%
+  get_juiced_data()
+```
+
+## healthyR.ts
+
+This was a minor patch release fixing the function [`ts_lag_correlation()`](https://www.spsanderson.com/healthyR.ts/reference/ts_lag_correlation.html) when the column that was the value was not explicitly called...`value`.
+
+Thank you!
