@@ -1,0 +1,40 @@
+---
+title: "Bootstrap Modeling with Base R"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-21"
+categories: [code, bootstrap, rtip]
+---
+
+# Introduction
+
+I have previously written about bootstrap modeling with [`{purrr} and {modelr}` here](https://www.spsanderson.com/steveondata/posts/rtip-2022-11-17/). What if you would like to do some simple __bootstrap__ modeling _without_ importing a library? This itself is easy too!
+
+# Example
+
+We will be using a very simple for loop to accomplish this. You will find an excellent post on this [on Stats StackExchange](https://stats.stackexchange/q/501275) from [Francisco Jos Goerlich Gisbert](https://stats.stackexchange.com/users/305753/francisco-jos-goerlich-gisbert)
+
+```{r lm_model_fn, warning=FALSE, message=FALSE}
+n    <- 2000
+df   <- mtcars
+pred <- numeric(0)
+
+library(tictoc) # for timing
+
+tic()
+set.seed(123)
+for (i in 1:n){
+  boot    <- sample(nrow(df), n, replace = TRUE)
+  fit     <- lm(mpg ~ wt, data = df[boot,])
+  pred[i] <- predict(fit, newdata = df[boot,]) +
+    sample(resid(fit), size = 1)
+}
+toc()
+```
+
+So we can see that the process ran pretty quickly and the loop itself is not a very difficult one. Let's explain a little.
+
+So the `boot` object is a sampling of `df` which in this case is the `mtcars` data set. We took a sample with replacement from this data set. We took 2000 samples and did this 2000 times.
+
+Next we made the `fit` object by fitting a simple linear model to the data where `mpg` is a function of `wt`. Once this is done, we made out predictions.
+
+That's it!
