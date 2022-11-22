@@ -10,7 +10,128 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.1.189</generator>
-<lastBuildDate>Mon, 21 Nov 2022 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 22 Nov 2022 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Data Preprocessing Scale/Normalize with {healthyR.ai}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-22/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>A large portion of data modeling occurrs not only in the data cleaning phase but also in the <em>data preprocessing</em> phase. This can include things like <em>scaling</em> or <em>normalizing</em> data before proceeding to the modeling phase. I will discuss one such function from my <em>r package</em> <a href="https://www.spsanderson.com/healthyR.ai/"><code>{healthyR.ai}</code></a>. In this post I will go over <a href="https://www.spsanderson.com/healthyR.ai/reference/hai_data_scale.html"><code>hai_data_scale()</code></a></p>
+<p>This is a <code>{recipes}</code> style <code>step</code> function and is <code>tidymodels</code> compliant.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Let’s take a look at the function call.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">hai_data_scale</span>(</span>
+<span id="cb1-2">  <span class="at" style="color: #657422;">.recipe_object =</span> <span class="cn" style="color: #8f5902;">NULL</span>,</span>
+<span id="cb1-3">  ...,</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;">.type_of_scale =</span> <span class="st" style="color: #20794D;">"center"</span>,</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;">.range_min =</span> <span class="dv" style="color: #AD0000;">0</span>,</span>
+<span id="cb1-6">  <span class="at" style="color: #657422;">.range_max =</span> <span class="dv" style="color: #AD0000;">1</span>,</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;">.scale_factor =</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb1-8">)</span></code></pre></div>
+</div>
+<p>Now let’s go over the arguments that get supplied to the parameters of this function.</p>
+<ul>
+<li><code>.recipe_object</code> - The data that you want to process</li>
+<li><code>...</code> - One or more selector functions to choose variables to be imputed. When used with imp_vars, these dots indicate which variables are used to predict the missing data in each variable. See selections() for more details</li>
+<li><code>.type_of_scale</code> - This is a quoted argument and can be one of the following:
+<ol type="1">
+<li>“center”</li>
+<li>“normalize”</li>
+<li>“range”</li>
+<li>“scale”</li>
+</ol></li>
+<li><code>range_min</code> - A single numeric value for the smallest value in the range. This defaults to 0.</li>
+<li><code>.range_max</code> - A single numeric value for the largeest value in the range. This defaults to 1.</li>
+<li><code>.scale_factor</code> - A numeric value of either 1 or 2 that scales the numeric inputs by one or two standard deviations. By dividing by two standard deviations, the coefficients attached to continuous predictors can be interpreted the same way as with binary inputs. Defaults to 1.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Now let’s see it in action!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR.ai)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(recipes)</span>
+<span id="cb2-4"></span>
+<span id="cb2-5">date_seq <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">seq.Date</span>(</span>
+<span id="cb2-6">  <span class="at" style="color: #657422;">from =</span> <span class="fu" style="color: #4758AB;">as.Date</span>(<span class="st" style="color: #20794D;">"2013-01-01"</span>), </span>
+<span id="cb2-7">  <span class="at" style="color: #657422;">length.out =</span> <span class="dv" style="color: #AD0000;">100</span>, </span>
+<span id="cb2-8">  <span class="at" style="color: #657422;">by =</span> <span class="st" style="color: #20794D;">"month"</span></span>
+<span id="cb2-9">)</span>
+<span id="cb2-10"></span>
+<span id="cb2-11">val_seq <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rep</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">10</span>, <span class="at" style="color: #657422;">mean =</span> <span class="dv" style="color: #AD0000;">6</span>, <span class="at" style="color: #657422;">sd =</span> <span class="dv" style="color: #AD0000;">2</span>), <span class="at" style="color: #657422;">times =</span> <span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb2-12"></span>
+<span id="cb2-13">df_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">tibble</span>(</span>
+<span id="cb2-14">  <span class="at" style="color: #657422;">date_col =</span> date_seq,</span>
+<span id="cb2-15">  <span class="at" style="color: #657422;">value    =</span> val_seq</span>
+<span id="cb2-16">)</span>
+<span id="cb2-17"></span>
+<span id="cb2-18">df_tbl</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 100 × 2
+   date_col   value
+   &lt;date&gt;     &lt;dbl&gt;
+ 1 2013-01-01  6.66
+ 2 2013-02-01  6.66
+ 3 2013-03-01  5.09
+ 4 2013-04-01  6.94
+ 5 2013-05-01  5.96
+ 6 2013-06-01  6.18
+ 7 2013-07-01  3.62
+ 8 2013-08-01  7.31
+ 9 2013-09-01  4.58
+10 2013-10-01  7.29
+# … with 90 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">recipe</span>(value <span class="sc" style="color: #5E5E5E;">~</span> ., df_tbl)</span>
+<span id="cb4-2"></span>
+<span id="cb4-3">new_rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">hai_data_scale</span>(</span>
+<span id="cb4-4">  <span class="at" style="color: #657422;">.recipe_object =</span> rec_obj,</span>
+<span id="cb4-5">  value,</span>
+<span id="cb4-6">  <span class="at" style="color: #657422;">.type_of_scale =</span> <span class="st" style="color: #20794D;">"center"</span></span>
+<span id="cb4-7">)<span class="sc" style="color: #5E5E5E;">$</span>scale_rec_obj</span>
+<span id="cb4-8"></span>
+<span id="cb4-9">new_rec_obj <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
+<span id="cb4-10">  <span class="fu" style="color: #4758AB;">get_juiced_data</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 100 × 2
+   date_col     value
+   &lt;date&gt;       &lt;dbl&gt;
+ 1 2013-01-01  0.633 
+ 2 2013-02-01  0.630 
+ 3 2013-03-01 -0.935 
+ 4 2013-04-01  0.909 
+ 5 2013-05-01 -0.0676
+ 6 2013-06-01  0.149 
+ 7 2013-07-01 -2.41  
+ 8 2013-08-01  1.28  
+ 9 2013-09-01 -1.45  
+10 2013-10-01  1.26  
+# … with 90 more rows</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>healthyrai</category>
+  <category>recipes</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-22/index.html</guid>
+  <pubDate>Tue, 22 Nov 2022 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Bootstrap Modeling with Base R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3087,74 +3208,6 @@ $dist_with_params
   <guid>https://www.spsanderson.com/steveondata/posts/tidydensity-20221007/index.html</guid>
   <pubDate>Fri, 07 Oct 2022 04:00:00 GMT</pubDate>
   <media:content url="https://www.spsanderson.com/steveondata/posts/tidydensity-20221007/tidy_density_logo.png" medium="image" type="image/png" height="167" width="144"/>
-</item>
-<item>
-  <title>Simple lapply()</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/post-with-code/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<p>This is a simple <code>lapply</code> example to start things off.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;"># Let l be some list of lists, where all elements of lists are numbers</span></span>
-<span id="cb1-2">l <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
-<span id="cb1-3">  <span class="at" style="color: #657422;">a =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>,</span>
-<span id="cb1-4">  <span class="at" style="color: #657422;">b =</span> <span class="dv" style="color: #AD0000;">11</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">20</span>,</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;">c =</span> <span class="dv" style="color: #AD0000;">21</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">30</span></span>
-<span id="cb1-6">)</span></code></pre></div>
-</div>
-<p>Now let’s take a look at our list <code>l</code> and see it’s structure.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">l</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$a
- [1]  1  2  3  4  5  6  7  8  9 10
-
-$b
- [1] 11 12 13 14 15 16 17 18 19 20
-
-$c
- [1] 21 22 23 24 25 26 27 28 29 30</code></pre>
-</div>
-</div>
-<p>Now that we see the structure, we can use the <code>lapply</code> function to get the sum of each list element, the mean, etc.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">lapply</span>(l, sum)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$a
-[1] 55
-
-$b
-[1] 155
-
-$c
-[1] 255</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">lapply</span>(l, mean)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$a
-[1] 5.5
-
-$b
-[1] 15.5
-
-$c
-[1] 25.5</code></pre>
-</div>
-</div>
-<p>Voila!</p>
-
-
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>weeklytip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/post-with-code/index.html</guid>
-  <pubDate>Wed, 05 Oct 2022 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

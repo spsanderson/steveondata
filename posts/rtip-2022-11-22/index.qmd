@@ -1,0 +1,78 @@
+---
+title: "Data Preprocessing Scale/Normalize with {healthyR.ai}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-22"
+categories: [code, rtip, healthyrai, recipes]
+---
+
+# Introduction
+
+A large portion of data modeling occurrs not only in the data cleaning phase but also in the _data preprocessing_ phase. This can include things like _scaling_ or _normalizing_ data before proceeding to the modeling phase. I will discuss one such function from my _r package_ [`{healthyR.ai}`](https://www.spsanderson.com/healthyR.ai/). In this post I will go over [`hai_data_scale()`](https://www.spsanderson.com/healthyR.ai/reference/hai_data_scale.html)
+
+This is a `{recipes}` style `step` function and is `tidymodels` compliant.
+
+# Function
+
+Let's take a look at the function call.
+
+```{r fns, eval=FALSE}
+hai_data_scale(
+  .recipe_object = NULL,
+  ...,
+  .type_of_scale = "center",
+  .range_min = 0,
+  .range_max = 1,
+  .scale_factor = 1
+)
+```
+
+Now let's go over the arguments that get supplied to the parameters of this function.
+
+*  `.recipe_object` - The data that you want to process
+*  `...` -  One or more selector functions to choose variables to be imputed. When used with imp_vars, these dots indicate which variables are used to predict the missing data in each variable. See selections() for more details
+*  `.type_of_scale` - This is a quoted argument and can be one of the following:
+    1. "center"
+    2. "normalize"
+    3. "range"
+    4. "scale"
+*  `range_min` - A single numeric value for the smallest value in the range. This defaults to 0.
+*  `.range_max` - A single numeric value for the largeest value in the range. This defaults to 1.
+*  `.scale_factor` - A numeric value of either 1 or 2 that scales the numeric inputs by one or two standard deviations. By dividing by two standard deviations, the coefficients attached to continuous predictors can be interpreted the same way as with binary inputs. Defaults to 1.
+
+# Example
+
+Now let's see it in action!
+
+```{r example, warning=FALSE, message=FALSE}
+library(healthyR.ai)
+library(dplyr)
+library(recipes)
+
+date_seq <- seq.Date(
+  from = as.Date("2013-01-01"), 
+  length.out = 100, 
+  by = "month"
+)
+
+val_seq <- rep(rnorm(10, mean = 6, sd = 2), times = 10)
+
+df_tbl <- tibble(
+  date_col = date_seq,
+  value    = val_seq
+)
+
+df_tbl
+
+rec_obj <- recipe(value ~ ., df_tbl)
+
+new_rec_obj <- hai_data_scale(
+  .recipe_object = rec_obj,
+  value,
+  .type_of_scale = "center"
+)$scale_rec_obj
+
+new_rec_obj %>% 
+  get_juiced_data()
+```
+
+Voila!
