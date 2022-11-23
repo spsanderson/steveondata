@@ -1,0 +1,207 @@
+---
+title: "Summary Statistics with {TidyDensity}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-11-23"
+categories: [code, weeklytip, tidydensity, datatable]
+---
+
+# Introduction
+
+Many times someone may want to see a summary or cumulative statistic for a given set of data or even from several simulations of data. I went over [bootstrap plotting](https://www.spsanderson.com/steveondata/posts/weekly-tip-tidydensity-2022-11-04/) earlier this month, and this is a form of what we will go over today although slightly more restrictive.
+
+I have decided to make today my [weekly r-tip](https://www.spsanderson.com/steveondata/#category=weeklytip) because tomorrow is Thanksgiving here in the US and I am taking an extended holiday so I won't be back until Monday.
+
+Today's function and weekly tip is on [`tidy_stat_tbl()`](https://www.spsanderson.com/TidyDensity/reference/tidy_stat_tbl.html). It is meant to be used with a `tidy_` distribution function. Let's take a look.
+
+# Function
+
+Here is the function call:
+
+```{r fns, eval=FALSE}
+tidy_stat_tbl(
+  .data,
+  .x = y,
+  .fns,
+  .return_type = "vector",
+  .use_data_table = FALSE,
+  ...
+)
+```
+
+Here are the arguments to the parameters of the function:
+
+*  `.data` - The input data coming from a tidy_ distribution function.
+*  `.x` - The default is y but can be one of the other columns from the input `data.`
+*  `.fns` - The default is IQR, but this can be any stat function like quantile or median etc.
+*  `.return_type` - The default is "vector" which returns an sapply object.
+*  `.use_data_table` - The default is FALSE, TRUE will use data.table under the hood and still return a tibble. If this argument is set to TRUE then the .return_type parameter will be ignored.
+*  `...` - Addition function arguments to be supplied to the parameters of `.fns`
+
+# Examples
+
+## Single Simulation
+
+Let's go over some examples. Firstly, we will go over all the different `.return_type`'s of a single simulation of `tidy_normal()` using the `quantile` function.
+
+_Vector Output_ **BE CAREFUL IT USES SAPPLY**
+```{r example, warning=FALSE, message=FALSE}
+library(TidyDensity)
+
+set.seed(123)
+tn <- tidy_normal()
+
+tidy_stat_tbl(
+  .data = tn,
+  .x = y,
+  .return_type = "vector",
+  .fns = quantile,
+  na.rm = TRUE,
+  probs = c(0.025, 0.5, 0.975)
+  )
+```
+
+_List Output with lapply_
+```{r e2, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, quantile, "list", na.rm = TRUE
+)
+
+tidy_stat_tbl(
+  tn, y, quantile, "list", na.rm = TRUE, 
+  probs = c(0.025, 0.5, 0.975)
+)
+```
+
+_Tibble output with tibble_
+```{r e3, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, quantile, "tibble", na.rm = TRUE
+)
+
+tidy_stat_tbl(
+  tn, y, quantile, "tibble", na.rm = TRUE, 
+  probs = c(0.025, 0.5, 0.975)
+)
+```
+
+_Tibble output with data.table_ The output object is a `tibble` but `data.table` is used to perform the calculations which can be magnitudes faster when simulations are large. I will showcase down the post.
+```{r e4, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, quantile, .use_data_table = TRUE, na.rm = TRUE
+)
+
+tidy_stat_tbl(
+  tn, y, quantile, .use_data_table = TRUE, na.rm = TRUE, 
+  probs = c(0.025, 0.5, 0.975)
+)
+```
+
+Now let's take a look with multiple simulations.
+
+## Multiple Simulations
+
+Let's set our simulation count to 5. While this is not a large amount it will serve as a good illustration on the outputs.
+
+```{r setup}
+ns <- 5
+f  <- quantile
+nr <- TRUE
+p  <- c(0.025, 0.975)
+```
+
+Ok let's run the same simulations but with the updated params.
+
+_Vector Output_ **BE CAREFUL IT USES SAPPLY**
+```{r e5, warning=FALSE, message=FALSE}
+set.seed(123)
+tn <- tidy_normal(.num_sims = ns)
+
+tidy_stat_tbl(
+  .data = tn,
+  .x = y,
+  .return_type = "vector",
+  .fns = f,
+  na.rm = nr,
+  probs = p
+  )
+
+tidy_stat_tbl(
+  tn, y, .return_type = "vector",
+  .fns = f, na.rm = nr
+)
+```
+
+_List Output with lapply_
+```{r e6, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, f, "list", na.rm = nr
+)
+
+tidy_stat_tbl(
+  tn, y, f, "list", na.rm = nr, 
+  probs = p
+)
+```
+
+_Tibble output with tibble_
+```{r e7, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, f, "tibble", na.rm = nr
+)
+
+tidy_stat_tbl(
+  tn, y, f, "tibble", na.rm = nr, 
+  probs = p
+)
+```
+
+_Tibble output with data.table_ The output object is a `tibble` but `data.table` is used to perform the calculations which can be magnitudes faster when simulations are large. I will showcase down the post.
+```{r e8, warning=FALSE, message=FALSE}
+tidy_stat_tbl(
+  tn, y, f, .use_data_table = TRUE, na.rm = nr
+)
+
+tidy_stat_tbl(
+  tn, y, f, .use_data_table = TRUE, na.rm = nr, 
+  probs = p
+)
+```
+
+Ok, now that we have shown that, let's ratchet up the simulations so we can see the true difference in using the `.use_data_tbl` parameter when simulations are large. We are going to use `{rbenchmark}` for 
+
+## Benchmarking
+
+Here we go. We are going to make a `tidy_bootstrap()` of the `mtcars$mpg` data which will produce 2000 simulations, we will replicate this 25 times.
+
+```{r benchmark, warning=FALSE, message=FALSE}
+library(rbenchmark)
+library(TidyDensity)
+library(dplyr)
+
+# Get the interesting vector, well for this anyways
+x <- mtcars$mpg
+
+# Bootstrap the vector (2k simulations is default)
+tb <- tidy_bootstrap(x) %>%
+  bootstrap_unnest_tbl()
+
+benchmark(
+  "tibble" = {
+    tidy_stat_tbl(tb, y, IQR, "tibble")
+  },
+  "data.table" = {
+    tidy_stat_tbl(tb, y, IQR, .use_data_table = TRUE, type = 7)
+  },
+  "sapply" = {
+    tidy_stat_tbl(tb, y, IQR, "vector")
+  },
+  "lapply" = {
+    tidy_stat_tbl(tb, y, IQR, "list")
+  },
+  replications = 25,
+  columns = c("test","replications","elapsed","relative","user.self","sys.self"  )
+) %>%
+  arrange(relative)
+```
+
+Voila!
