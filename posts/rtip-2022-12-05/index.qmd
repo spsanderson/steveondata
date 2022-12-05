@@ -1,0 +1,73 @@
+---
+title: "Naming Items in a List with {purrr}, {dplyr}, or {healthyR}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-05"
+categories: [code, rtip, purrr, healthyR]
+---
+
+# Introduction
+
+Many times when we are working with a data set we will want to break it up into groups and place them into a list and work with them in that fashion. With this it can be useful to the elements of the list named by the column that the data was split upon. Let's use the iris set as an example where we split on `Species`.
+
+There are two main functions that we will use in this scenario, namely [`purrr:map()`](https://purrr.tidyverse.org/reference/map.html) and [`dplyr::group_split()`](https://dplyr.tidyverse.org/reference/group_split.html), you could also use the `split` function from base `r` for this.
+
+We will also go over how simple this is using the [`{healthyR}`](https://www.spsanderson.com/healthyr) package. Let's look at the function from `{healthyR}`
+
+# Function
+
+Full function call.
+
+```{r eval=FALSE, warning=FALSE, message=FALSE}
+named_item_list(.data, .group_col)
+```
+
+There are only two arguments to supply.
+
+*  `.data` - The data.frame/tibble.
+*  `.group_col` - The column that contains the groupings.
+
+That's it.
+
+# Examples
+
+Let's jump into it.
+
+```{r example1, warning=FALSE, message=FALSE}
+library(purrr)
+library(dplyr)
+
+data_tbl <- iris
+
+data_tbl_list <- data_tbl %>%
+  group_split(Species)
+
+data_tbl_list
+
+data_tbl_list %>%
+   map( ~ pull(., Species)) %>%
+   map( ~ as.character(.)) %>%
+   map( ~ unique(.))
+```
+
+Now lets go ahead and apply the names.
+
+```{r example2}
+names(data_tbl_list) <- data_tbl_list %>%
+   map( ~ pull(., Species)) %>%
+   map( ~ as.character(.)) %>%
+   map( ~ unique(.))
+
+data_tbl_list
+```
+
+Let's now see how we do this in `{healthyR}`
+
+```{r example3, warning=FALSE, message=FALSE}
+library(healthyR)
+
+named_item_list(iris, Species)
+```
+
+If you use this in conjunction with the __healthyR__ function `save_to_excel()` then it will write an excel file with a tab for each named item in the list.
+
+Voila!
