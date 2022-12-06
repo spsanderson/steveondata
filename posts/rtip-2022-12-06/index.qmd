@@ -1,0 +1,88 @@
+---
+title: "Z-Score Scaling Step Recipe with {healthyR.ai}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-06"
+categories: [code, rtip, healthyrai, recipes]
+---
+
+# Introduction
+
+Sometimes one may find it useful or necessary to scale their data during a modeling or analysis phase. One of these such transformations is the z-score scaling.
+
+This is done simply by performing the below transform where x is simply some numeric vector:
+
+$$ z_x = (x - mu(x))/sd(x) $$
+
+Let's take a look at the `recipe` function called [`step_hai_scale_zscore`](https://www.spsanderson.com/healthyR.ai/reference/step_hai_scale_zscore.html)
+
+# Function
+
+Here is the full function call:
+
+```{r eval=FALSE}
+step_hai_scale_zscore(
+  recipe,
+  ...,
+  role = "predictor",
+  trained = FALSE,
+  columns = NULL,
+  skip = FALSE,
+  id = rand_id("hai_scale_zscore")
+)
+```
+
+Here are the arguments to the function.
+
+*  `recipe` - A recipe object. The step will be added to the sequence of operations for this recipe.
+*  `...` - One or more selector functions to choose which variables that will be used to create the new variables. The selected variables should have class numeric
+*  `role` - For model terms created by this step, what analysis role should they be assigned?. By default, the function assumes that the new variable columns created by the original variables will be used as predictors in a model.
+*  `trained` - A logical to indicate if the quantities for preprocessing have been estimated.
+*  `columns` - A character string of variables that will be used as inputs. This field is a placeholder and will be populated once recipes::prep() is used.
+*  `skip` - A logical. Should the step be skipped when the recipe is baked by bake.recipe()? While all operations are baked when prep.recipe() is run, some operations may not be able to be conducted on new data (e.g. processing the outcome variable(s)). Care should be taken when using skip = TRUE as it may affect the computations for subsequent operations.
+*  `id` - A character string that is unique to this step to identify it.
+
+# Example
+
+Here is a simple example.
+
+```{r example1, warning=FALSE, message=FALSE}
+library(healthyR.ai)
+library(dplyr)
+library(recipes)
+
+df <- iris |>
+  as_tibble() |>
+  select(Species, Sepal.Length)
+
+rec_obj <- recipe(Sepal.Length ~ ., data = df) %>%
+  step_hai_scale_zscore(Sepal.Length)
+
+rec_obj
+
+summary(rec_obj)
+```
+
+Now let's take a look at the differences.
+
+```{r example2, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(plotly)
+
+df_tbl <- get_juiced_data(rec_obj)
+
+df_tbl |>
+  purrr::set_names("Species","Sepal_Length","Scaled_Sepal_Length") |>
+  ggplot(aes(x = Sepal_Length)) +
+  geom_histogram(color = "black", fill = "lightgreen") +
+  geom_histogram(aes(x = Scaled_Sepal_Length), 
+                 color = "black", fill = "steelblue") +
+  theme_minimal() +
+  labs(
+    y = "Count",
+    x = "Sepal Length",
+    title = "Speal.Length: Original vs. Z-Score Scaled",
+    subtitle = "Original (Light Green) Scaled (Steelblue)"
+  )
+```
+
+Voila!
