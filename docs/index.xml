@@ -10,7 +10,186 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.1.189</generator>
-<lastBuildDate>Tue, 06 Dec 2022 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 07 Dec 2022 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Create Multiple {parsnip} Model Specs with {purrr}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-07/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>If you want to generate multiple <code>parsnip</code> model specifications at the same time then it’s really not to hard. This sort of thing is being addressed in an upcoming package of mine called <a href="https://www.spsanderson.com/tidyaml"><code>{tidyaml}</code></a></p>
+<p>This post is going to be quick and simple, I will showcase how you can generate many different model specifications in one go. I will also discuss the function <a href="https://www.spsanderson.com/tidyaml/reference/create_model_spec.html"><code>create_model_spec()</code></a> that will allow you to do this with a simple function call once the package is actually released.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Here is the function call for the <code>create_model_spec()</code> for once it is release.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">create_model_spec</span>(</span>
+<span id="cb1-2">  <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"lm"</span>),</span>
+<span id="cb1-3">  <span class="at" style="color: #657422;">.mode =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"regression"</span>),</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"linear_reg"</span>),</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;">.return_tibble =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
+<span id="cb1-6">)</span></code></pre></div>
+</div>
+<p>Here are the arguments to the function. * <code>.parsnip_eng</code> - The input must be a list. The default for this is set to all. This means that all of the parsnip linear regression engines will be used, for example lm, or glm. You can also choose to pass a c() vector like c(‘lm’, ‘glm’) * <code>.mode</code>- The input must be a list. The default is ‘regression’ * <code>.parsnip_fns</code> - The input must be a list. The default for this is set to all. This means that all of the parsnip linear regression functions will be used, for example linear_reg(), or cubist_rules. You can also choose to pass a c() vector like c(“linear_reg”,“cubist_rules”) * <code>.return_tibble</code> - The default is TRUE. FALSE will return a list object.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Here is the function at work.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(tidyaml)</span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">create_model_spec</span>(</span>
+<span id="cb2-4"> <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>,<span class="st" style="color: #20794D;">"glmnet"</span>,<span class="st" style="color: #20794D;">"cubist"</span>),</span>
+<span id="cb2-5"> <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb2-6">      <span class="fu" style="color: #4758AB;">rep</span>(</span>
+<span id="cb2-7">        <span class="st" style="color: #20794D;">"linear_reg"</span>, <span class="dv" style="color: #AD0000;">3</span>),</span>
+<span id="cb2-8">        <span class="st" style="color: #20794D;">"cubist_rules"</span></span>
+<span id="cb2-9">     )</span>
+<span id="cb2-10"> )</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 4
+  .parsnip_engine .parsnip_mode .parsnip_fns .model_spec
+  &lt;chr&gt;           &lt;chr&gt;         &lt;chr&gt;        &lt;list&gt;     
+1 lm              regression    linear_reg   &lt;spec[+]&gt;  
+2 glm             regression    linear_reg   &lt;spec[+]&gt;  
+3 glmnet          regression    linear_reg   &lt;spec[+]&gt;  
+4 cubist          regression    cubist_rules &lt;spec[+]&gt;  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">create_model_spec</span>(</span>
+<span id="cb4-2"> <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>,<span class="st" style="color: #20794D;">"glmnet"</span>,<span class="st" style="color: #20794D;">"cubist"</span>),</span>
+<span id="cb4-3"> <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb4-4">      <span class="fu" style="color: #4758AB;">rep</span>(</span>
+<span id="cb4-5">        <span class="st" style="color: #20794D;">"linear_reg"</span>, <span class="dv" style="color: #AD0000;">3</span>),</span>
+<span id="cb4-6">        <span class="st" style="color: #20794D;">"cubist_rules"</span></span>
+<span id="cb4-7">     ),</span>
+<span id="cb4-8"> <span class="at" style="color: #657422;">.return_tibble =</span> <span class="cn" style="color: #8f5902;">FALSE</span></span>
+<span id="cb4-9"> )</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$.parsnip_engine
+$.parsnip_engine[[1]]
+[1] "lm"
+
+$.parsnip_engine[[2]]
+[1] "glm"
+
+$.parsnip_engine[[3]]
+[1] "glmnet"
+
+$.parsnip_engine[[4]]
+[1] "cubist"
+
+
+$.parsnip_mode
+$.parsnip_mode[[1]]
+[1] "regression"
+
+
+$.parsnip_fns
+$.parsnip_fns[[1]]
+[1] "linear_reg"
+
+$.parsnip_fns[[2]]
+[1] "linear_reg"
+
+$.parsnip_fns[[3]]
+[1] "linear_reg"
+
+$.parsnip_fns[[4]]
+[1] "cubist_rules"
+
+
+$.model_spec
+$.model_spec[[1]]
+Linear Regression Model Specification (regression)
+
+Computational engine: lm 
+
+
+$.model_spec[[2]]
+Linear Regression Model Specification (regression)
+
+Computational engine: glm 
+
+
+$.model_spec[[3]]
+Linear Regression Model Specification (regression)
+
+Computational engine: glmnet 
+
+
+$.model_spec[[4]]
+Cubist Model Specification (regression)
+
+Computational engine: cubist </code></pre>
+</div>
+</div>
+<p>Now that we have seen what is to come in the future, let’s take a look at a pseudo solution that is easy to replicate now.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;"># Load the purrr package</span></span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
+<span id="cb6-3"><span class="fu" style="color: #4758AB;">library</span>(parsnip)</span>
+<span id="cb6-4"></span>
+<span id="cb6-5"><span class="co" style="color: #5E5E5E;"># Create a list of parsnip engines</span></span>
+<span id="cb6-6">engines <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb6-7">  <span class="at" style="color: #657422;">engine1 =</span> <span class="st" style="color: #20794D;">"lm"</span>,</span>
+<span id="cb6-8">  <span class="at" style="color: #657422;">engine2 =</span> <span class="st" style="color: #20794D;">"glm"</span>,</span>
+<span id="cb6-9">  <span class="at" style="color: #657422;">engine3 =</span> <span class="st" style="color: #20794D;">"randomForest"</span></span>
+<span id="cb6-10">)</span>
+<span id="cb6-11"></span>
+<span id="cb6-12"><span class="co" style="color: #5E5E5E;"># Create a list of parsnip call names</span></span>
+<span id="cb6-13">parsnip_calls <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb6-14">  <span class="at" style="color: #657422;">call1 =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>,</span>
+<span id="cb6-15">  <span class="at" style="color: #657422;">call2 =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>,</span>
+<span id="cb6-16">  <span class="at" style="color: #657422;">call3 =</span> <span class="st" style="color: #20794D;">"rand_forest"</span></span>
+<span id="cb6-17">)</span>
+<span id="cb6-18"></span>
+<span id="cb6-19"><span class="co" style="color: #5E5E5E;"># Use pmap() to create a list of parsnip model specs from the list of engines</span></span>
+<span id="cb6-20"><span class="co" style="color: #5E5E5E;"># and parsnip call names</span></span>
+<span id="cb6-21"><span class="co" style="color: #5E5E5E;"># Set the mode argument to "regression"</span></span>
+<span id="cb6-22">model_specs <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">pmap</span>(<span class="fu" style="color: #4758AB;">list</span>(engines, parsnip_calls), <span class="cf" style="color: #003B4F;">function</span>(engine, call) {</span>
+<span id="cb6-23">  <span class="fu" style="color: #4758AB;">match.fun</span>(call)(<span class="at" style="color: #657422;">engine =</span> engine, <span class="at" style="color: #657422;">mode =</span> <span class="st" style="color: #20794D;">"regression"</span>)</span>
+<span id="cb6-24">})</span>
+<span id="cb6-25"></span>
+<span id="cb6-26"><span class="co" style="color: #5E5E5E;"># Print the list of model specs to the console</span></span>
+<span id="cb6-27">model_specs</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$engine1
+Linear Regression Model Specification (regression)
+
+Computational engine: lm 
+
+
+$engine2
+Linear Regression Model Specification (regression)
+
+Computational engine: glm 
+
+
+$engine3
+Random Forest Model Specification (regression)
+
+Computational engine: randomForest </code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>parsnip</category>
+  <category>purrr</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-07/index.html</guid>
+  <pubDate>Wed, 07 Dec 2022 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Z-Score Scaling Step Recipe with {healthyR.ai}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -2733,115 +2912,6 @@ value_lag12 0.9905274  0.9492382  0.8218493  0.7780911   1.0000000</code></pre>
   <category>healthyrai</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-08/index.html</guid>
   <pubDate>Tue, 08 Nov 2022 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Discrete Fourier Vec with healthyR.ai</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-07/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Sometimes in modeling you may want to get a discrete <code>1/0</code> vector of a <code>fourier</code> transform of some input vector. With <code>{healthyR.ai}</code> we can do this easily.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Here is the full function call:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">hai_fourier_discrete_vec</span>(</span>
-<span id="cb1-2">  .x,</span>
-<span id="cb1-3">  .period,</span>
-<span id="cb1-4">  .order,</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;">.scale_type =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"sin"</span>, <span class="st" style="color: #20794D;">"cos"</span>, <span class="st" style="color: #20794D;">"sincos"</span>)</span>
-<span id="cb1-6">)</span></code></pre></div>
-</div>
-<p>Here are the parameters to the function and what they expect:</p>
-<ul>
-<li><code>.x</code> - A numeric vector</li>
-<li><code>.period</code> - The number of observations that complete a cycle</li>
-<li><code>.order</code> - The fourier term order</li>
-<li><code>.scale_type</code> - A character of one of the following: <code>sin</code>,<code>cos</code>,<code>sincos</code></li>
-</ul>
-<p>The internal caluclation is straightforward:</p>
-<ul>
-<li><code>sin = sin(2 * pi * h * x), where h = .order/.period</code></li>
-<li><code>cos = cos(2 * pi * h * x), where h = .order/.period</code></li>
-<li><code>sincos = sin(2 * pi * h * x) * cos(2 * pi * h * x) where h = .order/.period</code></li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Let’s work throught a quick and simple example.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(healthyR.ai)</span>
-<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(tidyr)</span>
-<span id="cb2-5"></span>
-<span id="cb2-6">len_out <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">24</span></span>
-<span id="cb2-7">by_unit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="st" style="color: #20794D;">"month"</span></span>
-<span id="cb2-8">start_date <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.Date</span>(<span class="st" style="color: #20794D;">"2021-01-01"</span>)</span>
-<span id="cb2-9"></span>
-<span id="cb2-10">data_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">tibble</span>(</span>
-<span id="cb2-11">  <span class="at" style="color: #657422;">date_col =</span> <span class="fu" style="color: #4758AB;">seq.Date</span>(</span>
-<span id="cb2-12">    <span class="at" style="color: #657422;">from =</span> start_date, </span>
-<span id="cb2-13">    <span class="at" style="color: #657422;">length.out =</span> len_out, </span>
-<span id="cb2-14">    <span class="at" style="color: #657422;">by =</span> by_unit</span>
-<span id="cb2-15">  ),</span>
-<span id="cb2-16">  <span class="at" style="color: #657422;">a =</span> <span class="fu" style="color: #4758AB;">rnorm</span>(len_out, <span class="at" style="color: #657422;">sd =</span> <span class="dv" style="color: #AD0000;">2</span>),</span>
-<span id="cb2-17">  <span class="at" style="color: #657422;">fv_sin =</span> <span class="fu" style="color: #4758AB;">hai_fourier_discrete_vec</span>(a, <span class="dv" style="color: #AD0000;">12</span>, <span class="dv" style="color: #AD0000;">1</span>, <span class="st" style="color: #20794D;">"sin"</span>),</span>
-<span id="cb2-18">  <span class="at" style="color: #657422;">fv_cos =</span> <span class="fu" style="color: #4758AB;">hai_fourier_discrete_vec</span>(a, <span class="dv" style="color: #AD0000;">12</span>, <span class="dv" style="color: #AD0000;">1</span>, <span class="st" style="color: #20794D;">"cos"</span>),</span>
-<span id="cb2-19">  <span class="at" style="color: #657422;">fv_sc  =</span> <span class="fu" style="color: #4758AB;">hai_fourier_discrete_vec</span>(a, <span class="dv" style="color: #AD0000;">12</span>, <span class="dv" style="color: #AD0000;">1</span>, <span class="st" style="color: #20794D;">"sincos"</span>)</span>
-<span id="cb2-20">)</span>
-<span id="cb2-21"></span>
-<span id="cb2-22">data_tbl</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 24 × 5
-   date_col         a fv_sin fv_cos fv_sc
-   &lt;date&gt;       &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
- 1 2021-01-01 -0.486       0      1     0
- 2 2021-02-01 -0.708       0      1     0
- 3 2021-03-01 -0.119       0      1     0
- 4 2021-04-01  0.0405      1      1     1
- 5 2021-05-01  1.19        1      1     1
- 6 2021-06-01  1.88        1      1     1
- 7 2021-07-01 -1.32        0      1     0
- 8 2021-08-01 -0.0214      0      1     0
- 9 2021-09-01  2.80        1      1     1
-10 2021-10-01  1.67        1      1     1
-# … with 14 more rows</code></pre>
-</div>
-</div>
-</section>
-<section id="visual" class="level1">
-<h1>Visual</h1>
-<p>Let’s visualize.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">data_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
-<span id="cb4-2">  <span class="fu" style="color: #4758AB;">pivot_longer</span>(<span class="at" style="color: #657422;">cols =</span> <span class="sc" style="color: #5E5E5E;">-</span>date_col) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> </span>
-<span id="cb4-3">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> date_col, <span class="at" style="color: #657422;">y =</span> value, <span class="at" style="color: #657422;">color =</span> name)) <span class="sc" style="color: #5E5E5E;">+</span> </span>
-<span id="cb4-4">  <span class="fu" style="color: #4758AB;">geom_line</span>() <span class="sc" style="color: #5E5E5E;">+</span> </span>
-<span id="cb4-5">  <span class="fu" style="color: #4758AB;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;">~</span> name, <span class="at" style="color: #657422;">scales =</span> <span class="st" style="color: #20794D;">"free"</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb4-6">  <span class="fu" style="color: #4758AB;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb4-7">  <span class="fu" style="color: #4758AB;">labs</span>(<span class="at" style="color: #657422;">color =</span> <span class="st" style="color: #20794D;">""</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2022-11-07/index_files/figure-html/plt-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>healthyrai</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-11-07/index.html</guid>
-  <pubDate>Mon, 07 Nov 2022 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

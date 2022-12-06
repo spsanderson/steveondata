@@ -1,0 +1,92 @@
+---
+title: "Create Multiple {parsnip} Model Specs with {purrr}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-07"
+categories: [code, rtip, parsnip, purrr]
+---
+
+# Introduction
+
+If you want to generate multiple `parsnip` model specifications at the same time then it's really not to hard. This sort of thing is being addressed in an upcoming package of mine called [`{tidyaml}`](https://www.spsanderson.com/tidyaml)
+
+This post is going to be quick and simple, I will showcase how you can generate many different model specifications in one go. I will also discuss the function [`create_model_spec()`](https://www.spsanderson.com/tidyaml/reference/create_model_spec.html) that will allow you to do this with a simple function call once the package is actually released.
+
+# Function
+
+Here is the function call for the `create_model_spec()` for once it is release.
+
+```{r eval=FALSE}
+create_model_spec(
+  .parsnip_eng = list("lm"),
+  .mode = list("regression"),
+  .parsnip_fns = list("linear_reg"),
+  .return_tibble = TRUE
+)
+```
+
+Here are the arguments to the function.
+*  `.parsnip_eng` - The input must be a list. The default for this is set to all. This means that all of the parsnip linear regression engines will be used, for example lm, or glm. You can also choose to pass a c() vector like c('lm', 'glm')
+*  `.mode`- The input must be a list. The default is 'regression'
+*  `.parsnip_fns` - The input must be a list. The default for this is set to all. This means that all of the parsnip linear regression functions will be used, for example linear_reg(), or cubist_rules. You can also choose to pass a c() vector like c("linear_reg","cubist_rules")
+*  `.return_tibble` - The default is TRUE. FALSE will return a list object.
+
+
+# Example
+
+Here is the function at work.
+```{r warning=FALSE, message=FALSE}
+library(tidyaml)
+
+create_model_spec(
+ .parsnip_eng = list("lm","glm","glmnet","cubist"),
+ .parsnip_fns = list(
+      rep(
+        "linear_reg", 3),
+        "cubist_rules"
+     )
+ )
+
+create_model_spec(
+ .parsnip_eng = list("lm","glm","glmnet","cubist"),
+ .parsnip_fns = list(
+      rep(
+        "linear_reg", 3),
+        "cubist_rules"
+     ),
+ .return_tibble = FALSE
+ )
+```
+
+Now that we have seen what is to come in the future, let's take a look at a pseudo solution that is easy to replicate now.
+
+```{r example1, warning=FALSE, message=FALSE}
+# Load the purrr package
+library(purrr)
+library(parsnip)
+
+# Create a list of parsnip engines
+engines <- list(
+  engine1 = "lm",
+  engine2 = "glm",
+  engine3 = "randomForest"
+)
+
+# Create a list of parsnip call names
+parsnip_calls <- list(
+  call1 = "linear_reg",
+  call2 = "linear_reg",
+  call3 = "rand_forest"
+)
+
+# Use pmap() to create a list of parsnip model specs from the list of engines
+# and parsnip call names
+# Set the mode argument to "regression"
+model_specs <- pmap(list(engines, parsnip_calls), function(engine, call) {
+  match.fun(call)(engine = engine, mode = "regression")
+})
+
+# Print the list of model specs to the console
+model_specs
+```
+
+Voila!
