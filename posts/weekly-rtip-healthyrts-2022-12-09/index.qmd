@@ -1,0 +1,76 @@
+---
+title: "Create QQ Plots for Time Series Models with {healthyR.ts}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-09"
+categories: [code, rtip, timeseries, healthyrts]
+---
+
+# Introduction
+
+A Q-Q plot, or quantile-quantile plot, is a graphical tool for comparing two sets of data to assess whether they come from the same distribution. In the context of time series modeling, a Q-Q plot can be used to check whether the residuals of a fitted time series model follow the normal distribution. This is important because many time series models, such as the autoregressive moving average (ARMA) model, assume that the residuals are normally distributed.
+
+To create a Q-Q plot, the data are first sorted in ascending order and then divided into quantiles. The quantiles of the first dataset are then plotted against the quantiles of the second dataset. If the two datasets come from the same distribution, the points on the Q-Q plot will fall approximately on a straight line. Deviations from this line can indicate departures from the assumed distribution.
+
+For example, if we have a time series dataset and we fit an ARMA model to it, we can use a Q-Q plot to check whether the residuals of the fitted model are normally distributed. If the Q-Q plot shows that the residuals do not follow the normal distribution, we may need to consider using a different time series model that does not assume normality of the residuals.
+
+In summary, Q-Q plots are a useful tool for assessing the distribution of a dataset and for checking whether a time series model has produced satisfactory residuals.
+
+In the R package [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/) there is a function to view the QQ plot. This function is called [`ts_qq_plot()`](https://www.spsanderson.com/healthyR.ts/reference/ts_qq_plot.html) and it is meant to work with a `calibration` tibble from the excellent [`{modeltime}`](https://business-science.github.io/modeltime/) which is a `{parsnip}` extension package.
+
+# Function
+
+Let's take a look at the full function call and the arguments that get provided to the parameters.
+
+```{r eval=FALSE}
+ts_qq_plot(
+  .calibration_tbl, 
+  .model_id = NULL, 
+  .interactive = FALSE
+  )
+```
+
+*  `.calibration_tbl` - A calibrated modeltime table.
+*  `.model_id` - The id of a particular model from a calibration tibble. If there are multiple models in the tibble and this remains NULL then the plot will be returned using ggplot2::facet_grid(~ .model_id)
+*  `.interactive` - A boolean with a default value of FALSE. TRUE will produce an interactive plotly plot.
+
+
+# Examples
+
+Let's work through an example, and since we already spoke about ARMA let's try out an ARMA model.
+
+```{r ex1, warning=FALSE, message=FALSE}
+library(healthyR.ts)
+library(modeltime)
+library(timetk)
+library(rsample)
+library(workflows)
+library(recipes)
+library(parsnip)
+
+data_tbl <- ts_to_tbl(AirPassengers) %>%
+  select(-index)
+
+splits <- time_series_split(
+  data_tbl,
+  date_var = date_col,
+  assess = "12 months",
+  cumulative = TRUE
+)
+
+rec_obj <- recipe(value ~ ., training(splits))
+
+model_spec_arima <- arima_reg() %>%
+  set_engine(engine = "auto_arima")
+
+wflw_fit_arima <- workflow() %>%
+  add_recipe(rec_obj) %>%
+  add_model(model_spec_arima) %>%
+  fit(training(splits))
+
+model_tbl <- modeltime_table(wflw_fit_arima)
+
+calibration_tbl <- model_tbl %>%
+  modeltime_calibrate(new_data = testing(splits))
+
+ts_qq_plot(calibration_tbl, .interactive = TRUE)
+```
