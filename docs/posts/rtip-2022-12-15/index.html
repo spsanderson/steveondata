@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2022-12-15">
+
+<title>Steve’s Data Tips and Tricks - Simple Moving Average Plots with {healthyR.ts}</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+<script src="../../site_libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.10.1/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - Simple Moving Average Plots with {healthyR.ts}">
+<meta property="og:description" content="The R package {healthyR.ts}, is an R package that allows users to easily plot and analyze their time series data.">
+<meta property="og:site-name" content="Steve's Data Tips and Tricks">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Simple Moving Average Plots with {healthyR.ts}">
+<meta name="twitter:description" content="The R package {healthyR.ts}, is an R package that allows users to easily plot and analyze their time series data.">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/steveondata/"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"><i class="bi bi-telegram" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="http://feeds.feedburner.com/RBloggers"><i class="bi bi-rss" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-bloggers.com/"><i class="bi bi-book" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div class="quarto-toggle-container">
+                  <a href="" class="quarto-color-scheme-toggle nav-link" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+              </div>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Simple Moving Average Plots with {healthyR.ts}</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+                <div class="quarto-category">timeseries</div>
+                <div class="quarto-category">healthyrts</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 15, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The R package <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a>, is an R package that allows users to easily plot and analyze their time series data. The package includes a variety of functions, but one of the standout features is the ts_sma_plot() function, which allows users to quickly visualize their time series data and any number of simple moving averages (SMAs) of their choosing.</p>
+<p>SMAs are a common tool used by analysts and investors to smooth out short-term fluctuations in data and identify longer-term trends. By overlaying SMAs of different time periods on top of the original time series data, the ts_sma_plot() function makes it easy to compare and contrast different time periods and identify potential trends and patterns in the data.</p>
+<p>With <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> and the <code>ts_sma_plot()</code> function, users can quickly and easily gain valuable insights into their time series data and make more informed decisions based on the trends and patterns they uncover.</p>
+<p>Ok enough of that, let’s see the function.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Here is the full function call.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ts_sma_plot</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  .data,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  .date_col,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  .value_col,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">.sma_order =</span> <span class="dv">2</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">.func =</span> mean,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">.align =</span> <span class="st">"center"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">.partial =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s take a look at the arguments that get provided to the parameters.</p>
+<ul>
+<li><code>.data</code> - The data that you are passing, must be a data.frame/tibble.</li>
+<li><code>.date_col</code> - The column that holds the date.</li>
+<li><code>.value_col</code> - The column that holds the value.</li>
+<li><code>.sma_order</code> - This will default to 1. This can be a vector like c(2,4,6,12)</li>
+<li><code>.func</code> - The unquoted function you want to pass, mean, median, etc</li>
+<li><code>.align</code> - This can be either “left”, “center”, “right”</li>
+<li><code>.partial</code> - This is a bool value of TRUE/FALSE, the default is TRUE</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Let’s take a look at an example with the AirPassengers dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(healthyR.ts)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">ts_to_tbl</span>(AirPassengers)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">ts_sma_plot</span>(df, date_col, value, <span class="at">.sma_order =</span> <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">6</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now let’s see the output of the function. There are two core components, <code>data</code> and <code>plots</code>.</p>
+<p>The data returns the original data augmented with the moving function data in long format.</p>
+<p>The plots returns both a <code>ggplot2</code> static plot and an interactive <code>plotly</code> plot.</p>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>out<span class="sc">$</span>data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 288 × 5
+   index     date_col   value sma_order sma_value
+   &lt;yearmon&gt; &lt;date&gt;     &lt;dbl&gt; &lt;fct&gt;         &lt;dbl&gt;
+ 1 Jan 1949  1949-01-01   112 3               NA 
+ 2 Feb 1949  1949-02-01   118 3              121.
+ 3 Mar 1949  1949-03-01   132 3              126.
+ 4 Apr 1949  1949-04-01   129 3              127.
+ 5 May 1949  1949-05-01   121 3              128.
+ 6 Jun 1949  1949-06-01   135 3              135.
+ 7 Jul 1949  1949-07-01   148 3              144.
+ 8 Aug 1949  1949-08-01   148 3              144 
+ 9 Sep 1949  1949-09-01   136 3              134.
+10 Oct 1949  1949-10-01   119 3              120.
+# … with 278 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="plots" class="level2">
+<h2 class="anchored" data-anchor-id="plots">Plots</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>out<span class="sc">$</span>plots<span class="sc">$</span>static_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 7 rows containing missing values (`geom_line()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>out<span class="sc">$</span>plots<span class="sc">$</span>interactive_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-9030d9d8132b5891b047" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-9030d9d8132b5891b047">{"x":{"data":[{"x":[-7670,-7639,-7611,-7580,-7550,-7519,-7489,-7458,-7427,-7397,-7366,-7336,-7305,-7274,-7246,-7215,-7185,-7154,-7124,-7093,-7062,-7032,-7001,-6971,-6940,-6909,-6881,-6850,-6820,-6789,-6759,-6728,-6697,-6667,-6636,-6606,-6575,-6544,-6515,-6484,-6454,-6423,-6393,-6362,-6331,-6301,-6270,-6240,-6209,-6178,-6150,-6119,-6089,-6058,-6028,-5997,-5966,-5936,-5905,-5875,-5844,-5813,-5785,-5754,-5724,-5693,-5663,-5632,-5601,-5571,-5540,-5510,-5479,-5448,-5420,-5389,-5359,-5328,-5298,-5267,-5236,-5206,-5175,-5145,-5114,-5083,-5054,-5023,-4993,-4962,-4932,-4901,-4870,-4840,-4809,-4779,-4748,-4717,-4689,-4658,-4628,-4597,-4567,-4536,-4505,-4475,-4444,-4414,-4383,-4352,-4324,-4293,-4263,-4232,-4202,-4171,-4140,-4110,-4079,-4049,-4018,-3987,-3959,-3928,-3898,-3867,-3837,-3806,-3775,-3745,-3714,-3684,-3653,-3622,-3593,-3562,-3532,-3501,-3471,-3440,-3409,-3379,-3348,-3318,null,-7670,-7639,-7611,-7580,-7550,-7519,-7489,-7458,-7427,-7397,-7366,-7336,-7305,-7274,-7246,-7215,-7185,-7154,-7124,-7093,-7062,-7032,-7001,-6971,-6940,-6909,-6881,-6850,-6820,-6789,-6759,-6728,-6697,-6667,-6636,-6606,-6575,-6544,-6515,-6484,-6454,-6423,-6393,-6362,-6331,-6301,-6270,-6240,-6209,-6178,-6150,-6119,-6089,-6058,-6028,-5997,-5966,-5936,-5905,-5875,-5844,-5813,-5785,-5754,-5724,-5693,-5663,-5632,-5601,-5571,-5540,-5510,-5479,-5448,-5420,-5389,-5359,-5328,-5298,-5267,-5236,-5206,-5175,-5145,-5114,-5083,-5054,-5023,-4993,-4962,-4932,-4901,-4870,-4840,-4809,-4779,-4748,-4717,-4689,-4658,-4628,-4597,-4567,-4536,-4505,-4475,-4444,-4414,-4383,-4352,-4324,-4293,-4263,-4232,-4202,-4171,-4140,-4110,-4079,-4049,-4018,-3987,-3959,-3928,-3898,-3867,-3837,-3806,-3775,-3745,-3714,-3684,-3653,-3622,-3593,-3562,-3532,-3501,-3471,-3440,-3409,-3379,-3348,-3318],"y":[112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432,null,112,118,132,129,121,135,148,148,136,119,104,118,115,126,141,135,125,149,170,170,158,133,114,140,145,150,178,163,172,178,199,199,184,162,146,166,171,180,193,181,183,218,230,242,209,191,172,194,196,196,236,235,229,243,264,272,237,211,180,201,204,188,235,227,234,264,302,293,259,229,203,229,242,233,267,269,270,315,364,347,312,274,237,278,284,277,317,313,318,374,413,405,355,306,271,306,315,301,356,348,355,422,465,467,404,347,305,336,340,318,362,348,363,435,491,505,404,359,310,337,360,342,406,396,420,472,548,559,463,407,362,405,417,391,419,461,472,535,622,606,508,461,390,432],"text":["date_col: 1949-01-01<br />value: 112<br />sma_order: 3<br />sma_order: black","date_col: 1949-02-01<br />value: 118<br />sma_order: 3<br />sma_order: black","date_col: 1949-03-01<br />value: 132<br />sma_order: 3<br />sma_order: black","date_col: 1949-04-01<br />value: 129<br />sma_order: 3<br />sma_order: black","date_col: 1949-05-01<br />value: 121<br />sma_order: 3<br />sma_order: black","date_col: 1949-06-01<br />value: 135<br />sma_order: 3<br />sma_order: black","date_col: 1949-07-01<br />value: 148<br />sma_order: 3<br />sma_order: black","date_col: 1949-08-01<br />value: 148<br />sma_order: 3<br />sma_order: black","date_col: 1949-09-01<br />value: 136<br />sma_order: 3<br />sma_order: black","date_col: 1949-10-01<br />value: 119<br />sma_order: 3<br />sma_order: black","date_col: 1949-11-01<br />value: 104<br />sma_order: 3<br />sma_order: black","date_col: 1949-12-01<br />value: 118<br />sma_order: 3<br />sma_order: black","date_col: 1950-01-01<br />value: 115<br />sma_order: 3<br />sma_order: black","date_col: 1950-02-01<br />value: 126<br />sma_order: 3<br />sma_order: black","date_col: 1950-03-01<br />value: 141<br />sma_order: 3<br />sma_order: black","date_col: 1950-04-01<br />value: 135<br />sma_order: 3<br />sma_order: black","date_col: 1950-05-01<br />value: 125<br />sma_order: 3<br />sma_order: black","date_col: 1950-06-01<br />value: 149<br />sma_order: 3<br />sma_order: black","date_col: 1950-07-01<br />value: 170<br />sma_order: 3<br />sma_order: black","date_col: 1950-08-01<br />value: 170<br />sma_order: 3<br />sma_order: black","date_col: 1950-09-01<br />value: 158<br />sma_order: 3<br />sma_order: black","date_col: 1950-10-01<br />value: 133<br />sma_order: 3<br />sma_order: black","date_col: 1950-11-01<br />value: 114<br />sma_order: 3<br />sma_order: black","date_col: 1950-12-01<br />value: 140<br />sma_order: 3<br />sma_order: black","date_col: 1951-01-01<br />value: 145<br />sma_order: 3<br />sma_order: black","date_col: 1951-02-01<br />value: 150<br />sma_order: 3<br />sma_order: black","date_col: 1951-03-01<br />value: 178<br />sma_order: 3<br />sma_order: black","date_col: 1951-04-01<br />value: 163<br />sma_order: 3<br />sma_order: black","date_col: 1951-05-01<br />value: 172<br />sma_order: 3<br />sma_order: black","date_col: 1951-06-01<br />value: 178<br />sma_order: 3<br />sma_order: black","date_col: 1951-07-01<br />value: 199<br />sma_order: 3<br />sma_order: black","date_col: 1951-08-01<br />value: 199<br />sma_order: 3<br />sma_order: black","date_col: 1951-09-01<br />value: 184<br />sma_order: 3<br />sma_order: black","date_col: 1951-10-01<br />value: 162<br />sma_order: 3<br />sma_order: black","date_col: 1951-11-01<br />value: 146<br />sma_order: 3<br />sma_order: black","date_col: 1951-12-01<br />value: 166<br />sma_order: 3<br />sma_order: black","date_col: 1952-01-01<br />value: 171<br />sma_order: 3<br />sma_order: black","date_col: 1952-02-01<br />value: 180<br />sma_order: 3<br />sma_order: black","date_col: 1952-03-01<br />value: 193<br />sma_order: 3<br />sma_order: black","date_col: 1952-04-01<br />value: 181<br />sma_order: 3<br />sma_order: black","date_col: 1952-05-01<br />value: 183<br />sma_order: 3<br />sma_order: black","date_col: 1952-06-01<br />value: 218<br />sma_order: 3<br />sma_order: black","date_col: 1952-07-01<br />value: 230<br />sma_order: 3<br />sma_order: black","date_col: 1952-08-01<br />value: 242<br />sma_order: 3<br />sma_order: black","date_col: 1952-09-01<br />value: 209<br />sma_order: 3<br />sma_order: black","date_col: 1952-10-01<br />value: 191<br />sma_order: 3<br />sma_order: black","date_col: 1952-11-01<br />value: 172<br />sma_order: 3<br />sma_order: black","date_col: 1952-12-01<br />value: 194<br />sma_order: 3<br />sma_order: black","date_col: 1953-01-01<br />value: 196<br />sma_order: 3<br />sma_order: black","date_col: 1953-02-01<br />value: 196<br />sma_order: 3<br />sma_order: black","date_col: 1953-03-01<br />value: 236<br />sma_order: 3<br />sma_order: black","date_col: 1953-04-01<br />value: 235<br />sma_order: 3<br />sma_order: black","date_col: 1953-05-01<br />value: 229<br />sma_order: 3<br />sma_order: black","date_col: 1953-06-01<br />value: 243<br />sma_order: 3<br />sma_order: black","date_col: 1953-07-01<br />value: 264<br />sma_order: 3<br />sma_order: black","date_col: 1953-08-01<br />value: 272<br />sma_order: 3<br />sma_order: black","date_col: 1953-09-01<br />value: 237<br />sma_order: 3<br />sma_order: black","date_col: 1953-10-01<br />value: 211<br />sma_order: 3<br />sma_order: black","date_col: 1953-11-01<br />value: 180<br />sma_order: 3<br />sma_order: black","date_col: 1953-12-01<br />value: 201<br />sma_order: 3<br />sma_order: black","date_col: 1954-01-01<br />value: 204<br />sma_order: 3<br />sma_order: black","date_col: 1954-02-01<br />value: 188<br />sma_order: 3<br />sma_order: black","date_col: 1954-03-01<br />value: 235<br />sma_order: 3<br />sma_order: black","date_col: 1954-04-01<br />value: 227<br />sma_order: 3<br />sma_order: black","date_col: 1954-05-01<br />value: 234<br />sma_order: 3<br />sma_order: black","date_col: 1954-06-01<br />value: 264<br />sma_order: 3<br />sma_order: black","date_col: 1954-07-01<br />value: 302<br />sma_order: 3<br />sma_order: black","date_col: 1954-08-01<br />value: 293<br />sma_order: 3<br />sma_order: black","date_col: 1954-09-01<br />value: 259<br />sma_order: 3<br />sma_order: black","date_col: 1954-10-01<br />value: 229<br />sma_order: 3<br />sma_order: black","date_col: 1954-11-01<br />value: 203<br />sma_order: 3<br />sma_order: black","date_col: 1954-12-01<br />value: 229<br />sma_order: 3<br />sma_order: black","date_col: 1955-01-01<br />value: 242<br />sma_order: 3<br />sma_order: black","date_col: 1955-02-01<br />value: 233<br />sma_order: 3<br />sma_order: black","date_col: 1955-03-01<br />value: 267<br />sma_order: 3<br />sma_order: black","date_col: 1955-04-01<br />value: 269<br />sma_order: 3<br />sma_order: black","date_col: 1955-05-01<br />value: 270<br />sma_order: 3<br />sma_order: black","date_col: 1955-06-01<br />value: 315<br />sma_order: 3<br />sma_order: black","date_col: 1955-07-01<br />value: 364<br />sma_order: 3<br />sma_order: black","date_col: 1955-08-01<br />value: 347<br />sma_order: 3<br />sma_order: black","date_col: 1955-09-01<br />value: 312<br />sma_order: 3<br />sma_order: black","date_col: 1955-10-01<br />value: 274<br />sma_order: 3<br />sma_order: black","date_col: 1955-11-01<br />value: 237<br />sma_order: 3<br />sma_order: black","date_col: 1955-12-01<br />value: 278<br />sma_order: 3<br />sma_order: black","date_col: 1956-01-01<br />value: 284<br />sma_order: 3<br />sma_order: black","date_col: 1956-02-01<br />value: 277<br />sma_order: 3<br />sma_order: black","date_col: 1956-03-01<br />value: 317<br />sma_order: 3<br />sma_order: black","date_col: 1956-04-01<br />value: 313<br />sma_order: 3<br />sma_order: black","date_col: 1956-05-01<br />value: 318<br />sma_order: 3<br />sma_order: black","date_col: 1956-06-01<br />value: 374<br />sma_order: 3<br />sma_order: black","date_col: 1956-07-01<br />value: 413<br />sma_order: 3<br />sma_order: black","date_col: 1956-08-01<br />value: 405<br />sma_order: 3<br />sma_order: black","date_col: 1956-09-01<br />value: 355<br />sma_order: 3<br />sma_order: black","date_col: 1956-10-01<br />value: 306<br />sma_order: 3<br />sma_order: black","date_col: 1956-11-01<br />value: 271<br />sma_order: 3<br />sma_order: black","date_col: 1956-12-01<br />value: 306<br />sma_order: 3<br />sma_order: black","date_col: 1957-01-01<br />value: 315<br />sma_order: 3<br />sma_order: black","date_col: 1957-02-01<br />value: 301<br />sma_order: 3<br />sma_order: black","date_col: 1957-03-01<br />value: 356<br />sma_order: 3<br />sma_order: black","date_col: 1957-04-01<br />value: 348<br />sma_order: 3<br />sma_order: black","date_col: 1957-05-01<br />value: 355<br />sma_order: 3<br />sma_order: black","date_col: 1957-06-01<br />value: 422<br />sma_order: 3<br />sma_order: black","date_col: 1957-07-01<br />value: 465<br />sma_order: 3<br />sma_order: black","date_col: 1957-08-01<br />value: 467<br />sma_order: 3<br />sma_order: black","date_col: 1957-09-01<br />value: 404<br />sma_order: 3<br />sma_order: black","date_col: 1957-10-01<br />value: 347<br />sma_order: 3<br />sma_order: black","date_col: 1957-11-01<br />value: 305<br />sma_order: 3<br />sma_order: black","date_col: 1957-12-01<br />value: 336<br />sma_order: 3<br />sma_order: black","date_col: 1958-01-01<br />value: 340<br />sma_order: 3<br />sma_order: black","date_col: 1958-02-01<br />value: 318<br />sma_order: 3<br />sma_order: black","date_col: 1958-03-01<br />value: 362<br />sma_order: 3<br />sma_order: black","date_col: 1958-04-01<br />value: 348<br />sma_order: 3<br />sma_order: black","date_col: 1958-05-01<br />value: 363<br />sma_order: 3<br />sma_order: black","date_col: 1958-06-01<br />value: 435<br />sma_order: 3<br />sma_order: black","date_col: 1958-07-01<br />value: 491<br />sma_order: 3<br />sma_order: black","date_col: 1958-08-01<br />value: 505<br />sma_order: 3<br />sma_order: black","date_col: 1958-09-01<br />value: 404<br />sma_order: 3<br />sma_order: black","date_col: 1958-10-01<br />value: 359<br />sma_order: 3<br />sma_order: black","date_col: 1958-11-01<br />value: 310<br />sma_order: 3<br />sma_order: black","date_col: 1958-12-01<br />value: 337<br />sma_order: 3<br />sma_order: black","date_col: 1959-01-01<br />value: 360<br />sma_order: 3<br />sma_order: black","date_col: 1959-02-01<br />value: 342<br />sma_order: 3<br />sma_order: black","date_col: 1959-03-01<br />value: 406<br />sma_order: 3<br />sma_order: black","date_col: 1959-04-01<br />value: 396<br />sma_order: 3<br />sma_order: black","date_col: 1959-05-01<br />value: 420<br />sma_order: 3<br />sma_order: black","date_col: 1959-06-01<br />value: 472<br />sma_order: 3<br />sma_order: black","date_col: 1959-07-01<br />value: 548<br />sma_order: 3<br />sma_order: black","date_col: 1959-08-01<br />value: 559<br />sma_order: 3<br />sma_order: black","date_col: 1959-09-01<br />value: 463<br />sma_order: 3<br />sma_order: black","date_col: 1959-10-01<br />value: 407<br />sma_order: 3<br />sma_order: black","date_col: 1959-11-01<br />value: 362<br />sma_order: 3<br />sma_order: black","date_col: 1959-12-01<br />value: 405<br />sma_order: 3<br />sma_order: black","date_col: 1960-01-01<br />value: 417<br />sma_order: 3<br />sma_order: black","date_col: 1960-02-01<br />value: 391<br />sma_order: 3<br />sma_order: black","date_col: 1960-03-01<br />value: 419<br />sma_order: 3<br />sma_order: black","date_col: 1960-04-01<br />value: 461<br />sma_order: 3<br />sma_order: black","date_col: 1960-05-01<br />value: 472<br />sma_order: 3<br />sma_order: black","date_col: 1960-06-01<br />value: 535<br />sma_order: 3<br />sma_order: black","date_col: 1960-07-01<br />value: 622<br />sma_order: 3<br />sma_order: black","date_col: 1960-08-01<br />value: 606<br />sma_order: 3<br />sma_order: black","date_col: 1960-09-01<br />value: 508<br />sma_order: 3<br />sma_order: black","date_col: 1960-10-01<br />value: 461<br />sma_order: 3<br />sma_order: black","date_col: 1960-11-01<br />value: 390<br />sma_order: 3<br />sma_order: black","date_col: 1960-12-01<br />value: 432<br />sma_order: 3<br />sma_order: black",null,"date_col: 1949-01-01<br />value: 112<br />sma_order: 6<br />sma_order: black","date_col: 1949-02-01<br />value: 118<br />sma_order: 6<br />sma_order: black","date_col: 1949-03-01<br />value: 132<br />sma_order: 6<br />sma_order: black","date_col: 1949-04-01<br />value: 129<br />sma_order: 6<br />sma_order: black","date_col: 1949-05-01<br />value: 121<br />sma_order: 6<br />sma_order: black","date_col: 1949-06-01<br />value: 135<br />sma_order: 6<br />sma_order: black","date_col: 1949-07-01<br />value: 148<br />sma_order: 6<br />sma_order: black","date_col: 1949-08-01<br />value: 148<br />sma_order: 6<br />sma_order: black","date_col: 1949-09-01<br />value: 136<br />sma_order: 6<br />sma_order: black","date_col: 1949-10-01<br />value: 119<br />sma_order: 6<br />sma_order: black","date_col: 1949-11-01<br />value: 104<br />sma_order: 6<br />sma_order: black","date_col: 1949-12-01<br />value: 118<br />sma_order: 6<br />sma_order: black","date_col: 1950-01-01<br />value: 115<br />sma_order: 6<br />sma_order: black","date_col: 1950-02-01<br />value: 126<br />sma_order: 6<br />sma_order: black","date_col: 1950-03-01<br />value: 141<br />sma_order: 6<br />sma_order: black","date_col: 1950-04-01<br />value: 135<br />sma_order: 6<br />sma_order: black","date_col: 1950-05-01<br />value: 125<br />sma_order: 6<br />sma_order: black","date_col: 1950-06-01<br />value: 149<br />sma_order: 6<br />sma_order: black","date_col: 1950-07-01<br />value: 170<br />sma_order: 6<br />sma_order: black","date_col: 1950-08-01<br />value: 170<br />sma_order: 6<br />sma_order: black","date_col: 1950-09-01<br />value: 158<br />sma_order: 6<br />sma_order: black","date_col: 1950-10-01<br />value: 133<br />sma_order: 6<br />sma_order: black","date_col: 1950-11-01<br />value: 114<br />sma_order: 6<br />sma_order: black","date_col: 1950-12-01<br />value: 140<br />sma_order: 6<br />sma_order: black","date_col: 1951-01-01<br />value: 145<br />sma_order: 6<br />sma_order: black","date_col: 1951-02-01<br />value: 150<br />sma_order: 6<br />sma_order: black","date_col: 1951-03-01<br />value: 178<br />sma_order: 6<br />sma_order: black","date_col: 1951-04-01<br />value: 163<br />sma_order: 6<br />sma_order: black","date_col: 1951-05-01<br />value: 172<br />sma_order: 6<br />sma_order: black","date_col: 1951-06-01<br />value: 178<br />sma_order: 6<br />sma_order: black","date_col: 1951-07-01<br />value: 199<br />sma_order: 6<br />sma_order: black","date_col: 1951-08-01<br />value: 199<br />sma_order: 6<br />sma_order: black","date_col: 1951-09-01<br />value: 184<br />sma_order: 6<br />sma_order: black","date_col: 1951-10-01<br />value: 162<br />sma_order: 6<br />sma_order: black","date_col: 1951-11-01<br />value: 146<br />sma_order: 6<br />sma_order: black","date_col: 1951-12-01<br />value: 166<br />sma_order: 6<br />sma_order: black","date_col: 1952-01-01<br />value: 171<br />sma_order: 6<br />sma_order: black","date_col: 1952-02-01<br />value: 180<br />sma_order: 6<br />sma_order: black","date_col: 1952-03-01<br />value: 193<br />sma_order: 6<br />sma_order: black","date_col: 1952-04-01<br />value: 181<br />sma_order: 6<br />sma_order: black","date_col: 1952-05-01<br />value: 183<br />sma_order: 6<br />sma_order: black","date_col: 1952-06-01<br />value: 218<br />sma_order: 6<br />sma_order: black","date_col: 1952-07-01<br />value: 230<br />sma_order: 6<br />sma_order: black","date_col: 1952-08-01<br />value: 242<br />sma_order: 6<br />sma_order: black","date_col: 1952-09-01<br />value: 209<br />sma_order: 6<br />sma_order: black","date_col: 1952-10-01<br />value: 191<br />sma_order: 6<br />sma_order: black","date_col: 1952-11-01<br />value: 172<br />sma_order: 6<br />sma_order: black","date_col: 1952-12-01<br />value: 194<br />sma_order: 6<br />sma_order: black","date_col: 1953-01-01<br />value: 196<br />sma_order: 6<br />sma_order: black","date_col: 1953-02-01<br />value: 196<br />sma_order: 6<br />sma_order: black","date_col: 1953-03-01<br />value: 236<br />sma_order: 6<br />sma_order: black","date_col: 1953-04-01<br />value: 235<br />sma_order: 6<br />sma_order: black","date_col: 1953-05-01<br />value: 229<br />sma_order: 6<br />sma_order: black","date_col: 1953-06-01<br />value: 243<br />sma_order: 6<br />sma_order: black","date_col: 1953-07-01<br />value: 264<br />sma_order: 6<br />sma_order: black","date_col: 1953-08-01<br />value: 272<br />sma_order: 6<br />sma_order: black","date_col: 1953-09-01<br />value: 237<br />sma_order: 6<br />sma_order: black","date_col: 1953-10-01<br />value: 211<br />sma_order: 6<br />sma_order: black","date_col: 1953-11-01<br />value: 180<br />sma_order: 6<br />sma_order: black","date_col: 1953-12-01<br />value: 201<br />sma_order: 6<br />sma_order: black","date_col: 1954-01-01<br />value: 204<br />sma_order: 6<br />sma_order: black","date_col: 1954-02-01<br />value: 188<br />sma_order: 6<br />sma_order: black","date_col: 1954-03-01<br />value: 235<br />sma_order: 6<br />sma_order: black","date_col: 1954-04-01<br />value: 227<br />sma_order: 6<br />sma_order: black","date_col: 1954-05-01<br />value: 234<br />sma_order: 6<br />sma_order: black","date_col: 1954-06-01<br />value: 264<br />sma_order: 6<br />sma_order: black","date_col: 1954-07-01<br />value: 302<br />sma_order: 6<br />sma_order: black","date_col: 1954-08-01<br />value: 293<br />sma_order: 6<br />sma_order: black","date_col: 1954-09-01<br />value: 259<br />sma_order: 6<br />sma_order: black","date_col: 1954-10-01<br />value: 229<br />sma_order: 6<br />sma_order: black","date_col: 1954-11-01<br />value: 203<br />sma_order: 6<br />sma_order: black","date_col: 1954-12-01<br />value: 229<br />sma_order: 6<br />sma_order: black","date_col: 1955-01-01<br />value: 242<br />sma_order: 6<br />sma_order: black","date_col: 1955-02-01<br />value: 233<br />sma_order: 6<br />sma_order: black","date_col: 1955-03-01<br />value: 267<br />sma_order: 6<br />sma_order: black","date_col: 1955-04-01<br />value: 269<br />sma_order: 6<br />sma_order: black","date_col: 1955-05-01<br />value: 270<br />sma_order: 6<br />sma_order: black","date_col: 1955-06-01<br />value: 315<br />sma_order: 6<br />sma_order: black","date_col: 1955-07-01<br />value: 364<br />sma_order: 6<br />sma_order: black","date_col: 1955-08-01<br />value: 347<br />sma_order: 6<br />sma_order: black","date_col: 1955-09-01<br />value: 312<br />sma_order: 6<br />sma_order: black","date_col: 1955-10-01<br />value: 274<br />sma_order: 6<br />sma_order: black","date_col: 1955-11-01<br />value: 237<br />sma_order: 6<br />sma_order: black","date_col: 1955-12-01<br />value: 278<br />sma_order: 6<br />sma_order: black","date_col: 1956-01-01<br />value: 284<br />sma_order: 6<br />sma_order: black","date_col: 1956-02-01<br />value: 277<br />sma_order: 6<br />sma_order: black","date_col: 1956-03-01<br />value: 317<br />sma_order: 6<br />sma_order: black","date_col: 1956-04-01<br />value: 313<br />sma_order: 6<br />sma_order: black","date_col: 1956-05-01<br />value: 318<br />sma_order: 6<br />sma_order: black","date_col: 1956-06-01<br />value: 374<br />sma_order: 6<br />sma_order: black","date_col: 1956-07-01<br />value: 413<br />sma_order: 6<br />sma_order: black","date_col: 1956-08-01<br />value: 405<br />sma_order: 6<br />sma_order: black","date_col: 1956-09-01<br />value: 355<br />sma_order: 6<br />sma_order: black","date_col: 1956-10-01<br />value: 306<br />sma_order: 6<br />sma_order: black","date_col: 1956-11-01<br />value: 271<br />sma_order: 6<br />sma_order: black","date_col: 1956-12-01<br />value: 306<br />sma_order: 6<br />sma_order: black","date_col: 1957-01-01<br />value: 315<br />sma_order: 6<br />sma_order: black","date_col: 1957-02-01<br />value: 301<br />sma_order: 6<br />sma_order: black","date_col: 1957-03-01<br />value: 356<br />sma_order: 6<br />sma_order: black","date_col: 1957-04-01<br />value: 348<br />sma_order: 6<br />sma_order: black","date_col: 1957-05-01<br />value: 355<br />sma_order: 6<br />sma_order: black","date_col: 1957-06-01<br />value: 422<br />sma_order: 6<br />sma_order: black","date_col: 1957-07-01<br />value: 465<br />sma_order: 6<br />sma_order: black","date_col: 1957-08-01<br />value: 467<br />sma_order: 6<br />sma_order: black","date_col: 1957-09-01<br />value: 404<br />sma_order: 6<br />sma_order: black","date_col: 1957-10-01<br />value: 347<br />sma_order: 6<br />sma_order: black","date_col: 1957-11-01<br />value: 305<br />sma_order: 6<br />sma_order: black","date_col: 1957-12-01<br />value: 336<br />sma_order: 6<br />sma_order: black","date_col: 1958-01-01<br />value: 340<br />sma_order: 6<br />sma_order: black","date_col: 1958-02-01<br />value: 318<br />sma_order: 6<br />sma_order: black","date_col: 1958-03-01<br />value: 362<br />sma_order: 6<br />sma_order: black","date_col: 1958-04-01<br />value: 348<br />sma_order: 6<br />sma_order: black","date_col: 1958-05-01<br />value: 363<br />sma_order: 6<br />sma_order: black","date_col: 1958-06-01<br />value: 435<br />sma_order: 6<br />sma_order: black","date_col: 1958-07-01<br />value: 491<br />sma_order: 6<br />sma_order: black","date_col: 1958-08-01<br />value: 505<br />sma_order: 6<br />sma_order: black","date_col: 1958-09-01<br />value: 404<br />sma_order: 6<br />sma_order: black","date_col: 1958-10-01<br />value: 359<br />sma_order: 6<br />sma_order: black","date_col: 1958-11-01<br />value: 310<br />sma_order: 6<br />sma_order: black","date_col: 1958-12-01<br />value: 337<br />sma_order: 6<br />sma_order: black","date_col: 1959-01-01<br />value: 360<br />sma_order: 6<br />sma_order: black","date_col: 1959-02-01<br />value: 342<br />sma_order: 6<br />sma_order: black","date_col: 1959-03-01<br />value: 406<br />sma_order: 6<br />sma_order: black","date_col: 1959-04-01<br />value: 396<br />sma_order: 6<br />sma_order: black","date_col: 1959-05-01<br />value: 420<br />sma_order: 6<br />sma_order: black","date_col: 1959-06-01<br />value: 472<br />sma_order: 6<br />sma_order: black","date_col: 1959-07-01<br />value: 548<br />sma_order: 6<br />sma_order: black","date_col: 1959-08-01<br />value: 559<br />sma_order: 6<br />sma_order: black","date_col: 1959-09-01<br />value: 463<br />sma_order: 6<br />sma_order: black","date_col: 1959-10-01<br />value: 407<br />sma_order: 6<br />sma_order: black","date_col: 1959-11-01<br />value: 362<br />sma_order: 6<br />sma_order: black","date_col: 1959-12-01<br />value: 405<br />sma_order: 6<br />sma_order: black","date_col: 1960-01-01<br />value: 417<br />sma_order: 6<br />sma_order: black","date_col: 1960-02-01<br />value: 391<br />sma_order: 6<br />sma_order: black","date_col: 1960-03-01<br />value: 419<br />sma_order: 6<br />sma_order: black","date_col: 1960-04-01<br />value: 461<br />sma_order: 6<br />sma_order: black","date_col: 1960-05-01<br />value: 472<br />sma_order: 6<br />sma_order: black","date_col: 1960-06-01<br />value: 535<br />sma_order: 6<br />sma_order: black","date_col: 1960-07-01<br />value: 622<br />sma_order: 6<br />sma_order: black","date_col: 1960-08-01<br />value: 606<br />sma_order: 6<br />sma_order: black","date_col: 1960-09-01<br />value: 508<br />sma_order: 6<br />sma_order: black","date_col: 1960-10-01<br />value: 461<br />sma_order: 6<br />sma_order: black","date_col: 1960-11-01<br />value: 390<br />sma_order: 6<br />sma_order: black","date_col: 1960-12-01<br />value: 432<br />sma_order: 6<br />sma_order: black"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-7670,-7639,-7611,-7580,-7550,-7519,-7489,-7458,-7427,-7397,-7366,-7336,-7305,-7274,-7246,-7215,-7185,-7154,-7124,-7093,-7062,-7032,-7001,-6971,-6940,-6909,-6881,-6850,-6820,-6789,-6759,-6728,-6697,-6667,-6636,-6606,-6575,-6544,-6515,-6484,-6454,-6423,-6393,-6362,-6331,-6301,-6270,-6240,-6209,-6178,-6150,-6119,-6089,-6058,-6028,-5997,-5966,-5936,-5905,-5875,-5844,-5813,-5785,-5754,-5724,-5693,-5663,-5632,-5601,-5571,-5540,-5510,-5479,-5448,-5420,-5389,-5359,-5328,-5298,-5267,-5236,-5206,-5175,-5145,-5114,-5083,-5054,-5023,-4993,-4962,-4932,-4901,-4870,-4840,-4809,-4779,-4748,-4717,-4689,-4658,-4628,-4597,-4567,-4536,-4505,-4475,-4444,-4414,-4383,-4352,-4324,-4293,-4263,-4232,-4202,-4171,-4140,-4110,-4079,-4049,-4018,-3987,-3959,-3928,-3898,-3867,-3837,-3806,-3775,-3745,-3714,-3684,-3653,-3622,-3593,-3562,-3532,-3501,-3471,-3440,-3409,-3379,-3348,-3318],"y":[null,120.666666666667,126.333333333333,127.333333333333,128.333333333333,134.666666666667,143.666666666667,144,134.333333333333,119.666666666667,113.666666666667,112.333333333333,119.666666666667,127.333333333333,134,133.666666666667,136.333333333333,148,163,166,153.666666666667,135,129,133,145,157.666666666667,163.666666666667,171,171,183,192,194,181.666666666667,164,158,161,172.333333333333,181.333333333333,184.666666666667,185.666666666667,194,210.333333333333,230,227,214,190.666666666667,185.666666666667,187.333333333333,195.333333333333,209.333333333333,222.333333333333,233.333333333333,235.666666666667,245.333333333333,259.666666666667,257.666666666667,240,209.333333333333,197.333333333333,195,197.666666666667,209,216.666666666667,232,241.666666666667,266.666666666667,286.333333333333,284.666666666667,260.333333333333,230.333333333333,220.333333333333,224.666666666667,234.666666666667,247.333333333333,256.333333333333,268.666666666667,284.666666666667,316.333333333333,342,341,311,274.333333333333,263,266.333333333333,279.666666666667,292.666666666667,302.333333333333,316,335,368.333333333333,397.333333333333,391,355.333333333333,310.666666666667,294.333333333333,297.333333333333,307.333333333333,324,335,353,375,414,451.333333333333,445.333333333333,406,352,329.333333333333,327,331.333333333333,340,342.666666666667,357.666666666667,382,429.666666666667,477,466.666666666667,422.666666666667,357.666666666667,335.333333333333,335.666666666667,346.333333333333,369.333333333333,381.333333333333,407.333333333333,429.333333333333,480,526.333333333333,523.333333333333,476.333333333333,410.666666666667,391.333333333333,394.666666666667,404.333333333333,409,423.666666666667,450.666666666667,489.333333333333,543,587.666666666667,578.666666666667,525,453,427.666666666667,null],"text":["date_col: 1949-01-01<br />sma_value:       NA<br />sma_order: 3<br />sma_order: 3","date_col: 1949-02-01<br />sma_value: 120.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1949-03-01<br />sma_value: 126.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1949-04-01<br />sma_value: 127.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1949-05-01<br />sma_value: 128.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1949-06-01<br />sma_value: 134.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1949-07-01<br />sma_value: 143.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1949-08-01<br />sma_value: 144.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1949-09-01<br />sma_value: 134.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1949-10-01<br />sma_value: 119.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1949-11-01<br />sma_value: 113.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1949-12-01<br />sma_value: 112.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1950-01-01<br />sma_value: 119.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1950-02-01<br />sma_value: 127.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1950-03-01<br />sma_value: 134.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-04-01<br />sma_value: 133.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1950-05-01<br />sma_value: 136.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1950-06-01<br />sma_value: 148.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-07-01<br />sma_value: 163.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-08-01<br />sma_value: 166.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-09-01<br />sma_value: 153.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1950-10-01<br />sma_value: 135.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-11-01<br />sma_value: 129.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1950-12-01<br />sma_value: 133.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-01-01<br />sma_value: 145.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-02-01<br />sma_value: 157.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1951-03-01<br />sma_value: 163.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1951-04-01<br />sma_value: 171.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-05-01<br />sma_value: 171.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-06-01<br />sma_value: 183.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-07-01<br />sma_value: 192.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-08-01<br />sma_value: 194.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-09-01<br />sma_value: 181.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1951-10-01<br />sma_value: 164.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-11-01<br />sma_value: 158.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1951-12-01<br />sma_value: 161.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1952-01-01<br />sma_value: 172.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1952-02-01<br />sma_value: 181.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1952-03-01<br />sma_value: 184.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1952-04-01<br />sma_value: 185.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1952-05-01<br />sma_value: 194.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1952-06-01<br />sma_value: 210.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1952-07-01<br />sma_value: 230.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1952-08-01<br />sma_value: 227.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1952-09-01<br />sma_value: 214.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1952-10-01<br />sma_value: 190.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1952-11-01<br />sma_value: 185.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1952-12-01<br />sma_value: 187.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-01-01<br />sma_value: 195.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-02-01<br />sma_value: 209.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-03-01<br />sma_value: 222.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-04-01<br />sma_value: 233.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-05-01<br />sma_value: 235.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1953-06-01<br />sma_value: 245.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-07-01<br />sma_value: 259.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1953-08-01<br />sma_value: 257.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1953-09-01<br />sma_value: 240.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1953-10-01<br />sma_value: 209.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-11-01<br />sma_value: 197.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1953-12-01<br />sma_value: 195.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1954-01-01<br />sma_value: 197.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1954-02-01<br />sma_value: 209.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1954-03-01<br />sma_value: 216.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1954-04-01<br />sma_value: 232.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1954-05-01<br />sma_value: 241.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1954-06-01<br />sma_value: 266.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1954-07-01<br />sma_value: 286.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1954-08-01<br />sma_value: 284.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1954-09-01<br />sma_value: 260.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1954-10-01<br />sma_value: 230.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1954-11-01<br />sma_value: 220.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1954-12-01<br />sma_value: 224.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1955-01-01<br />sma_value: 234.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1955-02-01<br />sma_value: 247.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1955-03-01<br />sma_value: 256.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1955-04-01<br />sma_value: 268.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1955-05-01<br />sma_value: 284.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1955-06-01<br />sma_value: 316.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1955-07-01<br />sma_value: 342.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1955-08-01<br />sma_value: 341.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1955-09-01<br />sma_value: 311.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1955-10-01<br />sma_value: 274.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1955-11-01<br />sma_value: 263.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1955-12-01<br />sma_value: 266.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-01-01<br />sma_value: 279.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1956-02-01<br />sma_value: 292.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1956-03-01<br />sma_value: 302.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-04-01<br />sma_value: 316.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1956-05-01<br />sma_value: 335.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1956-06-01<br />sma_value: 368.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-07-01<br />sma_value: 397.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-08-01<br />sma_value: 391.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1956-09-01<br />sma_value: 355.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-10-01<br />sma_value: 310.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1956-11-01<br />sma_value: 294.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1956-12-01<br />sma_value: 297.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1957-01-01<br />sma_value: 307.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1957-02-01<br />sma_value: 324.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-03-01<br />sma_value: 335.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-04-01<br />sma_value: 353.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-05-01<br />sma_value: 375.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-06-01<br />sma_value: 414.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-07-01<br />sma_value: 451.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1957-08-01<br />sma_value: 445.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1957-09-01<br />sma_value: 406.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-10-01<br />sma_value: 352.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1957-11-01<br />sma_value: 329.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1957-12-01<br />sma_value: 327.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1958-01-01<br />sma_value: 331.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1958-02-01<br />sma_value: 340.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1958-03-01<br />sma_value: 342.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-04-01<br />sma_value: 357.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-05-01<br />sma_value: 382.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1958-06-01<br />sma_value: 429.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-07-01<br />sma_value: 477.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1958-08-01<br />sma_value: 466.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-09-01<br />sma_value: 422.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-10-01<br />sma_value: 357.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1958-11-01<br />sma_value: 335.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1958-12-01<br />sma_value: 335.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1959-01-01<br />sma_value: 346.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-02-01<br />sma_value: 369.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-03-01<br />sma_value: 381.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-04-01<br />sma_value: 407.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-05-01<br />sma_value: 429.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-06-01<br />sma_value: 480.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1959-07-01<br />sma_value: 526.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-08-01<br />sma_value: 523.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-09-01<br />sma_value: 476.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-10-01<br />sma_value: 410.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1959-11-01<br />sma_value: 391.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1959-12-01<br />sma_value: 394.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-01-01<br />sma_value: 404.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1960-02-01<br />sma_value: 409.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1960-03-01<br />sma_value: 423.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-04-01<br />sma_value: 450.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-05-01<br />sma_value: 489.3333<br />sma_order: 3<br />sma_order: 3","date_col: 1960-06-01<br />sma_value: 543.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1960-07-01<br />sma_value: 587.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-08-01<br />sma_value: 578.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-09-01<br />sma_value: 525.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1960-10-01<br />sma_value: 453.0000<br />sma_order: 3<br />sma_order: 3","date_col: 1960-11-01<br />sma_value: 427.6667<br />sma_order: 3<br />sma_order: 3","date_col: 1960-12-01<br />sma_value:       NA<br />sma_order: 3<br />sma_order: 3"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(248,118,109,1)","dash":"solid"},"hoveron":"points","name":"3","legendgroup":"3","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-7670,-7639,-7611,-7580,-7550,-7519,-7489,-7458,-7427,-7397,-7366,-7336,-7305,-7274,-7246,-7215,-7185,-7154,-7124,-7093,-7062,-7032,-7001,-6971,-6940,-6909,-6881,-6850,-6820,-6789,-6759,-6728,-6697,-6667,-6636,-6606,-6575,-6544,-6515,-6484,-6454,-6423,-6393,-6362,-6331,-6301,-6270,-6240,-6209,-6178,-6150,-6119,-6089,-6058,-6028,-5997,-5966,-5936,-5905,-5875,-5844,-5813,-5785,-5754,-5724,-5693,-5663,-5632,-5601,-5571,-5540,-5510,-5479,-5448,-5420,-5389,-5359,-5328,-5298,-5267,-5236,-5206,-5175,-5145,-5114,-5083,-5054,-5023,-4993,-4962,-4932,-4901,-4870,-4840,-4809,-4779,-4748,-4717,-4689,-4658,-4628,-4597,-4567,-4536,-4505,-4475,-4444,-4414,-4383,-4352,-4324,-4293,-4263,-4232,-4202,-4171,-4140,-4110,-4079,-4049,-4018,-3987,-3959,-3928,-3898,-3867,-3837,-3806,-3775,-3745,-3714,-3684,-3653,-3622,-3593,-3562,-3532,-3501,-3471,-3440,-3409,-3379,-3348,-3318],"y":[null,null,124.5,130.5,135.5,136.166666666667,134.5,131.666666666667,128.833333333333,123.333333333333,119.666666666667,120.5,123.166666666667,126.666666666667,131.833333333333,141,148.333333333333,151.166666666667,150.833333333333,149,147.5,143.333333333333,140,143.333333333333,148.333333333333,158,164.333333333333,173.333333333333,181.5,182.5,182.333333333333,178,176,171.333333333333,168.166666666667,169.666666666667,172.833333333333,179,187.666666666667,197.5,207.833333333333,210.5,212.166666666667,210.333333333333,206.333333333333,200.666666666667,193,197.5,204.833333333333,214.333333333333,222.5,233.833333333333,246.5,246.666666666667,242.666666666667,234.5,227.5,217.5,203.5,203.166666666667,205.833333333333,214.833333333333,225.333333333333,241.666666666667,259.166666666667,263.166666666667,263.5,258.333333333333,252.5,242.5,232.5,233.833333333333,240.5,251.666666666667,266,286.333333333333,305.333333333333,312.833333333333,313.666666666667,308.166666666667,302,288.666666666667,277,277.833333333333,284.333333333333,297.833333333333,313.833333333333,335.333333333333,356.666666666667,363,361.833333333333,354,342.666666666667,326.333333333333,309,309.166666666667,316.166666666667,330.166666666667,349.5,374.5,402.166666666667,410.166666666667,410,401.666666666667,387.333333333333,366.5,341.666666666667,334.666666666667,334.833333333333,344.5,361,386.166666666667,417.333333333333,424.333333333333,426.166666666667,417.333333333333,401,379.166666666667,352,352.333333333333,358.5,376.833333333333,399.333333333333,430.666666666667,466.833333333333,476.333333333333,478.166666666667,468.5,457.333333333333,435.5,407.5,400.166666666667,409.166666666667,427.5,449.166666666667,483.333333333333,519.166666666667,534,534,520.333333333333,503.166666666667,null,null,null],"text":["date_col: 1949-01-01<br />sma_value:       NA<br />sma_order: 6<br />sma_order: 6","date_col: 1949-02-01<br />sma_value:       NA<br />sma_order: 6<br />sma_order: 6","date_col: 1949-03-01<br />sma_value: 124.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1949-04-01<br />sma_value: 130.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1949-05-01<br />sma_value: 135.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1949-06-01<br />sma_value: 136.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1949-07-01<br />sma_value: 134.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1949-08-01<br />sma_value: 131.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1949-09-01<br />sma_value: 128.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1949-10-01<br />sma_value: 123.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1949-11-01<br />sma_value: 119.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1949-12-01<br />sma_value: 120.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1950-01-01<br />sma_value: 123.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1950-02-01<br />sma_value: 126.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1950-03-01<br />sma_value: 131.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1950-04-01<br />sma_value: 141.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1950-05-01<br />sma_value: 148.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1950-06-01<br />sma_value: 151.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1950-07-01<br />sma_value: 150.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1950-08-01<br />sma_value: 149.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1950-09-01<br />sma_value: 147.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1950-10-01<br />sma_value: 143.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1950-11-01<br />sma_value: 140.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1950-12-01<br />sma_value: 143.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-01-01<br />sma_value: 148.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-02-01<br />sma_value: 158.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1951-03-01<br />sma_value: 164.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-04-01<br />sma_value: 173.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-05-01<br />sma_value: 181.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1951-06-01<br />sma_value: 182.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1951-07-01<br />sma_value: 182.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-08-01<br />sma_value: 178.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1951-09-01<br />sma_value: 176.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1951-10-01<br />sma_value: 171.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1951-11-01<br />sma_value: 168.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1951-12-01<br />sma_value: 169.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1952-01-01<br />sma_value: 172.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1952-02-01<br />sma_value: 179.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1952-03-01<br />sma_value: 187.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1952-04-01<br />sma_value: 197.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1952-05-01<br />sma_value: 207.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1952-06-01<br />sma_value: 210.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1952-07-01<br />sma_value: 212.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1952-08-01<br />sma_value: 210.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1952-09-01<br />sma_value: 206.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1952-10-01<br />sma_value: 200.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1952-11-01<br />sma_value: 193.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1952-12-01<br />sma_value: 197.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-01-01<br />sma_value: 204.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1953-02-01<br />sma_value: 214.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1953-03-01<br />sma_value: 222.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-04-01<br />sma_value: 233.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1953-05-01<br />sma_value: 246.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-06-01<br />sma_value: 246.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1953-07-01<br />sma_value: 242.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1953-08-01<br />sma_value: 234.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-09-01<br />sma_value: 227.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-10-01<br />sma_value: 217.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-11-01<br />sma_value: 203.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1953-12-01<br />sma_value: 203.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1954-01-01<br />sma_value: 205.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1954-02-01<br />sma_value: 214.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1954-03-01<br />sma_value: 225.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1954-04-01<br />sma_value: 241.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1954-05-01<br />sma_value: 259.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1954-06-01<br />sma_value: 263.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1954-07-01<br />sma_value: 263.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1954-08-01<br />sma_value: 258.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1954-09-01<br />sma_value: 252.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1954-10-01<br />sma_value: 242.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1954-11-01<br />sma_value: 232.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1954-12-01<br />sma_value: 233.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1955-01-01<br />sma_value: 240.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1955-02-01<br />sma_value: 251.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1955-03-01<br />sma_value: 266.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1955-04-01<br />sma_value: 286.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1955-05-01<br />sma_value: 305.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1955-06-01<br />sma_value: 312.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1955-07-01<br />sma_value: 313.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1955-08-01<br />sma_value: 308.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1955-09-01<br />sma_value: 302.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1955-10-01<br />sma_value: 288.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1955-11-01<br />sma_value: 277.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1955-12-01<br />sma_value: 277.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-01-01<br />sma_value: 284.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-02-01<br />sma_value: 297.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-03-01<br />sma_value: 313.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-04-01<br />sma_value: 335.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-05-01<br />sma_value: 356.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1956-06-01<br />sma_value: 363.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1956-07-01<br />sma_value: 361.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-08-01<br />sma_value: 354.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1956-09-01<br />sma_value: 342.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1956-10-01<br />sma_value: 326.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1956-11-01<br />sma_value: 309.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1956-12-01<br />sma_value: 309.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-01-01<br />sma_value: 316.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-02-01<br />sma_value: 330.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-03-01<br />sma_value: 349.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1957-04-01<br />sma_value: 374.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1957-05-01<br />sma_value: 402.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-06-01<br />sma_value: 410.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-07-01<br />sma_value: 410.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1957-08-01<br />sma_value: 401.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-09-01<br />sma_value: 387.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1957-10-01<br />sma_value: 366.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1957-11-01<br />sma_value: 341.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1957-12-01<br />sma_value: 334.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1958-01-01<br />sma_value: 334.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1958-02-01<br />sma_value: 344.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1958-03-01<br />sma_value: 361.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1958-04-01<br />sma_value: 386.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1958-05-01<br />sma_value: 417.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1958-06-01<br />sma_value: 424.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1958-07-01<br />sma_value: 426.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1958-08-01<br />sma_value: 417.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1958-09-01<br />sma_value: 401.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1958-10-01<br />sma_value: 379.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1958-11-01<br />sma_value: 352.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1958-12-01<br />sma_value: 352.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-01-01<br />sma_value: 358.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1959-02-01<br />sma_value: 376.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-03-01<br />sma_value: 399.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-04-01<br />sma_value: 430.6667<br />sma_order: 6<br />sma_order: 6","date_col: 1959-05-01<br />sma_value: 466.8333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-06-01<br />sma_value: 476.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-07-01<br />sma_value: 478.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1959-08-01<br />sma_value: 468.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1959-09-01<br />sma_value: 457.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1959-10-01<br />sma_value: 435.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1959-11-01<br />sma_value: 407.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1959-12-01<br />sma_value: 400.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1960-01-01<br />sma_value: 409.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1960-02-01<br />sma_value: 427.5000<br />sma_order: 6<br />sma_order: 6","date_col: 1960-03-01<br />sma_value: 449.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1960-04-01<br />sma_value: 483.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1960-05-01<br />sma_value: 519.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1960-06-01<br />sma_value: 534.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1960-07-01<br />sma_value: 534.0000<br />sma_order: 6<br />sma_order: 6","date_col: 1960-08-01<br />sma_value: 520.3333<br />sma_order: 6<br />sma_order: 6","date_col: 1960-09-01<br />sma_value: 503.1667<br />sma_order: 6<br />sma_order: 6","date_col: 1960-10-01<br />sma_value:       NA<br />sma_order: 6<br />sma_order: 6","date_col: 1960-11-01<br />sma_value:       NA<br />sma_order: 6<br />sma_order: 6","date_col: 1960-12-01<br />sma_value:       NA<br />sma_order: 6<br />sma_order: 6"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,191,196,1)","dash":"solid"},"hoveron":"points","name":"6","legendgroup":"6","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"SMA Plot","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-7887.6,-3100.4],"tickmode":"array","ticktext":["1950","1955","1960"],"tickvals":[-7305,-5479,-3653],"categoryorder":"array","categoryarray":["1950","1955","1960"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Time","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[78.1,647.9],"tickmode":"array","ticktext":["200","400","600"],"tickvals":[200,400,600],"categoryorder":"array","categoryarray":["200","400","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Value","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":true,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"title":{"text":"SMA Order","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"654102b3247":{"x":{},"y":{},"colour":{},"type":"scatter"},"65466e93fb4":{"x":{},"y":{},"colour":{}}},"cur_data":"654102b3247","visdat":{"654102b3247":["function (y) ","x"],"65466e93fb4":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'alternate';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } 
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
