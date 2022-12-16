@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2022-12-16">
+
+<title>Steve’s Data Tips and Tricks - Model Scedacity Plots with {healthyR.ts}</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+<script src="../../site_libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.10.1/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - Model Scedacity Plots with {healthyR.ts}">
+<meta property="og:description" content="Scedacity plots are a useful tool for evaluating the performance of time series models and identifying trends or patterns in the data.">
+<meta property="og:site-name" content="Steve's Data Tips and Tricks">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Model Scedacity Plots with {healthyR.ts}">
+<meta name="twitter:description" content="Scedacity plots are a useful tool for evaluating the performance of time series models and identifying trends or patterns in the data.">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/steveondata/"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"><i class="bi bi-telegram" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="http://feeds.feedburner.com/RBloggers"><i class="bi bi-rss" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"><i class="bi bi-rss" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-bloggers.com/"><i class="bi bi-book" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div class="quarto-toggle-container">
+                  <a href="" class="quarto-color-scheme-toggle nav-link" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+              </div>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Model Scedacity Plots with {healthyR.ts}</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+                <div class="quarto-category">timeseries</div>
+                <div class="quarto-category">healthyrts</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 16, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Scedacity plots are a useful tool for evaluating the performance of time series models and identifying trends or patterns in the data. They are a type of scatter plot that compares the predicted values produced by a model to the observed values in the data, with a diagonal reference line indicating perfect agreement between the two.</p>
+<p>The <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> package in R provides a convenient function for creating scedacity plots for time series data, called <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_scedacity_scatter_plot.html"><code>ts_scedacity_scatter_plot()</code></a>. This function takes as input a calibration tibble which you would get from using the <a href="https://business-science.github.io/modeltime/"><code>{modeltime}</code></a> library, and produces a scedacity plot showing the predicted values against the observed values.</p>
+<p>One of the main benefits of using a scedacity plot is that it allows you to visualize the accuracy of the model’s predictions. If the points on the plot fall close to the reference line, it indicates that the model is able to accurately predict the values in the data. On the other hand, if the points are scattered far from the reference line, it suggests that the model is not performing well and may need to be improved or refined.</p>
+<p>In addition to evaluating the accuracy of the model, scedacity plots can also be used to identify trends or patterns in the data. For example, if there is a clear upward or downward trend in the points on the plot, it may indicate that the model is over- or under-estimating the values in the data. By identifying these trends, you can adjust the model or try different approaches to improve its performance.</p>
+<p>Overall, scedacity plots are a useful tool for evaluating the performance of time series models and identifying trends or patterns in the data. The <code>ts_scedacity_scatter_plot()</code> function in the <code>{healthyR.ts}</code> package makes it easy to create these plots and gain insights into the performance of your time series models.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Let’s take a look at the full function call.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ts_scedacity_scatter_plot</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  .calibration_tbl,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">.model_id =</span> <span class="cn">NULL</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">.interactive =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s take a look at the arguments that get provided to the parameters.</p>
+<ul>
+<li><code>.calibration_tbl</code> - A calibrated modeltime table.</li>
+<li><code>.model_id</code> - The id of a particular model from a calibration tibble. If there are multiple models in the tibble and this remains NULL then the plot will be returned using <code>ggplot2::facet_grid(~ .model_id)</code></li>
+<li><code>.interactive</code> - A boolean with a default value of FALSE. TRUE will produce an interactive plotly plot.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Now for an example.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(healthyR.ts)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(timetk)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modeltime)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rsample)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(workflows)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(parsnip)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(recipes)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>data_tbl <span class="ot">&lt;-</span> <span class="fu">ts_to_tbl</span>(AirPassengers) <span class="sc">%&gt;%</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>index)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> <span class="fu">time_series_split</span>(</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  data_tbl,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">date_var =</span> date_col,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">assess =</span> <span class="st">"12 months"</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">cumulative =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>rec_obj <span class="ot">&lt;-</span> <span class="fu">recipe</span>(value <span class="sc">~</span> ., <span class="fu">training</span>(splits))</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>model_spec_arima <span class="ot">&lt;-</span> <span class="fu">arima_reg</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="at">engine =</span> <span class="st">"auto_arima"</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>model_spec_mars <span class="ot">&lt;-</span> <span class="fu">mars</span>(<span class="at">mode =</span> <span class="st">"regression"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"earth"</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>wflw_fit_arima <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rec_obj) <span class="sc">%&gt;%</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(model_spec_arima) <span class="sc">%&gt;%</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="fu">training</span>(splits))</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>wflw_fit_mars <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rec_obj) <span class="sc">%&gt;%</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(model_spec_mars) <span class="sc">%&gt;%</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="fu">training</span>(splits))</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>model_tbl <span class="ot">&lt;-</span> <span class="fu">modeltime_table</span>(wflw_fit_arima, wflw_fit_mars)</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>calibration_tbl <span class="ot">&lt;-</span> model_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">modeltime_calibrate</span>(<span class="at">new_data =</span> <span class="fu">testing</span>(splits))</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="fu">ts_scedacity_scatter_plot</span>(calibration_tbl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/ex1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now the interactive plot.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ts_scedacity_scatter_plot</span>(calibration_tbl, <span class="at">.interactive =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="htmlwidget-05cae548958d4409b812" style="width:100%;height:464px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-05cae548958d4409b812">{"x":{"data":[{"x":[424.109893893549,407.055701738514,470.825745933938,460.881655463913,484.868062088665,536.871367068168,612.870563523109,623.87075889033,527.870711390379,471.87072293912,426.870720131255,469.870720813936],"y":[-7.10989389354904,-16.0557017385145,-51.8257459339377,0.11834453608742,-12.8680620886648,-1.87136706816841,9.12943647689099,-17.8707588903303,-19.870711390379,-10.8707229391197,-36.8707201312554,-37.870720813936],"text":[".prediction: 424.1099<br />.residuals:  -7.1098939<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 407.0557<br />.residuals: -16.0557017<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 470.8257<br />.residuals: -51.8257459<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 460.8817<br />.residuals:   0.1183445<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 484.8681<br />.residuals: -12.8680621<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 536.8714<br />.residuals:  -1.8713671<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 612.8706<br />.residuals:   9.1294365<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 623.8708<br />.residuals: -17.8707589<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 527.8707<br />.residuals: -19.8707114<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 471.8707<br />.residuals: -10.8707229<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 426.8707<br />.residuals: -36.8707201<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 469.8707<br />.residuals: -37.8707208<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(248,118,109,1)","opacity":0.312,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","name":"ARIMA(1,1,0)(0,1,0)[12]","legendgroup":"ARIMA(1,1,0)(0,1,0)[12]","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[448.020509236397,451.067808901331,453.918508587881,456.965808252814,459.914807928556,462.96210759349,465.911107269232,468.958406934165,472.005706599098,474.95470627484,478.002005939773,480.951005615515],"y":[-31.0205092363973,-60.0678089013306,-34.9185085878811,4.03419174718556,12.0851920714437,72.0378924065104,156.088892730768,137.041593065835,35.9942934009018,-13.9547062748401,-88.0020059397734,-48.9510056155153],"text":[".prediction: 448.0205<br />.residuals: -31.0205092<br />.model_desc: EARTH",".prediction: 451.0678<br />.residuals: -60.0678089<br />.model_desc: EARTH",".prediction: 453.9185<br />.residuals: -34.9185086<br />.model_desc: EARTH",".prediction: 456.9658<br />.residuals:   4.0341917<br />.model_desc: EARTH",".prediction: 459.9148<br />.residuals:  12.0851921<br />.model_desc: EARTH",".prediction: 462.9621<br />.residuals:  72.0378924<br />.model_desc: EARTH",".prediction: 465.9111<br />.residuals: 156.0888927<br />.model_desc: EARTH",".prediction: 468.9584<br />.residuals: 137.0415931<br />.model_desc: EARTH",".prediction: 472.0057<br />.residuals:  35.9942934<br />.model_desc: EARTH",".prediction: 474.9547<br />.residuals: -13.9547063<br />.model_desc: EARTH",".prediction: 478.0020<br />.residuals: -88.0020059<br />.model_desc: EARTH",".prediction: 480.9510<br />.residuals: -48.9510056<br />.model_desc: EARTH"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,191,196,1)","opacity":0.312,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","name":"EARTH","legendgroup":"EARTH","showlegend":true,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[407.055701738514,409.800196132841,412.544690527168,415.289184921495,418.033679315822,420.778173710148,423.522668104475,426.267162498802,429.011656893129,431.756151287456,434.500645681782,437.245140076109,439.989634470436,442.734128864763,445.478623259089,448.223117653416,450.967612047743,453.71210644207,456.456600836397,459.201095230723,461.94558962505,464.690084019377,467.434578413704,470.17907280803,472.923567202357,475.668061596684,478.412555991011,481.157050385338,483.901544779664,486.646039173991,489.390533568318,492.135027962645,494.879522356972,497.624016751298,500.368511145625,503.113005539952,505.857499934279,508.601994328605,511.346488722932,514.090983117259,516.835477511586,519.579971905913,522.324466300239,525.068960694566,527.813455088893,530.55794948322,533.302443877546,536.046938271873,538.7914326662,541.535927060527,544.280421454854,547.02491584918,549.769410243507,552.513904637834,555.258399032161,558.002893426488,560.747387820814,563.491882215141,566.236376609468,568.980871003795,571.725365398121,574.469859792448,577.214354186775,579.958848581102,582.703342975429,585.447837369755,588.192331764082,590.936826158409,593.681320552736,596.425814947062,599.170309341389,601.914803735716,604.659298130043,607.40379252437,610.148286918696,612.892781313023,615.63727570735,618.381770101677,621.126264496004,623.87075889033],"y":[-16.3735031089181,-17.0147527262214,-17.6276382733201,-18.2131214741313,-18.772164052572,-19.3057277325593,-19.8147742380102,-20.3141893560123,-20.7851203050391,-21.2582268045554,-21.727731618134,-22.1848018168152,-22.6206044716395,-23.0263066536472,-23.3930754338785,-23.7120778833738,-23.9744810731735,-24.1714520743179,-24.2941579578473,-24.3337657948021,-24.2723173838704,-24.0541885995211,-23.7726828939262,-23.5349852205535,-23.4033427957972,-23.98715296481,-25.0110392358202,-26.1128226076528,-26.9303240791326,-27.2083908132345,-27.1362849917525,-26.7731186472597,-26.1546013010492,-25.3164424744139,-24.2943516886468,-23.1240384650409,-21.8412123248891,-20.4815827894845,-19.08085938012,-17.6747516180885,-16.2989690246832,-14.9892211211969,-13.7812174289226,-12.7106674691533,-11.8132807631821,-10.918975884584,-9.92802580444934,-9.0108140798354,-8.2550358979636,-7.51111631686667,-6.77099557666812,-6.03938446387188,-5.32099376498184,-4.62053426650188,-3.94271675493591,-3.29225201678777,-2.67385083856136,-2.09222400676058,-1.55208230788932,-1.05813652845147,-0.615097454950886,-0.227675873891473,0.0994174282228784,0.361471664888286,0.553776049600855,0.671619795856714,0.710292117151972,0.665082226982739,0.531279338845122,0.304172666235256,-0.0209485773507687,-0.448795178416831,-0.984077923466792,-1.63150759900458,-2.39579499153407,-3.28165020493612,-4.28280991394833,-5.39180804102284,-6.61104830666272,-7.94293443137095],"text":[".prediction: 407.0557<br />.residuals: -16.37350311<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 409.8002<br />.residuals: -17.01475273<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 412.5447<br />.residuals: -17.62763827<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 415.2892<br />.residuals: -18.21312147<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 418.0337<br />.residuals: -18.77216405<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 420.7782<br />.residuals: -19.30572773<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 423.5227<br />.residuals: -19.81477424<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 426.2672<br />.residuals: -20.31418936<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 429.0117<br />.residuals: -20.78512031<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 431.7562<br />.residuals: -21.25822680<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 434.5006<br />.residuals: -21.72773162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 437.2451<br />.residuals: -22.18480182<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 439.9896<br />.residuals: -22.62060447<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 442.7341<br />.residuals: -23.02630665<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 445.4786<br />.residuals: -23.39307543<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 448.2231<br />.residuals: -23.71207788<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 450.9676<br />.residuals: -23.97448107<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 453.7121<br />.residuals: -24.17145207<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 456.4566<br />.residuals: -24.29415796<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 459.2011<br />.residuals: -24.33376579<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 461.9456<br />.residuals: -24.27231738<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 464.6901<br />.residuals: -24.05418860<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 467.4346<br />.residuals: -23.77268289<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 470.1791<br />.residuals: -23.53498522<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 472.9236<br />.residuals: -23.40334280<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 475.6681<br />.residuals: -23.98715296<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 478.4126<br />.residuals: -25.01103924<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 481.1571<br />.residuals: -26.11282261<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 483.9015<br />.residuals: -26.93032408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 486.6460<br />.residuals: -27.20839081<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 489.3905<br />.residuals: -27.13628499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 492.1350<br />.residuals: -26.77311865<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 494.8795<br />.residuals: -26.15460130<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 497.6240<br />.residuals: -25.31644247<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 500.3685<br />.residuals: -24.29435169<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 503.1130<br />.residuals: -23.12403847<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 505.8575<br />.residuals: -21.84121232<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 508.6020<br />.residuals: -20.48158279<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 511.3465<br />.residuals: -19.08085938<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 514.0910<br />.residuals: -17.67475162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 516.8355<br />.residuals: -16.29896902<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 519.5800<br />.residuals: -14.98922112<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 522.3245<br />.residuals: -13.78121743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 525.0690<br />.residuals: -12.71066747<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 527.8135<br />.residuals: -11.81328076<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 530.5579<br />.residuals: -10.91897588<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 533.3024<br />.residuals:  -9.92802580<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 536.0469<br />.residuals:  -9.01081408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 538.7914<br />.residuals:  -8.25503590<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 541.5359<br />.residuals:  -7.51111632<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 544.2804<br />.residuals:  -6.77099558<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 547.0249<br />.residuals:  -6.03938446<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 549.7694<br />.residuals:  -5.32099376<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 552.5139<br />.residuals:  -4.62053427<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 555.2584<br />.residuals:  -3.94271675<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 558.0029<br />.residuals:  -3.29225202<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 560.7474<br />.residuals:  -2.67385084<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 563.4919<br />.residuals:  -2.09222401<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 566.2364<br />.residuals:  -1.55208231<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 568.9809<br />.residuals:  -1.05813653<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 571.7254<br />.residuals:  -0.61509745<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 574.4699<br />.residuals:  -0.22767587<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 577.2144<br />.residuals:   0.09941743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 579.9588<br />.residuals:   0.36147166<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 582.7033<br />.residuals:   0.55377605<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 585.4478<br />.residuals:   0.67161980<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 588.1923<br />.residuals:   0.71029212<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 590.9368<br />.residuals:   0.66508223<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 593.6813<br />.residuals:   0.53127934<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 596.4258<br />.residuals:   0.30417267<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 599.1703<br />.residuals:  -0.02094858<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 601.9148<br />.residuals:  -0.44879518<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 604.6593<br />.residuals:  -0.98407792<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 607.4038<br />.residuals:  -1.63150760<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 610.1483<br />.residuals:  -2.39579499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 612.8928<br />.residuals:  -3.28165020<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 615.6373<br />.residuals:  -4.28280991<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 618.3818<br />.residuals:  -5.39180804<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 621.1263<br />.residuals:  -6.61104831<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 623.8708<br />.residuals:  -7.94293443<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]"],"type":"scatter","mode":"lines","name":"ARIMA(1,1,0)(0,1,0)[12]","line":{"width":1.88976377952756,"color":"rgba(51,102,255,1)","dash":"solid"},"hoveron":"points","legendgroup":"ARIMA(1,1,0)(0,1,0)[12]","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[448.020509236397,448.437350962715,448.854192689033,449.271034415351,449.687876141669,450.104717867987,450.521559594305,450.938401320623,451.355243046941,451.772084773259,452.188926499577,452.605768225895,453.022609952213,453.439451678531,453.856293404849,454.273135131167,454.689976857485,455.106818583802,455.52366031012,455.940502036438,456.357343762756,456.774185489074,457.191027215392,457.60786894171,458.024710668028,458.441552394346,458.858394120664,459.275235846982,459.6920775733,460.108919299618,460.525761025936,460.942602752254,461.359444478572,461.77628620489,462.193127931208,462.609969657526,463.026811383843,463.443653110161,463.860494836479,464.277336562797,464.694178289115,465.111020015433,465.527861741751,465.944703468069,466.361545194387,466.778386920705,467.195228647023,467.612070373341,468.028912099659,468.445753825977,468.862595552295,469.279437278613,469.696279004931,470.113120731249,470.529962457567,470.946804183885,471.363645910202,471.78048763652,472.197329362838,472.614171089156,473.031012815474,473.447854541792,473.86469626811,474.281537994428,474.698379720746,475.115221447064,475.532063173382,475.9489048997,476.365746626018,476.782588352336,477.199430078654,477.616271804972,478.03311353129,478.449955257608,478.866796983926,479.283638710244,479.700480436561,480.117322162879,480.534163889197,480.951005615515],"y":[-39.7181234411994,-41.0727005577242,-42.1653442192287,-42.9943343803214,-43.5579509956105,-43.8544740197042,-43.8821834072108,-43.6393591127386,-43.1204288874889,-42.3173373807225,-41.2384103667255,-39.8929311886704,-38.2901831897293,-36.4394497130746,-34.3500141018786,-31.9700827199589,-29.2217586547151,-26.144971537671,-22.7816520829286,-19.1737310045915,-15.3631390167628,-11.3918068335455,-7.19505725890023,-2.32289354373462,3.12652683570826,8.97300188090972,15.0363295933511,21.1363079745136,27.0927350258786,32.9975581373557,40.3897707495313,49.0208940676625,58.2628216305474,67.4874469769844,76.0666636457717,83.3723651757076,88.8288530817036,94.5413230016517,101.3854246401,108.678003412014,115.73590473236,121.875974016106,126.415056678218,128.677969148714,129.51339542605,129.817946063026,129.539935498701,128.62767817213,127.02948852237,124.693680988479,121.568570009512,116.951230073377,109.763215693807,100.767782157524,90.7939468979429,80.6707273484772,71.2271409425413,63.2922051135495,57.2875319223632,50.9488283184454,43.9856826021101,36.6420001085858,29.1616861731025,21.7886461308866,14.7667853171679,8.25609169306064,1.61641551228893,-5.26918146446526,-12.3135179554802,-19.4294126790341,-26.5296843534053,-33.527151696872,-40.3350954823715,-46.9819457051534,-53.5459299986999,-60.0499399945941,-66.51686732442,-72.9696036197615,-79.4310405122025,-85.9240696333269],"text":[".prediction: 448.0205<br />.residuals: -39.71812344<br />.model_desc: EARTH",".prediction: 448.4374<br />.residuals: -41.07270056<br />.model_desc: EARTH",".prediction: 448.8542<br />.residuals: -42.16534422<br />.model_desc: EARTH",".prediction: 449.2710<br />.residuals: -42.99433438<br />.model_desc: EARTH",".prediction: 449.6879<br />.residuals: -43.55795100<br />.model_desc: EARTH",".prediction: 450.1047<br />.residuals: -43.85447402<br />.model_desc: EARTH",".prediction: 450.5216<br />.residuals: -43.88218341<br />.model_desc: EARTH",".prediction: 450.9384<br />.residuals: -43.63935911<br />.model_desc: EARTH",".prediction: 451.3552<br />.residuals: -43.12042889<br />.model_desc: EARTH",".prediction: 451.7721<br />.residuals: -42.31733738<br />.model_desc: EARTH",".prediction: 452.1889<br />.residuals: -41.23841037<br />.model_desc: EARTH",".prediction: 452.6058<br />.residuals: -39.89293119<br />.model_desc: EARTH",".prediction: 453.0226<br />.residuals: -38.29018319<br />.model_desc: EARTH",".prediction: 453.4395<br />.residuals: -36.43944971<br />.model_desc: EARTH",".prediction: 453.8563<br />.residuals: -34.35001410<br />.model_desc: EARTH",".prediction: 454.2731<br />.residuals: -31.97008272<br />.model_desc: EARTH",".prediction: 454.6900<br />.residuals: -29.22175865<br />.model_desc: EARTH",".prediction: 455.1068<br />.residuals: -26.14497154<br />.model_desc: EARTH",".prediction: 455.5237<br />.residuals: -22.78165208<br />.model_desc: EARTH",".prediction: 455.9405<br />.residuals: -19.17373100<br />.model_desc: EARTH",".prediction: 456.3573<br />.residuals: -15.36313902<br />.model_desc: EARTH",".prediction: 456.7742<br />.residuals: -11.39180683<br />.model_desc: EARTH",".prediction: 457.1910<br />.residuals:  -7.19505726<br />.model_desc: EARTH",".prediction: 457.6079<br />.residuals:  -2.32289354<br />.model_desc: EARTH",".prediction: 458.0247<br />.residuals:   3.12652684<br />.model_desc: EARTH",".prediction: 458.4416<br />.residuals:   8.97300188<br />.model_desc: EARTH",".prediction: 458.8584<br />.residuals:  15.03632959<br />.model_desc: EARTH",".prediction: 459.2752<br />.residuals:  21.13630797<br />.model_desc: EARTH",".prediction: 459.6921<br />.residuals:  27.09273503<br />.model_desc: EARTH",".prediction: 460.1089<br />.residuals:  32.99755814<br />.model_desc: EARTH",".prediction: 460.5258<br />.residuals:  40.38977075<br />.model_desc: EARTH",".prediction: 460.9426<br />.residuals:  49.02089407<br />.model_desc: EARTH",".prediction: 461.3594<br />.residuals:  58.26282163<br />.model_desc: EARTH",".prediction: 461.7763<br />.residuals:  67.48744698<br />.model_desc: EARTH",".prediction: 462.1931<br />.residuals:  76.06666365<br />.model_desc: EARTH",".prediction: 462.6100<br />.residuals:  83.37236518<br />.model_desc: EARTH",".prediction: 463.0268<br />.residuals:  88.82885308<br />.model_desc: EARTH",".prediction: 463.4437<br />.residuals:  94.54132300<br />.model_desc: EARTH",".prediction: 463.8605<br />.residuals: 101.38542464<br />.model_desc: EARTH",".prediction: 464.2773<br />.residuals: 108.67800341<br />.model_desc: EARTH",".prediction: 464.6942<br />.residuals: 115.73590473<br />.model_desc: EARTH",".prediction: 465.1110<br />.residuals: 121.87597402<br />.model_desc: EARTH",".prediction: 465.5279<br />.residuals: 126.41505668<br />.model_desc: EARTH",".prediction: 465.9447<br />.residuals: 128.67796915<br />.model_desc: EARTH",".prediction: 466.3615<br />.residuals: 129.51339543<br />.model_desc: EARTH",".prediction: 466.7784<br />.residuals: 129.81794606<br />.model_desc: EARTH",".prediction: 467.1952<br />.residuals: 129.53993550<br />.model_desc: EARTH",".prediction: 467.6121<br />.residuals: 128.62767817<br />.model_desc: EARTH",".prediction: 468.0289<br />.residuals: 127.02948852<br />.model_desc: EARTH",".prediction: 468.4458<br />.residuals: 124.69368099<br />.model_desc: EARTH",".prediction: 468.8626<br />.residuals: 121.56857001<br />.model_desc: EARTH",".prediction: 469.2794<br />.residuals: 116.95123007<br />.model_desc: EARTH",".prediction: 469.6963<br />.residuals: 109.76321569<br />.model_desc: EARTH",".prediction: 470.1131<br />.residuals: 100.76778216<br />.model_desc: EARTH",".prediction: 470.5300<br />.residuals:  90.79394690<br />.model_desc: EARTH",".prediction: 470.9468<br />.residuals:  80.67072735<br />.model_desc: EARTH",".prediction: 471.3636<br />.residuals:  71.22714094<br />.model_desc: EARTH",".prediction: 471.7805<br />.residuals:  63.29220511<br />.model_desc: EARTH",".prediction: 472.1973<br />.residuals:  57.28753192<br />.model_desc: EARTH",".prediction: 472.6142<br />.residuals:  50.94882832<br />.model_desc: EARTH",".prediction: 473.0310<br />.residuals:  43.98568260<br />.model_desc: EARTH",".prediction: 473.4479<br />.residuals:  36.64200011<br />.model_desc: EARTH",".prediction: 473.8647<br />.residuals:  29.16168617<br />.model_desc: EARTH",".prediction: 474.2815<br />.residuals:  21.78864613<br />.model_desc: EARTH",".prediction: 474.6984<br />.residuals:  14.76678532<br />.model_desc: EARTH",".prediction: 475.1152<br />.residuals:   8.25609169<br />.model_desc: EARTH",".prediction: 475.5321<br />.residuals:   1.61641551<br />.model_desc: EARTH",".prediction: 475.9489<br />.residuals:  -5.26918146<br />.model_desc: EARTH",".prediction: 476.3657<br />.residuals: -12.31351796<br />.model_desc: EARTH",".prediction: 476.7826<br />.residuals: -19.42941268<br />.model_desc: EARTH",".prediction: 477.1994<br />.residuals: -26.52968435<br />.model_desc: EARTH",".prediction: 477.6163<br />.residuals: -33.52715170<br />.model_desc: EARTH",".prediction: 478.0331<br />.residuals: -40.33509548<br />.model_desc: EARTH",".prediction: 478.4500<br />.residuals: -46.98194571<br />.model_desc: EARTH",".prediction: 478.8668<br />.residuals: -53.54593000<br />.model_desc: EARTH",".prediction: 479.2836<br />.residuals: -60.04993999<br />.model_desc: EARTH",".prediction: 479.7005<br />.residuals: -66.51686732<br />.model_desc: EARTH",".prediction: 480.1173<br />.residuals: -72.96960362<br />.model_desc: EARTH",".prediction: 480.5342<br />.residuals: -79.43104051<br />.model_desc: EARTH",".prediction: 480.9510<br />.residuals: -85.92406963<br />.model_desc: EARTH"],"type":"scatter","mode":"lines","name":"EARTH","line":{"width":1.88976377952756,"color":"rgba(51,102,255,1)","dash":"solid"},"hoveron":"points","legendgroup":"EARTH","showlegend":false,"xaxis":"x2","yaxis":"y2","hoverinfo":"text","frame":null},{"x":[407.055701738514,409.800196132841,412.544690527168,415.289184921495,418.033679315822,420.778173710148,423.522668104475,426.267162498802,429.011656893129,431.756151287456,434.500645681782,437.245140076109,439.989634470436,442.734128864763,445.478623259089,448.223117653416,450.967612047743,453.71210644207,456.456600836397,459.201095230723,461.94558962505,464.690084019377,467.434578413704,470.17907280803,472.923567202357,475.668061596684,478.412555991011,481.157050385338,483.901544779664,486.646039173991,489.390533568318,492.135027962645,494.879522356972,497.624016751298,500.368511145625,503.113005539952,505.857499934279,508.601994328605,511.346488722932,514.090983117259,516.835477511586,519.579971905913,522.324466300239,525.068960694566,527.813455088893,530.55794948322,533.302443877546,536.046938271873,538.7914326662,541.535927060527,544.280421454854,547.02491584918,549.769410243507,552.513904637834,555.258399032161,558.002893426488,560.747387820814,563.491882215141,566.236376609468,568.980871003795,571.725365398121,574.469859792448,577.214354186775,579.958848581102,582.703342975429,585.447837369755,588.192331764082,590.936826158409,593.681320552736,596.425814947062,599.170309341389,601.914803735716,604.659298130043,607.40379252437,610.148286918696,612.892781313023,615.63727570735,618.381770101677,621.126264496004,623.87075889033,623.87075889033,623.87075889033,621.126264496004,618.381770101677,615.63727570735,612.892781313023,610.148286918696,607.40379252437,604.659298130043,601.914803735716,599.170309341389,596.425814947062,593.681320552736,590.936826158409,588.192331764082,585.447837369755,582.703342975429,579.958848581102,577.214354186775,574.469859792448,571.725365398121,568.980871003795,566.236376609468,563.491882215141,560.747387820814,558.002893426488,555.258399032161,552.513904637834,549.769410243507,547.02491584918,544.280421454854,541.535927060527,538.7914326662,536.046938271873,533.302443877546,530.55794948322,527.813455088893,525.068960694566,522.324466300239,519.579971905913,516.835477511586,514.090983117259,511.346488722932,508.601994328605,505.857499934279,503.113005539952,500.368511145625,497.624016751298,494.879522356972,492.135027962645,489.390533568318,486.646039173991,483.901544779664,481.157050385338,478.412555991011,475.668061596684,472.923567202357,470.17907280803,467.434578413704,464.690084019377,461.94558962505,459.201095230723,456.456600836397,453.71210644207,450.967612047743,448.223117653416,445.478623259089,442.734128864763,439.989634470436,437.245140076109,434.500645681782,431.756151287456,429.011656893129,426.267162498802,423.522668104475,420.778173710148,418.033679315822,415.289184921495,412.544690527168,409.800196132841,407.055701738514,407.055701738514],"y":[-62.744078853063,-57.1879145867703,-52.8542414563258,-49.8569138797397,-48.2321586264873,-47.8722704485112,-48.5179745555822,-49.8084898172366,-51.4283851577099,-53.0680484524764,-54.5921546730799,-55.9449472905473,-57.1011172013603,-58.0384083470067,-58.7223798503988,-59.0999317871439,-59.0995136182634,-58.6369037301337,-57.6267383511313,-56.0025409246151,-53.7263520072298,-50.9938224912687,-48.7847086926232,-47.3763123344269,-46.96637539436,-48.5514359475384,-52.9143180154351,-59.2821878250355,-65.2756501140296,-68.8640234095614,-70.7505065481587,-71.191456011313,-70.3784949714637,-68.5361208438188,-65.9121603719955,-62.7729908268956,-59.3981020734704,-56.0687797436952,-53.0455834731688,-50.5330332557486,-48.640749155816,-47.3621539792617,-46.5883584117095,-46.1530286070485,-45.8875358068555,-45.6414697086194,-45.4536227750265,-45.2959665455121,-45.0050752502354,-44.6396101304003,-44.2132815965183,-43.7317850416121,-43.201011464043,-42.6268866773043,-42.0152648420571,-41.3718708089864,-40.702288285848,-40.0119929863058,-39.3064318727351,-38.5911515377194,-37.8719808180981,-37.1552749955067,-36.4482314237055,-35.7592890016927,-35.0986261691175,-34.4787731176972,-33.9153519032921,-33.4279499475087,-33.0411129556312,-32.7854054145362,-32.6984228019087,-32.8255462032627,-33.2201200114954,-33.9426527579102,-35.0586790480063,-36.6351804994745,-38.7277312551156,-41.3713926444521,-44.5896841126098,-48.3926108248825,-48.3926108248825,32.5067419621406,31.3675874992844,30.5877765624065,30.1621114272189,30.0718800896023,30.2670890649381,30.6796375599011,31.2519641645618,31.927955846429,32.6565256472072,33.3937507470068,34.1036716333214,34.7581144014742,35.3359361375961,35.8220127094106,36.2061782683192,36.4822323314693,36.6470662801512,36.6999232477238,36.6417859081964,36.4748784808165,36.2022672569565,35.8275449727846,35.3545866087252,34.7873667754108,34.1298313321853,33.3858181443005,32.5590239340793,31.6530161138684,30.671290443182,29.6173774966669,28.4950034543082,27.2743383858413,25.5975711661278,23.8035179394513,22.2609742804914,20.7316936687419,19.0259235538643,17.3837117368679,16.0428111064496,15.1835300195715,14.8838647129289,15.1056141647262,15.7156774236921,16.5249138968138,17.3234569947019,17.903235894991,18.0692923693652,17.6452187167936,16.4779365646537,14.4472417830924,11.4150019557644,7.05654260973002,2.89223954379457,0.577130017918282,0.159689802765609,0.30634189331996,1.23934290477071,2.88544529222665,5.18171723948897,7.33500933501098,9.03842243543669,10.2939995814979,11.1505514719164,11.6757760203963,11.9362289826419,11.9857950397124,11.8599082580812,11.5753436569168,11.1366914368119,10.5515948433657,9.85814454763179,9.18011110521209,8.88842607956174,9.26081498339254,10.6878305213432,13.430670931477,17.5989649096856,23.1584091343276,29.9970726352269,-62.744078853063],"text":[".prediction: 407.0557<br />.residuals: -16.37350311<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 409.8002<br />.residuals: -17.01475273<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 412.5447<br />.residuals: -17.62763827<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 415.2892<br />.residuals: -18.21312147<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 418.0337<br />.residuals: -18.77216405<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 420.7782<br />.residuals: -19.30572773<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 423.5227<br />.residuals: -19.81477424<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 426.2672<br />.residuals: -20.31418936<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 429.0117<br />.residuals: -20.78512031<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 431.7562<br />.residuals: -21.25822680<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 434.5006<br />.residuals: -21.72773162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 437.2451<br />.residuals: -22.18480182<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 439.9896<br />.residuals: -22.62060447<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 442.7341<br />.residuals: -23.02630665<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 445.4786<br />.residuals: -23.39307543<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 448.2231<br />.residuals: -23.71207788<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 450.9676<br />.residuals: -23.97448107<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 453.7121<br />.residuals: -24.17145207<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 456.4566<br />.residuals: -24.29415796<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 459.2011<br />.residuals: -24.33376579<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 461.9456<br />.residuals: -24.27231738<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 464.6901<br />.residuals: -24.05418860<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 467.4346<br />.residuals: -23.77268289<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 470.1791<br />.residuals: -23.53498522<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 472.9236<br />.residuals: -23.40334280<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 475.6681<br />.residuals: -23.98715296<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 478.4126<br />.residuals: -25.01103924<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 481.1571<br />.residuals: -26.11282261<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 483.9015<br />.residuals: -26.93032408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 486.6460<br />.residuals: -27.20839081<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 489.3905<br />.residuals: -27.13628499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 492.1350<br />.residuals: -26.77311865<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 494.8795<br />.residuals: -26.15460130<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 497.6240<br />.residuals: -25.31644247<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 500.3685<br />.residuals: -24.29435169<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 503.1130<br />.residuals: -23.12403847<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 505.8575<br />.residuals: -21.84121232<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 508.6020<br />.residuals: -20.48158279<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 511.3465<br />.residuals: -19.08085938<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 514.0910<br />.residuals: -17.67475162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 516.8355<br />.residuals: -16.29896902<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 519.5800<br />.residuals: -14.98922112<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 522.3245<br />.residuals: -13.78121743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 525.0690<br />.residuals: -12.71066747<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 527.8135<br />.residuals: -11.81328076<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 530.5579<br />.residuals: -10.91897588<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 533.3024<br />.residuals:  -9.92802580<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 536.0469<br />.residuals:  -9.01081408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 538.7914<br />.residuals:  -8.25503590<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 541.5359<br />.residuals:  -7.51111632<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 544.2804<br />.residuals:  -6.77099558<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 547.0249<br />.residuals:  -6.03938446<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 549.7694<br />.residuals:  -5.32099376<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 552.5139<br />.residuals:  -4.62053427<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 555.2584<br />.residuals:  -3.94271675<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 558.0029<br />.residuals:  -3.29225202<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 560.7474<br />.residuals:  -2.67385084<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 563.4919<br />.residuals:  -2.09222401<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 566.2364<br />.residuals:  -1.55208231<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 568.9809<br />.residuals:  -1.05813653<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 571.7254<br />.residuals:  -0.61509745<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 574.4699<br />.residuals:  -0.22767587<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 577.2144<br />.residuals:   0.09941743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 579.9588<br />.residuals:   0.36147166<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 582.7033<br />.residuals:   0.55377605<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 585.4478<br />.residuals:   0.67161980<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 588.1923<br />.residuals:   0.71029212<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 590.9368<br />.residuals:   0.66508223<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 593.6813<br />.residuals:   0.53127934<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 596.4258<br />.residuals:   0.30417267<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 599.1703<br />.residuals:  -0.02094858<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 601.9148<br />.residuals:  -0.44879518<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 604.6593<br />.residuals:  -0.98407792<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 607.4038<br />.residuals:  -1.63150760<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 610.1483<br />.residuals:  -2.39579499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 612.8928<br />.residuals:  -3.28165020<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 615.6373<br />.residuals:  -4.28280991<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 618.3818<br />.residuals:  -5.39180804<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 621.1263<br />.residuals:  -6.61104831<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 623.8708<br />.residuals:  -7.94293443<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 623.8708<br />.residuals:  -7.94293443<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 623.8708<br />.residuals:  -7.94293443<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 621.1263<br />.residuals:  -6.61104831<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 618.3818<br />.residuals:  -5.39180804<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 615.6373<br />.residuals:  -4.28280991<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 612.8928<br />.residuals:  -3.28165020<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 610.1483<br />.residuals:  -2.39579499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 607.4038<br />.residuals:  -1.63150760<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 604.6593<br />.residuals:  -0.98407792<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 601.9148<br />.residuals:  -0.44879518<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 599.1703<br />.residuals:  -0.02094858<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 596.4258<br />.residuals:   0.30417267<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 593.6813<br />.residuals:   0.53127934<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 590.9368<br />.residuals:   0.66508223<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 588.1923<br />.residuals:   0.71029212<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 585.4478<br />.residuals:   0.67161980<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 582.7033<br />.residuals:   0.55377605<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 579.9588<br />.residuals:   0.36147166<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 577.2144<br />.residuals:   0.09941743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 574.4699<br />.residuals:  -0.22767587<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 571.7254<br />.residuals:  -0.61509745<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 568.9809<br />.residuals:  -1.05813653<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 566.2364<br />.residuals:  -1.55208231<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 563.4919<br />.residuals:  -2.09222401<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 560.7474<br />.residuals:  -2.67385084<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 558.0029<br />.residuals:  -3.29225202<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 555.2584<br />.residuals:  -3.94271675<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 552.5139<br />.residuals:  -4.62053427<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 549.7694<br />.residuals:  -5.32099376<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 547.0249<br />.residuals:  -6.03938446<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 544.2804<br />.residuals:  -6.77099558<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 541.5359<br />.residuals:  -7.51111632<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 538.7914<br />.residuals:  -8.25503590<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 536.0469<br />.residuals:  -9.01081408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 533.3024<br />.residuals:  -9.92802580<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 530.5579<br />.residuals: -10.91897588<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 527.8135<br />.residuals: -11.81328076<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 525.0690<br />.residuals: -12.71066747<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 522.3245<br />.residuals: -13.78121743<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 519.5800<br />.residuals: -14.98922112<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 516.8355<br />.residuals: -16.29896902<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 514.0910<br />.residuals: -17.67475162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 511.3465<br />.residuals: -19.08085938<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 508.6020<br />.residuals: -20.48158279<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 505.8575<br />.residuals: -21.84121232<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 503.1130<br />.residuals: -23.12403847<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 500.3685<br />.residuals: -24.29435169<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 497.6240<br />.residuals: -25.31644247<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 494.8795<br />.residuals: -26.15460130<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 492.1350<br />.residuals: -26.77311865<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 489.3905<br />.residuals: -27.13628499<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 486.6460<br />.residuals: -27.20839081<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 483.9015<br />.residuals: -26.93032408<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 481.1571<br />.residuals: -26.11282261<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 478.4126<br />.residuals: -25.01103924<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 475.6681<br />.residuals: -23.98715296<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 472.9236<br />.residuals: -23.40334280<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 470.1791<br />.residuals: -23.53498522<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 467.4346<br />.residuals: -23.77268289<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 464.6901<br />.residuals: -24.05418860<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 461.9456<br />.residuals: -24.27231738<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 459.2011<br />.residuals: -24.33376579<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 456.4566<br />.residuals: -24.29415796<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 453.7121<br />.residuals: -24.17145207<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 450.9676<br />.residuals: -23.97448107<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 448.2231<br />.residuals: -23.71207788<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 445.4786<br />.residuals: -23.39307543<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 442.7341<br />.residuals: -23.02630665<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 439.9896<br />.residuals: -22.62060447<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 437.2451<br />.residuals: -22.18480182<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 434.5006<br />.residuals: -21.72773162<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 431.7562<br />.residuals: -21.25822680<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 429.0117<br />.residuals: -20.78512031<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 426.2672<br />.residuals: -20.31418936<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 423.5227<br />.residuals: -19.81477424<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 420.7782<br />.residuals: -19.30572773<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 418.0337<br />.residuals: -18.77216405<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 415.2892<br />.residuals: -18.21312147<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 412.5447<br />.residuals: -17.62763827<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 409.8002<br />.residuals: -17.01475273<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 407.0557<br />.residuals: -16.37350311<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]",".prediction: 407.0557<br />.residuals: -16.37350311<br />.model_desc: ARIMA(1,1,0)(0,1,0)[12]"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"transparent","dash":"solid"},"fill":"toself","fillcolor":"rgba(248,118,109,0.312)","hoveron":"points","hoverinfo":"x+y","name":"ARIMA(1,1,0)(0,1,0)[12]","legendgroup":"ARIMA(1,1,0)(0,1,0)[12]","showlegend":false,"xaxis":"x","yaxis":"y","frame":null},{"x":[448.020509236397,448.437350962715,448.854192689033,449.271034415351,449.687876141669,450.104717867987,450.521559594305,450.938401320623,451.355243046941,451.772084773259,452.188926499577,452.605768225895,453.022609952213,453.439451678531,453.856293404849,454.273135131167,454.689976857485,455.106818583802,455.52366031012,455.940502036438,456.357343762756,456.774185489074,457.191027215392,457.60786894171,458.024710668028,458.441552394346,458.858394120664,459.275235846982,459.6920775733,460.108919299618,460.525761025936,460.942602752254,461.359444478572,461.77628620489,462.193127931208,462.609969657526,463.026811383843,463.443653110161,463.860494836479,464.277336562797,464.694178289115,465.111020015433,465.527861741751,465.944703468069,466.361545194387,466.778386920705,467.195228647023,467.612070373341,468.028912099659,468.445753825977,468.862595552295,469.279437278613,469.696279004931,470.113120731249,470.529962457567,470.946804183885,471.363645910202,471.78048763652,472.197329362838,472.614171089156,473.031012815474,473.447854541792,473.86469626811,474.281537994428,474.698379720746,475.115221447064,475.532063173382,475.9489048997,476.365746626018,476.782588352336,477.199430078654,477.616271804972,478.03311353129,478.449955257608,478.866796983926,479.283638710244,479.700480436561,480.117322162879,480.534163889197,480.951005615515,480.951005615515,480.534163889197,480.117322162879,479.700480436561,479.283638710244,478.866796983926,478.449955257608,478.03311353129,477.616271804972,477.199430078654,476.782588352336,476.365746626018,475.9489048997,475.532063173382,475.115221447064,474.698379720746,474.281537994428,473.86469626811,473.447854541792,473.031012815474,472.614171089156,472.197329362838,471.78048763652,471.363645910202,470.946804183885,470.529962457567,470.113120731249,469.696279004931,469.279437278613,468.862595552295,468.445753825977,468.028912099659,467.612070373341,467.195228647023,466.778386920705,466.361545194387,465.944703468069,465.527861741751,465.111020015433,464.694178289115,464.277336562797,463.860494836479,463.443653110161,463.026811383843,462.609969657526,462.193127931208,461.77628620489,461.359444478572,460.942602752254,460.525761025936,460.108919299618,459.6920775733,459.275235846982,458.858394120664,458.441552394346,458.024710668028,457.60786894171,457.191027215392,456.774185489074,456.357343762756,455.940502036438,455.52366031012,455.106818583802,454.689976857485,454.273135131167,453.856293404849,453.439451678531,453.022609952213,452.605768225895,452.188926499577,451.772084773259,451.355243046941,450.938401320623,450.521559594305,450.104717867987,449.687876141669,449.271034415351,448.854192689033,448.437350962715,448.020509236397,448.020509236397],"y":[-107.609185530708,-103.522767341389,-99.7056824725969,-96.1869019006336,-92.9911893927359,-90.134439423355,-87.6181457455461,-85.4242463286122,-83.5046101498779,-81.7806475186434,-80.1930593763916,-78.6844973235945,-77.2002566863743,-75.6903333292706,-74.1110781794586,-72.3070177161793,-70.0765512868356,-67.4618512626907,-64.5170011085964,-61.2932733095832,-57.8333678727615,-54.170312770831,-50.1968091770897,-45.4092490973508,-40.1494917080589,-34.8074097424621,-29.5821960622529,-24.4464148813949,-19.2017244287523,-13.344042776871,-5.41885662534241,3.85759451581337,13.4506583406967,22.5333887348698,30.5627121895149,37.2463275321353,42.4709236849739,48.5692892866672,56.0258283645594,63.7118669854691,70.6912428157861,76.3196199302167,80.2283334940883,82.2097895873453,83.3951991323449,84.3365141374961,84.5373803956671,83.6585313828924,81.6256549350302,78.6387002581828,75.077661072826,70.6711292117884,64.2576961582218,56.1954479272964,46.9815240385824,37.2825425198774,27.974214312389,20.0993458040549,14.3116768644052,8.27576026684551,1.65673292126587,-5.30850304778273,-12.3718890889108,-19.2756454309055,-25.7591167653347,-31.6681610292424,-37.7901424639796,-44.3197116509982,-51.2237482836395,-58.4755980757818,-66.0533189034234,-73.9372972116713,-82.1079401395669,-90.6619557062304,-99.725176951808,-109.339768447665,-119.527485609653,-130.294686226389,-141.637957734474,-153.548994609309,-18.2991446573453,-17.224123289931,-15.6445210131345,-13.5062490391869,-10.7601115415229,-7.36668304559184,-3.30193570407639,1.43774917482383,6.88299381792729,12.9939501966128,19.6167727177136,26.5967123726791,33.7813487220677,41.0229734885575,48.1803444153636,55.2926873996705,62.8529376926787,70.6952614351157,78.5925032649544,86.3146322829543,93.6218963700454,100.263386980321,106.485064423044,114.480067572693,124.058912177077,134.606369757303,145.340116387752,155.268735229393,163.231330934966,168.059478946197,170.748661718775,172.433322109711,173.596824961368,174.542490601735,175.299377988556,175.631591719754,175.146148710083,172.601779862348,167.432328101995,160.780566648933,153.644139838558,146.74502091564,140.513356716636,135.186782478433,129.49840281928,121.570615102028,112.441505219099,103.074984920398,94.1841936195116,86.1983981244051,79.3391590515823,73.3871944805095,66.7190308304221,59.654855248955,52.7534135042815,46.4025453794754,40.7634620098815,35.8066946592893,31.38669910374,27.1070898392358,22.9458113004001,18.9536969427392,15.1719081873488,11.6330339774053,8.36685227626153,5.41104997570145,2.81143390312142,0.619890306915735,-1.10136505374629,-2.28376135705953,-2.85402724280159,-2.73624762509985,-1.85447189686491,-0.146221068875427,2.42549138394671,5.87528740151493,10.1982331399907,15.3749940341394,21.3773662259405,28.1729386483095,-107.609185530708],"text":[".prediction: 448.0205<br />.residuals: -39.71812344<br />.model_desc: EARTH",".prediction: 448.4374<br />.residuals: -41.07270056<br />.model_desc: EARTH",".prediction: 448.8542<br />.residuals: -42.16534422<br />.model_desc: EARTH",".prediction: 449.2710<br />.residuals: -42.99433438<br />.model_desc: EARTH",".prediction: 449.6879<br />.residuals: -43.55795100<br />.model_desc: EARTH",".prediction: 450.1047<br />.residuals: -43.85447402<br />.model_desc: EARTH",".prediction: 450.5216<br />.residuals: -43.88218341<br />.model_desc: EARTH",".prediction: 450.9384<br />.residuals: -43.63935911<br />.model_desc: EARTH",".prediction: 451.3552<br />.residuals: -43.12042889<br />.model_desc: EARTH",".prediction: 451.7721<br />.residuals: -42.31733738<br />.model_desc: EARTH",".prediction: 452.1889<br />.residuals: -41.23841037<br />.model_desc: EARTH",".prediction: 452.6058<br />.residuals: -39.89293119<br />.model_desc: EARTH",".prediction: 453.0226<br />.residuals: -38.29018319<br />.model_desc: EARTH",".prediction: 453.4395<br />.residuals: -36.43944971<br />.model_desc: EARTH",".prediction: 453.8563<br />.residuals: -34.35001410<br />.model_desc: EARTH",".prediction: 454.2731<br />.residuals: -31.97008272<br />.model_desc: EARTH",".prediction: 454.6900<br />.residuals: -29.22175865<br />.model_desc: EARTH",".prediction: 455.1068<br />.residuals: -26.14497154<br />.model_desc: EARTH",".prediction: 455.5237<br />.residuals: -22.78165208<br />.model_desc: EARTH",".prediction: 455.9405<br />.residuals: -19.17373100<br />.model_desc: EARTH",".prediction: 456.3573<br />.residuals: -15.36313902<br />.model_desc: EARTH",".prediction: 456.7742<br />.residuals: -11.39180683<br />.model_desc: EARTH",".prediction: 457.1910<br />.residuals:  -7.19505726<br />.model_desc: EARTH",".prediction: 457.6079<br />.residuals:  -2.32289354<br />.model_desc: EARTH",".prediction: 458.0247<br />.residuals:   3.12652684<br />.model_desc: EARTH",".prediction: 458.4416<br />.residuals:   8.97300188<br />.model_desc: EARTH",".prediction: 458.8584<br />.residuals:  15.03632959<br />.model_desc: EARTH",".prediction: 459.2752<br />.residuals:  21.13630797<br />.model_desc: EARTH",".prediction: 459.6921<br />.residuals:  27.09273503<br />.model_desc: EARTH",".prediction: 460.1089<br />.residuals:  32.99755814<br />.model_desc: EARTH",".prediction: 460.5258<br />.residuals:  40.38977075<br />.model_desc: EARTH",".prediction: 460.9426<br />.residuals:  49.02089407<br />.model_desc: EARTH",".prediction: 461.3594<br />.residuals:  58.26282163<br />.model_desc: EARTH",".prediction: 461.7763<br />.residuals:  67.48744698<br />.model_desc: EARTH",".prediction: 462.1931<br />.residuals:  76.06666365<br />.model_desc: EARTH",".prediction: 462.6100<br />.residuals:  83.37236518<br />.model_desc: EARTH",".prediction: 463.0268<br />.residuals:  88.82885308<br />.model_desc: EARTH",".prediction: 463.4437<br />.residuals:  94.54132300<br />.model_desc: EARTH",".prediction: 463.8605<br />.residuals: 101.38542464<br />.model_desc: EARTH",".prediction: 464.2773<br />.residuals: 108.67800341<br />.model_desc: EARTH",".prediction: 464.6942<br />.residuals: 115.73590473<br />.model_desc: EARTH",".prediction: 465.1110<br />.residuals: 121.87597402<br />.model_desc: EARTH",".prediction: 465.5279<br />.residuals: 126.41505668<br />.model_desc: EARTH",".prediction: 465.9447<br />.residuals: 128.67796915<br />.model_desc: EARTH",".prediction: 466.3615<br />.residuals: 129.51339543<br />.model_desc: EARTH",".prediction: 466.7784<br />.residuals: 129.81794606<br />.model_desc: EARTH",".prediction: 467.1952<br />.residuals: 129.53993550<br />.model_desc: EARTH",".prediction: 467.6121<br />.residuals: 128.62767817<br />.model_desc: EARTH",".prediction: 468.0289<br />.residuals: 127.02948852<br />.model_desc: EARTH",".prediction: 468.4458<br />.residuals: 124.69368099<br />.model_desc: EARTH",".prediction: 468.8626<br />.residuals: 121.56857001<br />.model_desc: EARTH",".prediction: 469.2794<br />.residuals: 116.95123007<br />.model_desc: EARTH",".prediction: 469.6963<br />.residuals: 109.76321569<br />.model_desc: EARTH",".prediction: 470.1131<br />.residuals: 100.76778216<br />.model_desc: EARTH",".prediction: 470.5300<br />.residuals:  90.79394690<br />.model_desc: EARTH",".prediction: 470.9468<br />.residuals:  80.67072735<br />.model_desc: EARTH",".prediction: 471.3636<br />.residuals:  71.22714094<br />.model_desc: EARTH",".prediction: 471.7805<br />.residuals:  63.29220511<br />.model_desc: EARTH",".prediction: 472.1973<br />.residuals:  57.28753192<br />.model_desc: EARTH",".prediction: 472.6142<br />.residuals:  50.94882832<br />.model_desc: EARTH",".prediction: 473.0310<br />.residuals:  43.98568260<br />.model_desc: EARTH",".prediction: 473.4479<br />.residuals:  36.64200011<br />.model_desc: EARTH",".prediction: 473.8647<br />.residuals:  29.16168617<br />.model_desc: EARTH",".prediction: 474.2815<br />.residuals:  21.78864613<br />.model_desc: EARTH",".prediction: 474.6984<br />.residuals:  14.76678532<br />.model_desc: EARTH",".prediction: 475.1152<br />.residuals:   8.25609169<br />.model_desc: EARTH",".prediction: 475.5321<br />.residuals:   1.61641551<br />.model_desc: EARTH",".prediction: 475.9489<br />.residuals:  -5.26918146<br />.model_desc: EARTH",".prediction: 476.3657<br />.residuals: -12.31351796<br />.model_desc: EARTH",".prediction: 476.7826<br />.residuals: -19.42941268<br />.model_desc: EARTH",".prediction: 477.1994<br />.residuals: -26.52968435<br />.model_desc: EARTH",".prediction: 477.6163<br />.residuals: -33.52715170<br />.model_desc: EARTH",".prediction: 478.0331<br />.residuals: -40.33509548<br />.model_desc: EARTH",".prediction: 478.4500<br />.residuals: -46.98194571<br />.model_desc: EARTH",".prediction: 478.8668<br />.residuals: -53.54593000<br />.model_desc: EARTH",".prediction: 479.2836<br />.residuals: -60.04993999<br />.model_desc: EARTH",".prediction: 479.7005<br />.residuals: -66.51686732<br />.model_desc: EARTH",".prediction: 480.1173<br />.residuals: -72.96960362<br />.model_desc: EARTH",".prediction: 480.5342<br />.residuals: -79.43104051<br />.model_desc: EARTH",".prediction: 480.9510<br />.residuals: -85.92406963<br />.model_desc: EARTH",".prediction: 480.9510<br />.residuals: -85.92406963<br />.model_desc: EARTH",".prediction: 480.5342<br />.residuals: -79.43104051<br />.model_desc: EARTH",".prediction: 480.1173<br />.residuals: -72.96960362<br />.model_desc: EARTH",".prediction: 479.7005<br />.residuals: -66.51686732<br />.model_desc: EARTH",".prediction: 479.2836<br />.residuals: -60.04993999<br />.model_desc: EARTH",".prediction: 478.8668<br />.residuals: -53.54593000<br />.model_desc: EARTH",".prediction: 478.4500<br />.residuals: -46.98194571<br />.model_desc: EARTH",".prediction: 478.0331<br />.residuals: -40.33509548<br />.model_desc: EARTH",".prediction: 477.6163<br />.residuals: -33.52715170<br />.model_desc: EARTH",".prediction: 477.1994<br />.residuals: -26.52968435<br />.model_desc: EARTH",".prediction: 476.7826<br />.residuals: -19.42941268<br />.model_desc: EARTH",".prediction: 476.3657<br />.residuals: -12.31351796<br />.model_desc: EARTH",".prediction: 475.9489<br />.residuals:  -5.26918146<br />.model_desc: EARTH",".prediction: 475.5321<br />.residuals:   1.61641551<br />.model_desc: EARTH",".prediction: 475.1152<br />.residuals:   8.25609169<br />.model_desc: EARTH",".prediction: 474.6984<br />.residuals:  14.76678532<br />.model_desc: EARTH",".prediction: 474.2815<br />.residuals:  21.78864613<br />.model_desc: EARTH",".prediction: 473.8647<br />.residuals:  29.16168617<br />.model_desc: EARTH",".prediction: 473.4479<br />.residuals:  36.64200011<br />.model_desc: EARTH",".prediction: 473.0310<br />.residuals:  43.98568260<br />.model_desc: EARTH",".prediction: 472.6142<br />.residuals:  50.94882832<br />.model_desc: EARTH",".prediction: 472.1973<br />.residuals:  57.28753192<br />.model_desc: EARTH",".prediction: 471.7805<br />.residuals:  63.29220511<br />.model_desc: EARTH",".prediction: 471.3636<br />.residuals:  71.22714094<br />.model_desc: EARTH",".prediction: 470.9468<br />.residuals:  80.67072735<br />.model_desc: EARTH",".prediction: 470.5300<br />.residuals:  90.79394690<br />.model_desc: EARTH",".prediction: 470.1131<br />.residuals: 100.76778216<br />.model_desc: EARTH",".prediction: 469.6963<br />.residuals: 109.76321569<br />.model_desc: EARTH",".prediction: 469.2794<br />.residuals: 116.95123007<br />.model_desc: EARTH",".prediction: 468.8626<br />.residuals: 121.56857001<br />.model_desc: EARTH",".prediction: 468.4458<br />.residuals: 124.69368099<br />.model_desc: EARTH",".prediction: 468.0289<br />.residuals: 127.02948852<br />.model_desc: EARTH",".prediction: 467.6121<br />.residuals: 128.62767817<br />.model_desc: EARTH",".prediction: 467.1952<br />.residuals: 129.53993550<br />.model_desc: EARTH",".prediction: 466.7784<br />.residuals: 129.81794606<br />.model_desc: EARTH",".prediction: 466.3615<br />.residuals: 129.51339543<br />.model_desc: EARTH",".prediction: 465.9447<br />.residuals: 128.67796915<br />.model_desc: EARTH",".prediction: 465.5279<br />.residuals: 126.41505668<br />.model_desc: EARTH",".prediction: 465.1110<br />.residuals: 121.87597402<br />.model_desc: EARTH",".prediction: 464.6942<br />.residuals: 115.73590473<br />.model_desc: EARTH",".prediction: 464.2773<br />.residuals: 108.67800341<br />.model_desc: EARTH",".prediction: 463.8605<br />.residuals: 101.38542464<br />.model_desc: EARTH",".prediction: 463.4437<br />.residuals:  94.54132300<br />.model_desc: EARTH",".prediction: 463.0268<br />.residuals:  88.82885308<br />.model_desc: EARTH",".prediction: 462.6100<br />.residuals:  83.37236518<br />.model_desc: EARTH",".prediction: 462.1931<br />.residuals:  76.06666365<br />.model_desc: EARTH",".prediction: 461.7763<br />.residuals:  67.48744698<br />.model_desc: EARTH",".prediction: 461.3594<br />.residuals:  58.26282163<br />.model_desc: EARTH",".prediction: 460.9426<br />.residuals:  49.02089407<br />.model_desc: EARTH",".prediction: 460.5258<br />.residuals:  40.38977075<br />.model_desc: EARTH",".prediction: 460.1089<br />.residuals:  32.99755814<br />.model_desc: EARTH",".prediction: 459.6921<br />.residuals:  27.09273503<br />.model_desc: EARTH",".prediction: 459.2752<br />.residuals:  21.13630797<br />.model_desc: EARTH",".prediction: 458.8584<br />.residuals:  15.03632959<br />.model_desc: EARTH",".prediction: 458.4416<br />.residuals:   8.97300188<br />.model_desc: EARTH",".prediction: 458.0247<br />.residuals:   3.12652684<br />.model_desc: EARTH",".prediction: 457.6079<br />.residuals:  -2.32289354<br />.model_desc: EARTH",".prediction: 457.1910<br />.residuals:  -7.19505726<br />.model_desc: EARTH",".prediction: 456.7742<br />.residuals: -11.39180683<br />.model_desc: EARTH",".prediction: 456.3573<br />.residuals: -15.36313902<br />.model_desc: EARTH",".prediction: 455.9405<br />.residuals: -19.17373100<br />.model_desc: EARTH",".prediction: 455.5237<br />.residuals: -22.78165208<br />.model_desc: EARTH",".prediction: 455.1068<br />.residuals: -26.14497154<br />.model_desc: EARTH",".prediction: 454.6900<br />.residuals: -29.22175865<br />.model_desc: EARTH",".prediction: 454.2731<br />.residuals: -31.97008272<br />.model_desc: EARTH",".prediction: 453.8563<br />.residuals: -34.35001410<br />.model_desc: EARTH",".prediction: 453.4395<br />.residuals: -36.43944971<br />.model_desc: EARTH",".prediction: 453.0226<br />.residuals: -38.29018319<br />.model_desc: EARTH",".prediction: 452.6058<br />.residuals: -39.89293119<br />.model_desc: EARTH",".prediction: 452.1889<br />.residuals: -41.23841037<br />.model_desc: EARTH",".prediction: 451.7721<br />.residuals: -42.31733738<br />.model_desc: EARTH",".prediction: 451.3552<br />.residuals: -43.12042889<br />.model_desc: EARTH",".prediction: 450.9384<br />.residuals: -43.63935911<br />.model_desc: EARTH",".prediction: 450.5216<br />.residuals: -43.88218341<br />.model_desc: EARTH",".prediction: 450.1047<br />.residuals: -43.85447402<br />.model_desc: EARTH",".prediction: 449.6879<br />.residuals: -43.55795100<br />.model_desc: EARTH",".prediction: 449.2710<br />.residuals: -42.99433438<br />.model_desc: EARTH",".prediction: 448.8542<br />.residuals: -42.16534422<br />.model_desc: EARTH",".prediction: 448.4374<br />.residuals: -41.07270056<br />.model_desc: EARTH",".prediction: 448.0205<br />.residuals: -39.71812344<br />.model_desc: EARTH",".prediction: 448.0205<br />.residuals: -39.71812344<br />.model_desc: EARTH"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"transparent","dash":"solid"},"fill":"toself","fillcolor":"rgba(0,191,196,0.312)","hoveron":"points","hoverinfo":"x+y","name":"EARTH","legendgroup":"EARTH","showlegend":false,"xaxis":"x2","yaxis":"y2","frame":null}],"layout":{"margin":{"t":55.4520547945205,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Skedacity Scatter Plot","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,0.482876712328767],"automargin":true,"type":"linear","autorange":false,"range":[396.214948880924,634.711511747921],"tickmode":"array","ticktext":["400","450","500","550","600"],"tickvals":[400,450,500,550,600],"categoryorder":"array","categoryarray":["400","450","500","550","600"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":"","hoverformat":".2f"},"annotations":[{"text":"Predictions","x":0.5,"y":0,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"top","annotationType":"axis","yshift":-21.9178082191781},{"text":"Residuals","x":0,"y":0.5,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-90,"xanchor":"right","yanchor":"center","annotationType":"axis","xshift":-27.7625570776256},{"text":"ARIMA(1,1,0)(0,1,0)[12]","x":0.241438356164384,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"},{"text":"EARTH","x":0.758561643835616,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(26,26,26,1)","family":"","size":11.689497716895},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"center","yanchor":"bottom"}],"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-76.5860249742648,42.0944922106756],"tickmode":"array","ticktext":["-75","-50","-25","0","25"],"tickvals":[-75,-50,-25,0,25],"categoryorder":"array","categoryarray":["-75","-50","-25","0","25"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":"","hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.482876712328767,"y0":0,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":0.482876712328767,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.517123287671233,"x1":1,"y0":0,"y1":1},{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0.517123287671233,"x1":1,"y0":0,"y1":23.37899543379,"yanchor":1,"ysizemode":"pixel"}],"xaxis2":{"type":"linear","autorange":false,"range":[446.373984417441,482.597530434471],"tickmode":"array","ticktext":["450","460","470","480"],"tickvals":[450,460,470,480],"categoryorder":"array","categoryarray":["450","460","470","480"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0.517123287671233,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y2","title":"","hoverformat":".2f"},"yaxis2":{"type":"linear","autorange":false,"range":[-170.008023925762,192.090621036207],"tickmode":"array","ticktext":["-100","0","100"],"tickvals":[-100,0,100],"categoryorder":"array","categoryarray":["-100","0","100"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"domain":[0,1],"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x2","title":"","hoverformat":".2f"},"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"18020df7a69":{"x":{},"y":{},"fill":{},"type":"scatter"},"1806a2a669e":{"x":{},"y":{},"fill":{}}},"cur_data":"18020df7a69","visdat":{"18020df7a69":["function (y) ","x"],"1806a2a669e":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  let localAlternateSentinel = 'alternate';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } 
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
