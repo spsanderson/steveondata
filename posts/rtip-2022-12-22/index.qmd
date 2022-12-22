@@ -1,0 +1,60 @@
+---
+title: "Listing Functions and Parameters"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-22"
+categories: [code, rtip, dplyr]
+---
+
+# Introduction
+
+I got a little bored one day and decided I wanted to list out all of the functions inside of a package along with their parameters in a tibble. Not sure if this serves any particular purpose or not, I was just bored.
+
+This does not work for packages that have data as an export like [`{healthyR}`](https://www.spsanderson.com/healthyR/) or [`{healthyR.data}`](https://www.spsanderson.com/healthyR.data/) but it will work for packages like [`{TidyDensity}`](https://www.spsanderson.com/TidyDensity/).
+
+Let's run through it
+
+# Examples
+
+Here we go.
+
+```{r ex1, message=FALSE, warning=FALSE}
+library(TidyDensity)
+
+dplyr::tibble(fns = ls(paste0("package:TidyDensity"))) |>
+  dplyr::group_by(fns) |>
+  dplyr::mutate(params = purrr::map(fns, formalArgs) |>
+           toString()) |>
+  dplyr::mutate(func_with_params = stringr::str_remove(params, "c")) |>
+  dplyr::mutate(func_with_params = ifelse(
+    stringr::str_detect(
+      func_with_params, "\\("), 
+      paste0(fns, func_with_params), 
+      paste0(fns, "(", func_with_params, ")")
+    )) |>
+  dplyr::ungroup() |>
+  knitr::kable()
+```
+
+Another example.
+
+```{r ex2, message=FALSE, warning=FALSE}
+library(healthyverse)
+
+library(TidyDensity)
+
+dplyr::tibble(fns = ls(paste0("package:healthyverse"))) |>
+  dplyr::group_by(fns) |>
+  dplyr::mutate(params = purrr::map(fns, formalArgs) |>
+           toString()) |>
+  dplyr::mutate(func_with_params = stringr::str_remove(params, "c")) |>
+  dplyr::mutate(func_with_params = ifelse(
+    stringr::str_detect(
+      func_with_params, "\\("), 
+      paste0(fns, func_with_params), 
+      paste0(fns, "(", func_with_params, ")")
+    )) |>
+  dplyr::ungroup() |>
+  knitr::kable()
+```
+
+Voila!
