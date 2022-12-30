@@ -1,0 +1,155 @@
+---
+title: "Time to Event Analysis with {healthyR.ts}"
+author: "Steven P. Sanderson II, MPH"
+date: "2022-12-30"
+categories: [code, rtip, healthyrts, timeseries]
+---
+
+# Introduction
+
+Time-to-event analysis, also known as survival analysis, is a statistical technique used to analyze the length of time until an event occurs. This type of analysis is often used in fields such as healthcare, engineering, and finance to understand the factors that influence the likelihood of an event occurring and to make predictions about future events.
+
+In economics, an event study is a statistical technique used to analyze the effect of a specific event on a particular market or financial instrument. Event studies are commonly used in finance to understand how events, such as the announcement of a new product, the release of financial earnings, or a change in government policy, may impact the price or performance of a company's stock or other financial instruments.
+
+To conduct an event study, analysts typically collect data on the performance of a market or financial instrument before and after the event in question. This data is then used to estimate the effect of the event on the market or instrument.
+
+There are several different methods that can be used to conduct an event study, including the market model, the abnormal return method, and the buy-and-hold abnormal return method. These methods allow analysts to quantify the effect of the event on the market or instrument and to identify any changes in market behavior that may have occurred as a result of the event.
+
+Overall, event studies are a valuable tool for understanding how specific events may impact financial markets and instruments, and are widely used in finance and economics to inform investment decisions and to better understand market behavior.
+
+In this post we are going to examine a function from the R package [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/) has a function called [`ts_time_event_analysis_tbl()`](https://www.spsanderson.com/healthyR.ts/reference/ts_time_event_analysis_tbl.html) that will help us understand what happens after a specified event, in this instance it will always be some percentage decrease or increase in a value.
+
+There is a great article from Investopedia on this economic topic [here](https://www.investopedia.com/terms/e/eventstudy.asp)
+
+# Function
+
+The function is `ts_time_event_analysis_tbl()` and it's complimentary plotting function [`ts_event_analysis_plot()`](https://www.spsanderson.com/healthyR.ts/reference/ts_event_analysis_plot.html).
+
+Here is the `tibble` data return function.
+
+```{r eval=FALSE}
+ts_time_event_analysis_tbl(
+  .data,
+  .date_col,
+  .value_col,
+  .percent_change = 0.05,
+  .horizon = 12,
+  .precision = 2,
+  .direction = "forward",
+  .filter_non_event_groups = TRUE
+)
+```
+
+Let's take a look at the arguments to the parameters for this one.
+
+*  `.data` - The date.frame/tibble that holds the data.
+*  `.date_col` - The column with the date value.
+*  `.value_col` - The column with the value you are measuring.
+*  `.percent_change` - This defaults to 0.05 which is a 5% increase in the `value_col.`
+*  `.horizon` - How far do you want to look back or ahead.
+*  `.precision` - The default is 2 which means it rounds the lagged 1 value percent change to 2 decimal points. You may want more for more finely tuned results, this will result in fewer groupings.
+*  `.direction` - The default is forward. You can supply either forward, backwards or both.
+*  `filter_non_event_groups` - The default is TRUE, this drops groupings with no events on the rare occasion it does occur.
+
+Now the plotting function.
+
+```{r eval=FALSE}
+ts_event_analysis_plot(
+  .data,
+  .plot_type = "mean",
+  .plot_ci = TRUE,
+  .interactive = FALSE
+)
+```
+
+*  `.data` - The data that comes from the ts_time_event_analysis_tbl()
+*  `.plot_type` - The default is "mean" which will show the mean event change of the output from the analysis tibble. The possible values for this are: mean, median, and individual.
+*  `.plot_ci` - The default is TRUE. This will only work if you choose one of the aggregate plots of either "mean" or "median"
+*  `.interactive` - The default is FALSE. TRUE will return a `plotly` plot.
+
+# Examples
+
+Let's go through a couple examples using the AirPassengers data. We will first transform it into a `tibble` and then we will use a look period of 6. Let's see the data output and then we will visualize.
+
+```{r warning=FALSE, message=FALSE}
+library(healthyR.ts)
+library(dplyr)
+
+df <- ts_to_tbl(AirPassengers) %>% select(-index)
+
+event_tbl <- ts_time_event_analysis_tbl(
+  .data = df,
+  .horizon = 6,
+  .date_col = date_col,
+  .value_col = value,
+  .direction = "both"
+)
+
+glimpse(event_tbl)
+```
+
+Let's visualize!
+
+```{r warning=FALSE, message=FALSE}
+ts_event_analysis_plot(
+  .data = event_tbl
+)
+```
+
+Let's see the median now.
+
+```{r warning=FALSE, message=FALSE}
+ts_event_analysis_plot(
+  .data = event_tbl,
+  .plot_type = "median"
+)
+```
+
+Now let's see it as an interactive plot.
+
+```{r warning=FALSE, message=FALSE}
+ts_event_analysis_plot(
+  .data = event_tbl,
+  .plot_type = "median",
+  .interactive = TRUE
+)
+```
+
+Now let's see all the individual groups.
+
+```{r warning=FALSE, message=FALSE}
+ts_event_analysis_plot(
+  .data = event_tbl,
+  .plot_type = "individual",
+  .interactive = TRUE
+)
+```
+
+Single direction plotting.
+
+```{r warning=FALSE, message=FALSE}
+ts_time_event_analysis_tbl(
+  .data = df,
+  .horizon = 6,
+  .date_col = date_col,
+  .value_col = value,
+  .direction = "backward"
+) %>%
+  ts_event_analysis_plot()
+```
+
+And...
+
+```{r warning=FALSE, message=FALSE}
+ts_time_event_analysis_tbl(
+  .data = df,
+  .horizon = 6,
+  .date_col = date_col,
+  .value_col = value,
+  .direction = "forward"
+) %>%
+  ts_event_analysis_plot()
+```
+
+
+Voila!
