@@ -1,0 +1,113 @@
+---
+title: "An Update on {tidyAML}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-01-12"
+categories: [code, rtip, tidyaml, automl]
+---
+
+# Introduction
+
+I have been doing a lot of work on a new package called [`{tidyAML}`](https://www.spsanderson.com/tidyAML/).  `{tidyAML}` is a new R package that makes it easy to use the `{tidymodels}` ecosystem to perform automated machine learning (AutoML). This package provides a simple and intuitive interface that allows users to quickly generate machine learning models without worrying about the underlying details. It also includes a safety mechanism that ensures that the package will fail gracefully if any required extension packages are not installed on the user’s machine. With `{tidyAML}`, users can easily build high-quality machine learning models in just a few lines of code. Whether you are a beginner or an experienced machine learning practitioner, `{tidyAML}` has something to offer.
+
+Some ideas are that we should be able to generate regression models on the fly without having to actually go through the process of building the specification, especially if it is a non-tuning model, meaning we are not planing on tuning hyper-parameters like penalty and cost.
+
+The idea is not to re-write the excellent work the `{tidymodels}` team has done (because it’s not possible) but rather to try and make an enhanced easy to use set of functions that do what they say and can generate many models and predictions at once.
+
+This is similar to the great `{h2o}` package, but, `{tidyAML}` does not require `java` to be setup properly like `{h2o}` because `{tidyAML}` is built on `{tidymodels}`.
+
+This package is not yet release, so you can only install from _GitHub_ with the following:
+
+```{r eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("spsanderson/tidyAML")
+```
+
+# Example
+
+```{r warning=FALSE, message=FALSE}
+library(tidyAML)
+
+fast_regression_parsnip_spec_tbl(.parsnip_fns = "linear_reg")
+fast_regression_parsnip_spec_tbl(.parsnip_eng = c("lm","glm"))
+fast_regression_parsnip_spec_tbl(.parsnip_eng = c("lm","glm","gee"), 
+                                 .parsnip_fns = "linear_reg")
+```
+
+As shown we can easily select the models we want either by choosing the supported parsnip function like linear_reg() or by choose the desired engine, you can also use them both in conjunction with each other!
+
+Now, what if you want to create a non-tuning model spec without using the fast_regression_parsnip_spec_tbl() function. Well, you can. The function is called create_model_spec().
+
+```{r warning=FALSE, message=FALSE}
+create_model_spec(
+ .parsnip_eng = list("lm","glm","glmnet","cubist"),
+ .parsnip_fns = list(
+      rep(
+        "linear_reg", 3),
+        "cubist_rules"
+     )
+ )
+
+create_model_spec(
+ .parsnip_eng = list("lm","glm","glmnet","cubist"),
+ .parsnip_fns = list(
+      rep(
+        "linear_reg", 3),
+        "cubist_rules"
+     ),
+ .return_tibble = FALSE
+ )
+```
+
+Now the reason we are here. Let’s take a look at the first function for modeling with tidyAML, fast_regression().
+
+```{r warning=FALSE, message=FALSE}
+library(recipes)
+library(dplyr)
+library(purrr)
+
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+frt_tbl <- fast_regression(
+  .data = mtcars, 
+  .rec_obj = rec_obj, 
+  .parsnip_eng = c("lm","glm"),
+  .parsnip_fns = "linear_reg"
+)
+
+glimpse(frt_tbl)
+```
+
+Now lets take a look at a few different things in the `frt_tbl`.
+
+```{r warning=FALSE, message=FALSE}
+names(frt_tbl)
+```
+
+Let's look at a single model spec.
+
+```{r warning=FALSE, message=FALSE}
+frt_tbl %>% slice(1) %>% select(model_spec) %>% pull() %>% pluck(1)
+```
+
+Now the `wflw` column.
+
+```{r warning=FALSE, message=FALSE}
+frt_tbl %>% slice(1) %>% select(wflw) %>% pull() %>% pluck(1)
+```
+
+The fitted wflw object.
+
+```{r warning=FALSE, message=FALSE}
+frt_tbl %>% slice(1) %>% select(fitted_wflw) %>% pull() %>% pluck(1)
+
+frt_tbl %>% slice(1) %>% select(fitted_wflw) %>% pull() %>% pluck(1) %>%
+  broom::glance() %>%
+  glimpse()
+```
+
+And finally the predictions (this one I am probably going to change up).
+
+```{r warning=FALSE, message=FALSE}
+frt_tbl %>% slice(1) %>% select(pred_wflw) %>% pull() %>% pluck(1)
+```
+
+Voila!
