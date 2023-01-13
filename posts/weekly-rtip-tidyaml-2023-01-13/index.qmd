@@ -1,0 +1,98 @@
+---
+title: "The building of {tidyAML}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-01-13"
+categories: [code, rtip, tidyaml, purrr]
+---
+
+# Introduction
+
+Yesterday I posted on [An Update to `{tidyAML}`](https://www.spsanderson.com/steveondata/posts/rtip-2023-01-12/) where I was discussing some of my thought process and how things could potentially work for the package.
+
+Today I want to showcase how the function [`fast_regression_parsnip_spec_tbl()`](https://www.spsanderson.com/tidyAML/reference/fast_regression_parsnip_spec_tbl.html) and it's complimentary function [`fast_classification_parsnip_spec_tbl()`](https://www.spsanderson.com/tidyAML/reference/fast_classification_parsnip_spec_tbl.html) actually work or maybe don't work for that matter.
+
+We are going to pick on `fast_regression_parsnip_spec_tbl()` in today's post. The point of it is that it creates a `tibble` of `parsnip` **regression model specifications**. This will create a `tibble` of 46 different regression model specifications which can be filtered. The model specs are created first and then filtered out. This will only create models for regression problems. To find all of the supported models in this package you can visit [the parsnip search page](https://www.tidymodels.org/find/parsnip/)
+
+# Function
+
+First let's take a look at the function call itself.
+
+```{r eval=FALSE}
+fast_regression_parsnip_spec_tbl(
+  .parsnip_fns = "all", 
+  .parsnip_eng = "all"
+  )
+```
+
+Now let's take a look at the arguments:
+
+-   `.parsnip_fns` - The default for this is set to all. This means that all of the parsnip linear regression functions will be used, for example linear_reg(), or cubist_rules. You can also choose to pass a `c()` vector like `c("linear_reg","cubist_rules")`
+-   `.parsnip_eng` - The default for this is set to all. This means that all of the parsnip linear regression engines will be used, for example `lm`, or `glm`. You can also choose to pass a `c(`) vector like `c('lm', 'glm')`
+
+The workhorse to this function is the [`internal_make_spec_tbl()`](https://www.spsanderson.com/tidyAML/reference/internal_make_spec_tbl.html) function. This is the one that will be the subject of the post. Let's take a look at it's inner workings, afterall this is open source.
+
+```{r eval=FALSE}
+internal_make_spec_tbl <- function(.data){
+
+  # Checks ----
+  df <- dplyr::as_tibble(.data)
+
+  nms <- unique(names(df))
+
+  if (!".parsnip_engine" %in% nms | !".parsnip_mode" %in% nms | !".parsnip_fns" %in% nms){
+    rlang::abort(
+      message = "The model tibble must come from the class/reg to parsnip function.",
+      use_cli_format = TRUE
+    )
+  }
+
+  # Make tibble ----
+  mod_spec_tbl <- df %>%
+    dplyr::mutate(
+      model_spec = purrr::pmap(
+        dplyr::cur_data(),
+        ~ match.fun(..3)(mode = ..2, engine = ..1)
+      )
+    ) %>%
+    # add .model_id column
+    dplyr::mutate(.model_id = dplyr::row_number()) %>%
+    dplyr::select(.model_id, dplyr::everything())
+
+  # Return ----
+  return(mod_spec_tbl)
+
+}
+```
+
+Let's examine this (and it is currently changing form in a github issue). Firstly, we are taking in a data.frame/tibble that has to have certain names in it (this is going to change and look for a class instead). Once this determination is `TRUE` we then proceed to the meat and potatoes of it. The internal `mod_spec_tbl` is made using `mutate`, `pmap`, `cur_data` and `match.fun`. What this does essentially is the following:
+
+1.  `mutate` a column called `model_spec`
+2.  Use the `{purrr}` function `pmap` which maps over several columns in parallel to create the model spec.
+3.  Inside of the `pmap` we use `cur_data()` to get the current line where we match the function using `match.fun` (which takes a character string of the function, this means the library needs to be loaded) we supply the column it is in and then we supply the arguments we want.
+4.  We give it a numeric model id
+5.  We then ensure that the `.model_id` column is first.
+
+# Example
+
+Let's see it in action!
+
+```{r warning=FALSE, message=FALSE}
+library(tidyAML) # Not yet available, you can install from GitHub though
+
+fast_regression_parsnip_spec_tbl()
+```
+
+So we see we get a nicely generated `tibble` of output that matchs a model spec to the `.model_id` and to the appropriate `parsnip engine` and `mode`
+
+We can also choose the models we may want by giving either arguments to the `.parsnip_engine` parameter or `.parsnip_fns` or both.
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+
+fast_regression_parsnip_spec_tbl(.parsnip_fns = "linear_reg")
+fast_regression_parsnip_spec_tbl(.parsnip_eng = c("lm","glm"))
+fast_regression_parsnip_spec_tbl(.parsnip_eng = "glm") %>%
+  pull(model_spec)
+```
+
+Voila!
