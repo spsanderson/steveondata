@@ -1,0 +1,107 @@
+---
+title: "Augmenting a Brownian Motion to a Time Series with {healthyR.ts}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-01-17"
+categories: [code, rtip, timeseries, healthyrts]
+---
+
+# Introduction
+
+Time series analysis is a crucial tool for forecasting and understanding trends in various industries, including finance, economics, and engineering. However, traditional time series analysis methods can be limiting, and they may not always capture the complex dynamics of real-world data. That's where the R package [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/) comes in.
+
+The [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/) package is a powerful tool for time series analysis that offers a wide range of functions for cleaning, transforming, and analyzing time series data. One of its standout features is the `ts_brownian_motion_augment()` function, which allows you to add a brownian motion to a given time series dataset. This powerful tool can be used to simulate more realistic and complex scenarios, making it an invaluable tool for forecasters and data analysts.
+
+Brownian motion is a random walk process that can be used to model the movement of particles in a fluid. It has been widely used in mathematical finance, physics, and engineering to model the random movements of stock prices, pollutant concentrations, and other phenomena. By adding a brownian motion to a time series dataset, the `ts_brownian_motion_augment()` function allows users to capture the unpredictable and random nature of real-world data, making time series analysis more accurate and reliable.
+
+The `ts_brownian_motion_augment()` function is easy to use and requires no prior knowledge of brownian motion or advanced mathematics. With just a few lines of code, users can quickly add a brownian motion to their time series dataset and begin analyzing the data with greater precision and confidence.
+
+This set of functionality will be included in the next release which will be coming soon as it also speeds up the current `ts_brownian_motion()` function by 49x!
+
+# Function
+
+Here is the full function call.
+
+```{r eval=FALSE}
+ts_brownian_motion_augment(
+  .data,
+  .date_col,
+  .value_col,
+  .time = 100,
+  .num_sims = 10,
+  .delta_time = NULL
+)
+```
+
+Let's take a look at the arguments for the parameters.
+
+*  `.data` - The data.frame/tibble being augmented.
+*  `.date_col` - The column that holds the date.
+*  `.value_col` - The value that is going to get augmented. The last value of this column becomes the initial value internally.
+*  `.time` - How many time steps ahead.
+*  `.num_sims` - How many simulations should be run.
+*  `.delta_time` - Time step size.
+
+
+# Example
+
+Now for an example.
+
+```{r warning=FALSE, message=FALSE}
+library(tidyquant)
+library(dplyr)
+library(timetk)
+library(ggplot2)
+library(healthyR.ts)
+
+df <- FANG %>%
+  filter(symbol == "FB") %>%
+  select(symbol, date, adjusted) %>%
+  filter_by_time(.date_var = date, .start_date = "2016-01-01") %>%
+  tq_mutate(select = adjusted, mutate_fun = periodReturn,
+            period = "daily", type = "log",
+            col_rename = "daily_returns")
+```
+
+Let's take a look at our initial data.
+
+```{r}
+df
+```
+
+Now let's augment it with the brownian motion and see that data set before we visualize it.
+
+```{r}
+df %>%
+  ts_brownian_motion_augment(
+    .date_col = date,
+    .num_sims = 50,
+    .value_col = daily_returns,
+    .delta_time = 0.00005
+  )
+```
+
+As you see the function preserves the names of the input columns!
+
+Now, let's see it!
+
+```{r}
+df %>%
+  ts_brownian_motion_augment(
+    .date_col = date,
+    .num_sims = 50,
+    .value_col = daily_returns,
+    .delta_time = 0.00005
+  ) %>%
+  ggplot(aes(x = date, y = daily_returns
+             , group = sim_number, color = sim_number)) +
+  geom_line() +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(
+    title = "FB Log Daily Returns for 2016",
+    x = "Date",
+    y = "Log Daily Returns"
+  )
+```
+
+Voila!

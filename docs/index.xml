@@ -10,7 +10,148 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Mon, 16 Jan 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 17 Jan 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Augmenting a Brownian Motion to a Time Series with {healthyR.ts}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-17/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Time series analysis is a crucial tool for forecasting and understanding trends in various industries, including finance, economics, and engineering. However, traditional time series analysis methods can be limiting, and they may not always capture the complex dynamics of real-world data. That’s where the R package <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> comes in.</p>
+<p>The <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> package is a powerful tool for time series analysis that offers a wide range of functions for cleaning, transforming, and analyzing time series data. One of its standout features is the <code>ts_brownian_motion_augment()</code> function, which allows you to add a brownian motion to a given time series dataset. This powerful tool can be used to simulate more realistic and complex scenarios, making it an invaluable tool for forecasters and data analysts.</p>
+<p>Brownian motion is a random walk process that can be used to model the movement of particles in a fluid. It has been widely used in mathematical finance, physics, and engineering to model the random movements of stock prices, pollutant concentrations, and other phenomena. By adding a brownian motion to a time series dataset, the <code>ts_brownian_motion_augment()</code> function allows users to capture the unpredictable and random nature of real-world data, making time series analysis more accurate and reliable.</p>
+<p>The <code>ts_brownian_motion_augment()</code> function is easy to use and requires no prior knowledge of brownian motion or advanced mathematics. With just a few lines of code, users can quickly add a brownian motion to their time series dataset and begin analyzing the data with greater precision and confidence.</p>
+<p>This set of functionality will be included in the next release which will be coming soon as it also speeds up the current <code>ts_brownian_motion()</code> function by 49x!</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Here is the full function call.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">ts_brownian_motion_augment</span>(</span>
+<span id="cb1-2">  .data,</span>
+<span id="cb1-3">  .date_col,</span>
+<span id="cb1-4">  .value_col,</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;">.time =</span> <span class="dv" style="color: #AD0000;">100</span>,</span>
+<span id="cb1-6">  <span class="at" style="color: #657422;">.num_sims =</span> <span class="dv" style="color: #AD0000;">10</span>,</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;">.delta_time =</span> <span class="cn" style="color: #8f5902;">NULL</span></span>
+<span id="cb1-8">)</span></code></pre></div>
+</div>
+<p>Let’s take a look at the arguments for the parameters.</p>
+<ul>
+<li><code>.data</code> - The data.frame/tibble being augmented.</li>
+<li><code>.date_col</code> - The column that holds the date.</li>
+<li><code>.value_col</code> - The value that is going to get augmented. The last value of this column becomes the initial value internally.</li>
+<li><code>.time</code> - How many time steps ahead.</li>
+<li><code>.num_sims</code> - How many simulations should be run.</li>
+<li><code>.delta_time</code> - Time step size.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Now for an example.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(tidyquant)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(timetk)</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;">library</span>(healthyR.ts)</span>
+<span id="cb2-6"></span>
+<span id="cb2-7">df <span class="ot" style="color: #003B4F;">&lt;-</span> FANG <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-8">  <span class="fu" style="color: #4758AB;">filter</span>(symbol <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"FB"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-9">  <span class="fu" style="color: #4758AB;">select</span>(symbol, date, adjusted) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-10">  <span class="fu" style="color: #4758AB;">filter_by_time</span>(<span class="at" style="color: #657422;">.date_var =</span> date, <span class="at" style="color: #657422;">.start_date =</span> <span class="st" style="color: #20794D;">"2016-01-01"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-11">  <span class="fu" style="color: #4758AB;">tq_mutate</span>(<span class="at" style="color: #657422;">select =</span> adjusted, <span class="at" style="color: #657422;">mutate_fun =</span> periodReturn,</span>
+<span id="cb2-12">            <span class="at" style="color: #657422;">period =</span> <span class="st" style="color: #20794D;">"daily"</span>, <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"log"</span>,</span>
+<span id="cb2-13">            <span class="at" style="color: #657422;">col_rename =</span> <span class="st" style="color: #20794D;">"daily_returns"</span>)</span></code></pre></div>
+</div>
+<p>Let’s take a look at our initial data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">df</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 252 × 4
+   symbol date       adjusted daily_returns
+   &lt;chr&gt;  &lt;date&gt;        &lt;dbl&gt;         &lt;dbl&gt;
+ 1 FB     2016-01-04    102.        0      
+ 2 FB     2016-01-05    103.        0.00498
+ 3 FB     2016-01-06    103.        0.00233
+ 4 FB     2016-01-07     97.9      -0.0503 
+ 5 FB     2016-01-08     97.3      -0.00604
+ 6 FB     2016-01-11     97.5       0.00185
+ 7 FB     2016-01-12     99.4       0.0189 
+ 8 FB     2016-01-13     95.4      -0.0404 
+ 9 FB     2016-01-14     98.4       0.0302 
+10 FB     2016-01-15     95.0      -0.0352 
+# … with 242 more rows</code></pre>
+</div>
+</div>
+<p>Now let’s augment it with the brownian motion and see that data set before we visualize it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">df <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;">ts_brownian_motion_augment</span>(</span>
+<span id="cb5-3">    <span class="at" style="color: #657422;">.date_col =</span> date,</span>
+<span id="cb5-4">    <span class="at" style="color: #657422;">.num_sims =</span> <span class="dv" style="color: #AD0000;">50</span>,</span>
+<span id="cb5-5">    <span class="at" style="color: #657422;">.value_col =</span> daily_returns,</span>
+<span id="cb5-6">    <span class="at" style="color: #657422;">.delta_time =</span> <span class="fl" style="color: #AD0000;">0.00005</span></span>
+<span id="cb5-7">  )</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5,302 × 3
+   sim_number  date       daily_returns
+   &lt;fct&gt;       &lt;date&gt;             &lt;dbl&gt;
+ 1 actual_data 2016-01-04       0      
+ 2 actual_data 2016-01-05       0.00498
+ 3 actual_data 2016-01-06       0.00233
+ 4 actual_data 2016-01-07      -0.0503 
+ 5 actual_data 2016-01-08      -0.00604
+ 6 actual_data 2016-01-11       0.00185
+ 7 actual_data 2016-01-12       0.0189 
+ 8 actual_data 2016-01-13      -0.0404 
+ 9 actual_data 2016-01-14       0.0302 
+10 actual_data 2016-01-15      -0.0352 
+# … with 5,292 more rows</code></pre>
+</div>
+</div>
+<p>As you see the function preserves the names of the input columns!</p>
+<p>Now, let’s see it!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">df <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb7-2">  <span class="fu" style="color: #4758AB;">ts_brownian_motion_augment</span>(</span>
+<span id="cb7-3">    <span class="at" style="color: #657422;">.date_col =</span> date,</span>
+<span id="cb7-4">    <span class="at" style="color: #657422;">.num_sims =</span> <span class="dv" style="color: #AD0000;">50</span>,</span>
+<span id="cb7-5">    <span class="at" style="color: #657422;">.value_col =</span> daily_returns,</span>
+<span id="cb7-6">    <span class="at" style="color: #657422;">.delta_time =</span> <span class="fl" style="color: #AD0000;">0.00005</span></span>
+<span id="cb7-7">  ) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb7-8">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> date, <span class="at" style="color: #657422;">y =</span> daily_returns</span>
+<span id="cb7-9">             , <span class="at" style="color: #657422;">group =</span> sim_number, <span class="at" style="color: #657422;">color =</span> sim_number)) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-10">  <span class="fu" style="color: #4758AB;">geom_line</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-11">  <span class="fu" style="color: #4758AB;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-12">  <span class="fu" style="color: #4758AB;">theme</span>(<span class="at" style="color: #657422;">legend.position =</span> <span class="st" style="color: #20794D;">"none"</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb7-13">  <span class="fu" style="color: #4758AB;">labs</span>(</span>
+<span id="cb7-14">    <span class="at" style="color: #657422;">title =</span> <span class="st" style="color: #20794D;">"FB Log Daily Returns for 2016"</span>,</span>
+<span id="cb7-15">    <span class="at" style="color: #657422;">x =</span> <span class="st" style="color: #20794D;">"Date"</span>,</span>
+<span id="cb7-16">    <span class="at" style="color: #657422;">y =</span> <span class="st" style="color: #20794D;">"Log Daily Returns"</span></span>
+<span id="cb7-17">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-01-17/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <category>healthyrts</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-17/index.html</guid>
+  <pubDate>Tue, 17 Jan 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Auto K-Means with {healthyR.ai}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3765,161 +3906,6 @@ $ ci_high    &lt;dbl&gt; 2.1943864, 0.9579465</code></pre>
   <category>tidydesntiy</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-14/index.html</guid>
   <pubDate>Wed, 14 Dec 2022 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mixture Distributions with {TidyDensity}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-13/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>A mixture distribution is a type of probability distribution that is created by combining two or more simpler distributions. This allows us to model complex data that may have multiple underlying patterns. For example, a mixture distribution could be used to model a dataset that includes both continuous and discrete variables.</p>
-<p>To create a mixture distribution, we first need to specify the individual distributions that will be combined, as well as the weights that determine how much each distribution contributes to the overall mixture. Once we have these components, we can use them to calculate the probability of any given value occurring in the mixture distribution.</p>
-<p>Mixture distributions can be useful in a variety of applications, such as data analysis and machine learning. In data analysis, they can be used to model data that is not well-described by a single distribution, and in machine learning, they can be used to improve the performance of predictive models. Overall, mixture distributions are a powerful tool for understanding and working with complex data.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Let’s take a look a function in <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> that allows us to do this. At this moment, weights are not a parameter to the function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">tidy_mixture_density</span>(...)</span></code></pre></div>
-</div>
-<p>Now let’s take a look at the arguments that get supplied to the <code>...</code> parameter.</p>
-<ul>
-<li><code>...</code> - The random data you want to pass. Example rnorm(50,0,1) or something like tidy_normal(.mean = 5, .sd = 1)</li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Let’s take a look at an example.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3">output <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">tidy_mixture_density</span>(</span>
-<span id="cb2-4">  <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>, <span class="dv" style="color: #AD0000;">0</span>, <span class="dv" style="color: #AD0000;">1</span>), </span>
-<span id="cb2-5">  <span class="fu" style="color: #4758AB;">tidy_normal</span>(<span class="at" style="color: #657422;">.mean =</span> <span class="dv" style="color: #AD0000;">5</span>, <span class="at" style="color: #657422;">.sd =</span> <span class="dv" style="color: #AD0000;">1</span>)</span>
-<span id="cb2-6">)</span></code></pre></div>
-</div>
-<p>As you can see, you can enter a function that outputs a numeric vector or you can use a <code>{TidyDensity}</code> distribution function.</p>
-<p>Let’s take a look at the outputs.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">output<span class="sc" style="color: #5E5E5E;">$</span>data</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$dist_tbl
-# A tibble: 150 × 2
-       x       y
-   &lt;int&gt;   &lt;dbl&gt;
- 1     1  0.341 
- 2     2  1.02  
- 3     3  0.0727
- 4     4  0.166 
- 5     5  1.22  
- 6     6 -1.02  
- 7     7  0.510 
- 8     8 -0.440 
- 9     9  0.154 
-10    10 -1.71  
-# … with 140 more rows
-
-$dens_tbl
-# A tibble: 150 × 2
-       x         y
-   &lt;dbl&gt;     &lt;dbl&gt;
- 1 -5.10 0.0000452
- 2 -5.00 0.0000649
- 3 -4.91 0.0000926
- 4 -4.81 0.000130 
- 5 -4.71 0.000182 
- 6 -4.61 0.000251 
- 7 -4.52 0.000342 
- 8 -4.42 0.000463 
- 9 -4.32 0.000620 
-10 -4.23 0.000822 
-# … with 140 more rows
-
-$input_data
-$input_data$`rnorm(100, 0, 1)`
-  [1]  0.340537094  1.017947724  0.072677575  0.165989029  1.219143938
-  [6] -1.023473289  0.509929681 -0.440443183  0.153820008 -1.705894963
- [11] -1.597345196 -0.186384136 -2.594099308  0.233653364  0.811994363
- [16] -0.594942094  0.003107744 -0.889182158 -0.440905806  2.613419135
- [21]  0.853828238 -0.350536770  0.377864298  0.840972405 -0.132862546
- [26] -0.722874709  0.662916105  0.241055167  0.417758316 -0.638472585
- [31] -1.641039972 -0.920414204 -0.152141451 -0.437875952  0.085670806
- [36]  0.463827108 -0.522106822  0.500837004 -1.681585000 -0.154955758
- [41] -1.233628434 -0.725378152 -0.768707055 -2.070839826  2.306342549
- [46]  0.687025505 -1.081833687 -0.310171612 -1.709459599  0.995053299
- [51]  1.739132624 -0.108686350  0.916712737 -0.187255212  0.743396519
- [56] -1.141785566  1.671065850  1.953865678 -0.890899203 -1.537271940
- [61]  0.503394168  0.224776316  1.346257014  0.126784177  1.200079518
- [66] -1.453852152 -1.127011369  0.261459814 -0.002019175  1.640353320
- [71]  1.139002423  1.508466841  0.645805779 -0.322963918  1.340095220
- [76] -1.300832878  0.546650568 -0.558880636  1.951096245 -1.015339234
- [81]  1.069275018  0.133173860 -1.357403704  0.310231722 -0.784578245
- [86]  0.390688526 -0.719058316  0.593524764 -0.397886322 -0.126173974
- [91]  0.017003588 -0.266109359 -1.271686264 -0.288485067  0.932965997
- [96] -0.500822905 -0.879803183 -0.016200167  0.684898020 -0.536289497
-
-$input_data$`tidy_normal(.mean = 5, .sd = 1)`
-# A tibble: 50 × 7
-   sim_number     x     y    dx       dy       p     q
-   &lt;fct&gt;      &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;
- 1 1              1  5.11  1.42 0.000273 0.545    5.11
- 2 1              2  4.38  1.55 0.000835 0.267    4.38
- 3 1              3  4.81  1.68 0.00217  0.425    4.81
- 4 1              4  2.40  1.81 0.00482  0.00470  2.40
- 5 1              5  5.34  1.94 0.00913  0.632    5.34
- 6 1              6  5.39  2.07 0.0147   0.651    5.39
- 7 1              7  5.41  2.20 0.0203   0.659    5.41
- 8 1              8  4.20  2.34 0.0240   0.212    4.20
- 9 1              9  6.13  2.47 0.0246   0.871    6.13
-10 1             10  5.58  2.60 0.0225   0.718    5.58
-# … with 40 more rows</code></pre>
-</div>
-</div>
-<p>And now the visuals that come with it.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">output<span class="sc" style="color: #5E5E5E;">$</span>plots</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$line_plot</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2022-12-13/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-$dens_plot</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2022-12-13/index_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>The function also lists the input functions as well.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">output<span class="sc" style="color: #5E5E5E;">$</span>input_fns</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-rnorm(100, 0, 1)
-
-[[2]]
-tidy_normal(.mean = 5, .sd = 1)</code></pre>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidydesntiy</category>
-  <category>mixturemodels</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-13/index.html</guid>
-  <pubDate>Tue, 13 Dec 2022 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
