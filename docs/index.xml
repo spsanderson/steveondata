@@ -10,7 +10,228 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Fri, 20 Jan 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 23 Jan 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>ADF and Phillips-Perron Tests for Stationarity using lists</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-23/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>A time series is a set of data points collected at regular intervals of time. Sometimes, the data points in a time series change over time in a predictable way. This is called a stationary time series. Other times, the data points change in an unpredictable way. This is called a non-stationary time series.</p>
+<p>Imagine you are playing a game of catch with a friend. If you throw the ball back and forth at the same speed and distance, that’s like a stationary time series. But if you keep throwing the ball harder and farther, that’s like a non-stationary time series.</p>
+<p>There are two tests that we can use to see if a time series is stationary or non-stationary. The first test is called the ADF test, which stands for Augmented Dickey-Fuller test. The second test is called the Phillips-Perron test.</p>
+<p>The ADF test looks at the data points and checks to see if the average value of the data points is the same over time. If the average value is the same, then the time series is stationary. If the average value is not the same, then the time series is non-stationary.</p>
+<p>The Phillips-Perron test is similar to the ADF test, but it is a bit more advanced. It checks to see if the data points are changing in a predictable way. If the data points are changing in a predictable way, then the time series is stationary. If the data points are changing in an unpredictable way, then the time series is non-stationary.</p>
+<p>So, in short, The ADF test checks if the mean of the time series is constant over time and Phillips-Perron test checks if the variance of the time series is constant over time.</p>
+<p>Now, you can use these two tests to see if the time series you are studying is stationary or non-stationary, just like how you can use the game of catch to see if your throws are the same or different.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>To perform these test we can use two libraries, one is the <code>{tseries}</code> library for the <code>adf.test()</code> and the other is the <code>{aTSA}</code> for the <code>pp.test()</code></p>
+<p>Let’s see some examples.</p>
+</section>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+<p>Let’s first make our time series obejcts and place them in a list.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(tseries)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(aTSA)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;"># create time series objects</span></span>
+<span id="cb1-5">ts1 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ts</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">start =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1990</span>,<span class="dv" style="color: #AD0000;">1</span>), <span class="at" style="color: #657422;">frequency =</span> <span class="dv" style="color: #AD0000;">12</span>)</span>
+<span id="cb1-6">ts2 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ts</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">start =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1995</span>,<span class="dv" style="color: #AD0000;">1</span>), <span class="at" style="color: #657422;">frequency =</span> <span class="dv" style="color: #AD0000;">12</span>)</span>
+<span id="cb1-7">ts3 <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ts</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>), <span class="at" style="color: #657422;">start =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2000</span>,<span class="dv" style="color: #AD0000;">1</span>), <span class="at" style="color: #657422;">frequency =</span> <span class="dv" style="color: #AD0000;">12</span>)</span>
+<span id="cb1-8"></span>
+<span id="cb1-9"><span class="co" style="color: #5E5E5E;"># create list of time series</span></span>
+<span id="cb1-10">ts_list <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(ts1, ts2, ts3)</span></code></pre></div>
+</div>
+<p>Now let’s make our functions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;"># function to test for stationarity</span></span>
+<span id="cb2-2">adf_is_stationary <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(x) {</span>
+<span id="cb2-3">  <span class="fu" style="color: #4758AB;">adf.test</span>(x)<span class="sc" style="color: #5E5E5E;">$</span>p.value <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="fl" style="color: #AD0000;">0.05</span></span>
+<span id="cb2-4">}</span>
+<span id="cb2-5"></span>
+<span id="cb2-6">pp_is_stationary <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(x) {</span>
+<span id="cb2-7">  pp_df <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">pp.test</span>(x) <span class="sc" style="color: #5E5E5E;">|&gt;</span> <span class="fu" style="color: #4758AB;">as.data.frame</span>() </span>
+<span id="cb2-8">  pp_df<span class="sc" style="color: #5E5E5E;">$</span>p.value <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="fl" style="color: #AD0000;">0.05</span></span>
+<span id="cb2-9">}</span></code></pre></div>
+</div>
+<p>Time to use <code>lapply()</code>!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;"># apply function to each time series in list</span></span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">lapply</span>(ts_list, adf_is_stationary)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Augmented Dickey-Fuller Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+     lag    ADF p.value
+[1,]   0 -10.97    0.01
+[2,]   1  -7.70    0.01
+[3,]   2  -5.23    0.01
+[4,]   3  -4.05    0.01
+[5,]   4  -4.03    0.01
+Type 2: with drift no trend 
+     lag    ADF p.value
+[1,]   0 -11.48    0.01
+[2,]   1  -8.32    0.01
+[3,]   2  -5.81    0.01
+[4,]   3  -4.59    0.01
+[5,]   4  -4.63    0.01
+Type 3: with drift and trend 
+     lag    ADF p.value
+[1,]   0 -11.42    0.01
+[2,]   1  -8.28    0.01
+[3,]   2  -5.77    0.01
+[4,]   3  -4.56    0.01
+[5,]   4  -4.59    0.01
+---- 
+Note: in fact, p.value = 0.01 means p.value &lt;= 0.01 
+Augmented Dickey-Fuller Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+     lag    ADF p.value
+[1,]   0 -10.60    0.01
+[2,]   1  -7.88    0.01
+[3,]   2  -5.96    0.01
+[4,]   3  -5.26    0.01
+[5,]   4  -4.90    0.01
+Type 2: with drift no trend 
+     lag    ADF p.value
+[1,]   0 -10.64    0.01
+[2,]   1  -7.98    0.01
+[3,]   2  -6.08    0.01
+[4,]   3  -5.41    0.01
+[5,]   4  -5.08    0.01
+Type 3: with drift and trend 
+     lag    ADF p.value
+[1,]   0 -10.58    0.01
+[2,]   1  -7.94    0.01
+[3,]   2  -6.06    0.01
+[4,]   3  -5.39    0.01
+[5,]   4  -5.07    0.01
+---- 
+Note: in fact, p.value = 0.01 means p.value &lt;= 0.01 
+Augmented Dickey-Fuller Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+     lag   ADF p.value
+[1,]   0 -9.19    0.01
+[2,]   1 -6.65    0.01
+[3,]   2 -5.41    0.01
+[4,]   3 -5.33    0.01
+[5,]   4 -4.77    0.01
+Type 2: with drift no trend 
+     lag   ADF p.value
+[1,]   0 -9.14    0.01
+[2,]   1 -6.62    0.01
+[3,]   2 -5.39    0.01
+[4,]   3 -5.30    0.01
+[5,]   4 -4.75    0.01
+Type 3: with drift and trend 
+     lag   ADF p.value
+[1,]   0 -9.11    0.01
+[2,]   1 -6.59    0.01
+[3,]   2 -5.36    0.01
+[4,]   3 -5.29    0.01
+[5,]   4 -4.73    0.01
+---- 
+Note: in fact, p.value = 0.01 means p.value &lt;= 0.01 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+logical(0)
+
+[[2]]
+logical(0)
+
+[[3]]
+logical(0)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">lapply</span>(ts_list, pp_is_stationary)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Phillips-Perron Unit Root Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+ lag Z_rho p.value
+   3  -111    0.01
+----- 
+ Type 2: with drift no trend 
+ lag Z_rho p.value
+   3  -110    0.01
+----- 
+ Type 3: with drift and trend 
+ lag Z_rho p.value
+   3  -110    0.01
+--------------- 
+Note: p-value = 0.01 means p.value &lt;= 0.01 
+Phillips-Perron Unit Root Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+ lag Z_rho p.value
+   3  -101    0.01
+----- 
+ Type 2: with drift no trend 
+ lag Z_rho p.value
+   3  -101    0.01
+----- 
+ Type 3: with drift and trend 
+ lag Z_rho p.value
+   3  -101    0.01
+--------------- 
+Note: p-value = 0.01 means p.value &lt;= 0.01 
+Phillips-Perron Unit Root Test 
+alternative: stationary 
+ 
+Type 1: no drift no trend 
+ lag Z_rho p.value
+   3 -92.9    0.01
+----- 
+ Type 2: with drift no trend 
+ lag Z_rho p.value
+   3 -92.9    0.01
+----- 
+ Type 3: with drift and trend 
+ lag Z_rho p.value
+   3   -93    0.01
+--------------- 
+Note: p-value = 0.01 means p.value &lt;= 0.01 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] FALSE FALSE FALSE
+
+[[2]]
+[1] FALSE FALSE FALSE
+
+[[3]]
+[1] FALSE FALSE FALSE</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>lists</category>
+  <category>timeseries</category>
+  <category>lapply</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-23/index.html</guid>
+  <pubDate>Mon, 23 Jan 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Another Post on Lists</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4089,90 +4310,6 @@ $ ci_hi             &lt;dbl&gt; 6.521727</code></pre>
   <category>tidydensity</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-20/index.html</guid>
   <pubDate>Tue, 20 Dec 2022 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Viewing Different Versions of the Same Statistical Distribution with {TidyDensity}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-19/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In statistics, it is often useful to view different versions of the same statistical distribution. For example, when working with the normal distribution, it may be helpful to see how the distribution changes as the mean and standard deviation are varied.</p>
-<p>One way to do this is by using the R library <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a>, which has a function called <a href="https://www.spsanderson.com/TidyDensity/reference/tidy_multi_single_dist.html"><code>tidy_multi_single_dist()</code></a>. This function allows a user to easily generate multiple versions of the same statistical distribution which can be plotted on the same graph, with each version representing a different combination of mean and standard deviation.</p>
-<p>To use this function, the user simply needs to specify the distribution they want to plot (e.g.&nbsp;“normal”), the range of values for the mean and standard deviation, and the number of versions they want to plot. The function will then generate a plot showing the different versions of the distribution, with each version represented by a different color.</p>
-<p>There are several reasons why it might be a good idea to view different versions of the same statistical distribution. For one, it can help the user understand how the shape of the distribution changes as the mean and standard deviation are varied. This can be particularly useful for distributions that have a wide range of possible values for the mean and standard deviation, such as the normal distribution.</p>
-<p>In addition, viewing different versions of the same distribution can also help the user identify patterns and trends in the data. For example, the user may notice that the distribution becomes more spread out as the standard deviation increases, or that the distribution shifts to the left or right as the mean changes.</p>
-<p>Overall, the TidyDensity function tidy_multi_single_dist() is a useful tool for anyone interested in visualizing different versions of the same statistical distribution. Whether you are a student learning about statistics for the first time, or an experienced data scientist looking to better understand your data, this function can help you gain a deeper understanding of the underlying distribution and identify patterns and trends in your data.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Let’s take a look at the full function call.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">tidy_multi_single_dist</span>(</span>
-<span id="cb1-2">  <span class="at" style="color: #657422;">.tidy_dist =</span> <span class="cn" style="color: #8f5902;">NULL</span>, </span>
-<span id="cb1-3">  <span class="at" style="color: #657422;">.param_list =</span> <span class="fu" style="color: #4758AB;">list</span>()</span>
-<span id="cb1-4">  )</span></code></pre></div>
-</div>
-<p>Now let’s look at the arguments that go to the parameters.</p>
-<ul>
-<li><code>.tidy_dist</code> - The type of tidy_ distribution that you want to run. You can only choose one.</li>
-<li><code>.param_list</code> - This must be a list() object of the parameters that you want to pass through to the <code>{TidyDensity}</code> <strong>‘tidy_’</strong> distribution function.</li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Let’s run through an example.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb2-3"></span>
-<span id="cb2-4">tn <span class="ot" style="color: #003B4F;">&lt;-</span><span class="fu" style="color: #4758AB;">tidy_multi_single_dist</span>(</span>
-<span id="cb2-5">  <span class="at" style="color: #657422;">.tidy_dist =</span> <span class="st" style="color: #20794D;">"tidy_normal"</span>,</span>
-<span id="cb2-6">  <span class="at" style="color: #657422;">.param_list =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
-<span id="cb2-7">    <span class="at" style="color: #657422;">.n =</span> <span class="dv" style="color: #AD0000;">200</span>,</span>
-<span id="cb2-8">    <span class="at" style="color: #657422;">.mean =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="sc" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">0</span>, <span class="dv" style="color: #AD0000;">1</span>),</span>
-<span id="cb2-9">    <span class="at" style="color: #657422;">.sd =</span> <span class="dv" style="color: #AD0000;">1</span>,</span>
-<span id="cb2-10">    <span class="at" style="color: #657422;">.num_sims =</span> <span class="dv" style="color: #AD0000;">3</span></span>
-<span id="cb2-11">  )</span>
-<span id="cb2-12">)</span></code></pre></div>
-</div>
-<p>Now that we have generated the data, let’s take a look and see if these different distributions have indeed been created.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">tidy_distribution_summary_tbl</span>(tn, dist_name) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb3-2">  <span class="fu" style="color: #4758AB;">select</span>(dist_name, mean_val, std_val)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 3
-  dist_name         mean_val std_val
-  &lt;fct&gt;                &lt;dbl&gt;   &lt;dbl&gt;
-1 Gaussian c(-1, 1)  -1.03     0.988
-2 Gaussian c(0, 1)    0.0136   1.01 
-3 Gaussian c(1, 1)    0.990    1.02 </code></pre>
-</div>
-</div>
-<p>Look’s good there, now let’s visualize.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">tn <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb5-2">  <span class="fu" style="color: #4758AB;">tidy_multi_dist_autoplot</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2022-12-19/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>distributions</category>
-  <category>tidydensity</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2022-12-19/index.html</guid>
-  <pubDate>Mon, 19 Dec 2022 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
