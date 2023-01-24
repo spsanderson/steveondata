@@ -1,0 +1,91 @@
+---
+title: "Making Non Stationary Data Stationary"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-01-24"
+categories: [code, rtip, lists, timeseries]
+---
+
+# Introduction
+
+In the most basic sense for time series, a series is stationary if the properties of the generating process (the process that generates the data) do not change over time, the process remains constant. This does not mean the data does not change, it simply means the process does not change. You can back a vanilla cake or a chocolate cake but you still cook it in the oven. That changes that are made overtime are constant.
+
+A non-stationary time series is like a toy car that doesn't run in a straight line. Sometimes it goes fast and sometimes it goes slow, so it's hard to predict what it will do next. But, just like how you can fix a toy car by adjusting it, we can fix a non-stationary time series by making it _"stationary."_
+
+One way we can do this is by taking the _difference_ in the time series vector. This is like taking the toy car apart and looking at how each piece moves. By subtracting one piece from another, we can see if they are moving at the same speed or not. If they are not, we can adjust them so they are moving at the same speed. This makes it easier to predict what the toy car will do next because it's moving at a steady pace.
+
+Another way we can make a non-stationary time series stationary is by taking the second difference of the log of the data. This is like looking at the toy car from a different angle. By taking the log of the data, we can see how much each piece has changed over time. Then, by taking the second difference, we can see if the changes are happening at the same rate or not. If they are not, we can adjust them so they are happening at the same rate.
+
+In simple terms, these methods help to stabilize the time series by making the data move at a consistent speed, which allows for better predictions.
+
+In summary, a non-stationary time series is like a toy car that doesn't run in a straight line. By taking the difference in the time series vector or taking the second difference of the log of the data, we can fix the toy car and make it run in a straight line. This is helpful for making accurate predictions.
+
+# Function
+
+We are going to use the [`adf.test()`](https://rdrr.io/cran/aTSA/man/adf.test.html) function from the [`{aTSA}`](https://rdrr.io/cran/aTSA/) library. Here is the function:
+
+```{r eval=FALSE}
+adf.test(x, nlag = NULL, output = TRUE)
+```
+
+Here are the arugments to the parameters.
+
+*  `x`- a numeric vector or time series.
+*  `alternative` - the lag order with default to calculate the test statistic. See details for the default.
+*  `output` - a logical value indicating to print the test results in R console. The default is TRUE.
+
+# Examples
+
+As an example, we are going to use the `R` built in data set __AirPassengers__ as our timeseries. This data is both _cyclical_ and _trending_ so it is good for this purpose.
+
+```{r warning=FALSE, message=FALSE}
+library(aTSA)
+
+plot(AirPassengers)
+```
+
+Now that we know what it looks like, lets see if it is stationary right off the bat.
+
+```{r warning=FALSE, message=FALSE}
+adf.test(AirPassengers)
+```
+
+So we can see that right off the bat that __"Type 1"__ and __"Type 2"__ fail as there is significant trend in this data as we can plainly see. Let's see what happens when we take a simpmle `diff()` of the series.
+
+```{r warning=FALSE, message=FALSE}
+plot(diff(AirPassengers))
+```
+
+Looking like its still going to fail, but let's run the test anyways.
+
+```{r warning=FALSE, message=FALSE}
+adf.test(diff(AirPassengers))
+```
+
+The adf.test comes back with a _p.value <= 0.01_ as the data is no longer presenting a trend, but as we can plainly see, the data has non constant variance overtime which we know we need. Here we will use the [`{TidyDensity}`](https://www.spsanderson.com/TidyDensity/) package to use the `cvar()` (cumulative variance) function to see the ongoing variance.
+
+```{r warning=FALSE, message=FALSE}
+library(TidyDensity)
+
+plot(cvar(diff(AirPassengers)), type = "l")
+```
+
+Reject the null that the data is _stationary_. So lets proceed with a diff diff log of the data and see what we get. First let's visualize.
+
+```{r warning=FALSE, message=FALSE}
+plot(diff(diff(log(AirPassengers))))
+
+plot(cvar(diff(diff(log(AirPassengers)))), type = "l")
+```
+
+Looking good!
+
+```{r warning=FALSE, message=FALSE}
+adf.test(diff(diff(log(AirPassengers))))
+```
+
+Voila!
+
+# References
+
+1. https://towardsdatascience.com/stationarity-in-time-series-analysis-90c94f27322
+2. https://www.statology.org/dickey-fuller-test-in-r/
