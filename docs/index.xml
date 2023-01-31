@@ -10,7 +10,157 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Mon, 30 Jan 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 31 Jan 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Median: A Simple Way to Detect Excess Events Over Time with {healthyR}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-31/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>As we collect data over time, it’s important to look for patterns and trends that can help us understand what’s happening. One common way to do this is to look at the median of the data. The median is the middle value of a set of numbers, and it can be a useful tool for detecting whether there is an excess of events, either positive or negative, occurring over time.</p>
+<p>Benefits of Looking at Median:</p>
+<ol type="1">
+<li><p>Shows the central tendency: The median gives us a good idea of the central tendency of the data. This can help us understand what’s typical and what’s not.</p></li>
+<li><p>Resistant to outliers: Unlike the mean, the median is not affected by outliers. This means that if there are a few extreme values in the data, the median will not be skewed by them.</p></li>
+<li><p>Easy to understand: The median is easy to understand, even for people who are not familiar with statistics.</p></li>
+</ol>
+<p>Using the R Library <a href="https://www.spsanderson.com/healthyR/"><code>{healthyR}</code></a> provides a convenient way to perform median analysis. The function <a href="https://www.spsanderson.com/healthyR/reference/ts_median_excess_plt.html"><code>ts_median_excess_plt()</code></a> can be used to plot the median of an event over time and detect any excess events that may be occurring. This function is designed to be user-friendly, so even if you’re not an expert in statistics, you can still use it to gain valuable insights into your data.</p>
+<p>In conclusion, looking at the median of an event over time can be a useful tool for detecting excess events, either positive or negative. The R library {healthyR} provides a convenient way to perform this analysis with the function <code>ts_median_excess_plt()</code>. Give it a try and see what insights you can uncover in your own data!</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Here is the full function call.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">ts_median_excess_plt</span>(</span>
+<span id="cb1-2">  .data,</span>
+<span id="cb1-3">  .date_col,</span>
+<span id="cb1-4">  .value_col,</span>
+<span id="cb1-5">  .x_axis,</span>
+<span id="cb1-6">  .ggplot_group_var,</span>
+<span id="cb1-7">  .years_back</span>
+<span id="cb1-8">)</span></code></pre></div>
+</div>
+<p>Here are its arguments.</p>
+<ul>
+<li><code>.data</code> - The data that is being analyzed, data must be a tibble/data.frame.</li>
+<li><code>.date_col</code> - The column of the tibble that holds the date.</li>
+<li><code>.value_col</code> - The column that holds the value of interest.</li>
+<li><code>.x_axis</code> - What is the be the x-axis, day, week, etc.</li>
+<li><code>.ggplot_group_var</code> - The variable to group the ggplot on.</li>
+<li><code>.years_back</code> - How many yeas back do you want to go in order to compute the median value.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>First make sure you have the package installed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">install.packages</span>(<span class="st" style="color: #20794D;">"healthyR"</span>)</span></code></pre></div>
+</div>
+<p>Now for an example. The data is required to be in a certain format, this function is dated, meaning it was one of the first ones I wrote so I will be taking time to improve it in the future. We are using data from my <a href="https://www.spsanderson.com/healthyR.data/"><code>{healthyR.data]</code>}</a> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR.data)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">library</span>(lubridate)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;">library</span>(healthyR)</span>
+<span id="cb3-4"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;">library</span>(timetk)</span>
+<span id="cb3-6"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span>
+<span id="cb3-7"></span>
+<span id="cb3-8">df <span class="ot" style="color: #003B4F;">&lt;-</span> healthyR_data <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;">filter_by_time</span>(</span>
+<span id="cb3-10">    <span class="at" style="color: #657422;">.date_var =</span> visit_start_date_time,</span>
+<span id="cb3-11">    <span class="at" style="color: #657422;">.start_date =</span> <span class="st" style="color: #20794D;">"2012"</span>,</span>
+<span id="cb3-12">    <span class="at" style="color: #657422;">.end_date =</span> <span class="st" style="color: #20794D;">"2019"</span></span>
+<span id="cb3-13">  ) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-14">  <span class="fu" style="color: #4758AB;">filter</span>(ip_op_flag <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"I"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-15">  <span class="fu" style="color: #4758AB;">select</span>(visit_id, visit_start_date_time) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-16">  <span class="fu" style="color: #4758AB;">mutate</span>(</span>
+<span id="cb3-17">    <span class="at" style="color: #657422;">visit_start_date_time =</span> <span class="fu" style="color: #4758AB;">as.Date</span>(visit_start_date_time, <span class="st" style="color: #20794D;">"%Y%M%D"</span>),</span>
+<span id="cb3-18">    <span class="at" style="color: #657422;">record =</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb3-19">    ) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-20">  <span class="fu" style="color: #4758AB;">summarise_by_time</span>(</span>
+<span id="cb3-21">    <span class="at" style="color: #657422;">.date_var =</span> visit_start_date_time,</span>
+<span id="cb3-22">    <span class="at" style="color: #657422;">visits =</span> <span class="fu" style="color: #4758AB;">sum</span>(record)</span>
+<span id="cb3-23">  ) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb3-24">  <span class="fu" style="color: #4758AB;">ts_signature_tbl</span>(</span>
+<span id="cb3-25">    <span class="at" style="color: #657422;">.date_col =</span> visit_start_date_time</span>
+<span id="cb3-26">  )</span></code></pre></div>
+</div>
+<p>Ok now that we have our data, let’s take a look at it using <code>glimpse()</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">glimpse</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,922
+Columns: 30
+$ visit_start_date_time &lt;date&gt; 2012-01-01, 2012-01-02, 2012-01-03, 2012-01-04,…
+$ visits                &lt;dbl&gt; 34, 52, 53, 44, 46, 55, 42, 29, 50, 55, 50, 43, …
+$ index.num             &lt;dbl&gt; 1325376000, 1325462400, 1325548800, 1325635200, …
+$ diff                  &lt;dbl&gt; NA, 86400, 86400, 86400, 86400, 86400, 86400, 86…
+$ year                  &lt;int&gt; 2012, 2012, 2012, 2012, 2012, 2012, 2012, 2012, …
+$ year.iso              &lt;int&gt; 2011, 2012, 2012, 2012, 2012, 2012, 2012, 2012, …
+$ half                  &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ quarter               &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ month                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ month.xts             &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ month.lbl             &lt;ord&gt; January, January, January, January, January, Jan…
+$ day                   &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1…
+$ hour                  &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ minute                &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ second                &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ hour12                &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ am.pm                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ wday                  &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, …
+$ wday.xts              &lt;int&gt; 0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 0, 1, …
+$ wday.lbl              &lt;ord&gt; Sunday, Monday, Tuesday, Wednesday, Thursday, Fr…
+$ mday                  &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1…
+$ qday                  &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1…
+$ yday                  &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1…
+$ mweek                 &lt;int&gt; 5, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, …
+$ week                  &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, …
+$ week.iso              &lt;int&gt; 52, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3,…
+$ week2                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, …
+$ week3                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 0, …
+$ week4                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, …
+$ mday7                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, …</code></pre>
+</div>
+</div>
+<p>Now to visualize it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">df <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;">ts_median_excess_plt</span>(</span>
+<span id="cb6-3">    <span class="at" style="color: #657422;">.date_col =</span> visit_start_date_time,</span>
+<span id="cb6-4">    <span class="at" style="color: #657422;">.value_col =</span> visits,</span>
+<span id="cb6-5">    <span class="at" style="color: #657422;">.x_axis =</span> month.lbl,</span>
+<span id="cb6-6">    <span class="at" style="color: #657422;">.ggplot_group_var =</span> year,</span>
+<span id="cb6-7">    <span class="at" style="color: #657422;">.years_back =</span> <span class="dv" style="color: #AD0000;">3</span></span>
+<span id="cb6-8">  ) <span class="sc" style="color: #5E5E5E;">+</span></span>
+<span id="cb6-9">  <span class="fu" style="color: #4758AB;">labs</span>(</span>
+<span id="cb6-10">    <span class="at" style="color: #657422;">y =</span> <span class="st" style="color: #20794D;">"Excess Visits"</span>,</span>
+<span id="cb6-11">    <span class="at" style="color: #657422;">title =</span> <span class="st" style="color: #20794D;">"Excess Visits by Month YoY"</span></span>
+<span id="cb6-12">  ) <span class="sc" style="color: #5E5E5E;">+</span> </span>
+<span id="cb6-13">  <span class="fu" style="color: #4758AB;">theme</span>(<span class="at" style="color: #657422;">axis.text.x=</span><span class="fu" style="color: #4758AB;">element_text</span>(<span class="at" style="color: #657422;">angle =</span> <span class="sc" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">90</span>, <span class="at" style="color: #657422;">hjust =</span> <span class="dv" style="color: #AD0000;">0</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-01-31/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>So from here what we can see is that looking back in time over the visits data that the current year (the max year in the data) shows that it is significantly under previous years median values by month.</p>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <category>healthyr</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-31/index.html</guid>
+  <pubDate>Tue, 31 Jan 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>{healthyR.ts}: The New and Improved Library for Time Series Analysis</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3411,193 +3561,6 @@ Attaching package: 'dplyr'</code></pre>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-03/index.html</guid>
   <pubDate>Tue, 03 Jan 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Event Analysis with {healthyR.ts}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Time-to-event analysis, also known as survival analysis, is a statistical technique used to analyze the length of time until an event occurs. This type of analysis is often used in fields such as healthcare, engineering, and finance to understand the factors that influence the likelihood of an event occurring and to make predictions about future events.</p>
-<p>In economics, an event study is a statistical technique used to analyze the effect of a specific event on a particular market or financial instrument. Event studies are commonly used in finance to understand how events, such as the announcement of a new product, the release of financial earnings, or a change in government policy, may impact the price or performance of a company’s stock or other financial instruments.</p>
-<p>To conduct an event study, analysts typically collect data on the performance of a market or financial instrument before and after the event in question. This data is then used to estimate the effect of the event on the market or instrument.</p>
-<p>There are several different methods that can be used to conduct an event study, including the market model, the abnormal return method, and the buy-and-hold abnormal return method. These methods allow analysts to quantify the effect of the event on the market or instrument and to identify any changes in market behavior that may have occurred as a result of the event.</p>
-<p>Overall, event studies are a valuable tool for understanding how specific events may impact financial markets and instruments, and are widely used in finance and economics to inform investment decisions and to better understand market behavior.</p>
-<p>In this post we are going to examine a function from the R package <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a> has a function called <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_time_event_analysis_tbl.html"><code>ts_time_event_analysis_tbl()</code></a> that will help us understand what happens after a specified event, in this instance it will always be some percentage decrease or increase in a value.</p>
-<p>There is a great article from Investopedia on this economic topic <a href="https://www.investopedia.com/terms/e/eventstudy.asp">here</a></p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>The function is <code>ts_time_event_analysis_tbl()</code> and it’s complimentary plotting function <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_event_analysis_plot.html"><code>ts_event_analysis_plot()</code></a>.</p>
-<p>Here is the <code>tibble</code> data return function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">ts_time_event_analysis_tbl</span>(</span>
-<span id="cb1-2">  .data,</span>
-<span id="cb1-3">  .date_col,</span>
-<span id="cb1-4">  .value_col,</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;">.percent_change =</span> <span class="fl" style="color: #AD0000;">0.05</span>,</span>
-<span id="cb1-6">  <span class="at" style="color: #657422;">.horizon =</span> <span class="dv" style="color: #AD0000;">12</span>,</span>
-<span id="cb1-7">  <span class="at" style="color: #657422;">.precision =</span> <span class="dv" style="color: #AD0000;">2</span>,</span>
-<span id="cb1-8">  <span class="at" style="color: #657422;">.direction =</span> <span class="st" style="color: #20794D;">"forward"</span>,</span>
-<span id="cb1-9">  <span class="at" style="color: #657422;">.filter_non_event_groups =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb1-10">)</span></code></pre></div>
-</div>
-<p>Let’s take a look at the arguments to the parameters for this one.</p>
-<ul>
-<li><code>.data</code> - The date.frame/tibble that holds the data.</li>
-<li><code>.date_col</code> - The column with the date value.</li>
-<li><code>.value_col</code> - The column with the value you are measuring.</li>
-<li><code>.percent_change</code> - This defaults to 0.05 which is a 5% increase in the <code>value_col.</code></li>
-<li><code>.horizon</code> - How far do you want to look back or ahead.</li>
-<li><code>.precision</code> - The default is 2 which means it rounds the lagged 1 value percent change to 2 decimal points. You may want more for more finely tuned results, this will result in fewer groupings.</li>
-<li><code>.direction</code> - The default is forward. You can supply either forward, backwards or both.</li>
-<li><code>filter_non_event_groups</code> - The default is TRUE, this drops groupings with no events on the rare occasion it does occur.</li>
-</ul>
-<p>Now the plotting function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>(</span>
-<span id="cb2-2">  .data,</span>
-<span id="cb2-3">  <span class="at" style="color: #657422;">.plot_type =</span> <span class="st" style="color: #20794D;">"mean"</span>,</span>
-<span id="cb2-4">  <span class="at" style="color: #657422;">.plot_ci =</span> <span class="cn" style="color: #8f5902;">TRUE</span>,</span>
-<span id="cb2-5">  <span class="at" style="color: #657422;">.interactive =</span> <span class="cn" style="color: #8f5902;">FALSE</span></span>
-<span id="cb2-6">)</span></code></pre></div>
-</div>
-<ul>
-<li><code>.data</code> - The data that comes from the ts_time_event_analysis_tbl()</li>
-<li><code>.plot_type</code> - The default is “mean” which will show the mean event change of the output from the analysis tibble. The possible values for this are: mean, median, and individual.</li>
-<li><code>.plot_ci</code> - The default is TRUE. This will only work if you choose one of the aggregate plots of either “mean” or “median”</li>
-<li><code>.interactive</code> - The default is FALSE. TRUE will return a <code>plotly</code> plot.</li>
-</ul>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>Let’s go through a couple examples using the AirPassengers data. We will first transform it into a <code>tibble</code> and then we will use a look period of 6. Let’s see the data output and then we will visualize.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR.ts)</span>
-<span id="cb3-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb3-3"></span>
-<span id="cb3-4">df <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ts_to_tbl</span>(AirPassengers) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(<span class="sc" style="color: #5E5E5E;">-</span>index)</span>
-<span id="cb3-5"></span>
-<span id="cb3-6">event_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ts_time_event_analysis_tbl</span>(</span>
-<span id="cb3-7">  <span class="at" style="color: #657422;">.data =</span> df,</span>
-<span id="cb3-8">  <span class="at" style="color: #657422;">.horizon =</span> <span class="dv" style="color: #AD0000;">6</span>,</span>
-<span id="cb3-9">  <span class="at" style="color: #657422;">.date_col =</span> date_col,</span>
-<span id="cb3-10">  <span class="at" style="color: #657422;">.value_col =</span> value,</span>
-<span id="cb3-11">  <span class="at" style="color: #657422;">.direction =</span> <span class="st" style="color: #20794D;">"both"</span></span>
-<span id="cb3-12">)</span>
-<span id="cb3-13"></span>
-<span id="cb3-14"><span class="fu" style="color: #4758AB;">glimpse</span>(event_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 33
-Columns: 18
-$ rowid                &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15…
-$ date_col             &lt;date&gt; 1949-02-01, 1949-03-01, 1949-04-01, 1949-05-01, …
-$ value                &lt;dbl&gt; 118, 132, 129, 121, 135, 148, 148, 199, 184, 162,…
-$ lag_val              &lt;dbl&gt; 112, 118, 132, 129, 121, 135, 148, 199, 199, 184,…
-$ adj_diff             &lt;dbl&gt; 6, 14, -3, -8, 14, 13, 0, 0, -15, -22, -16, 20, 5…
-$ relative_change_raw  &lt;dbl&gt; 0.05357143, 0.11864407, -0.02272727, -0.06201550,…
-$ relative_change      &lt;dbl&gt; 0.05, 0.12, -0.02, -0.06, 0.12, 0.10, 0.00, 0.00,…
-$ pct_chg_mark         &lt;lgl&gt; TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, F…
-$ event_base_change    &lt;dbl&gt; 0.00000000, 0.11864407, -0.02272727, -0.06201550,…
-$ group_number         &lt;fct&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2…
-$ numeric_group_number &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2…
-$ group_event_number   &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2…
-$ x                    &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1…
-$ mean_event_change    &lt;dbl&gt; 0.00000000, 0.03849647, -0.06815622, -0.04991040,…
-$ median_event_change  &lt;dbl&gt; 0.00000000, 0.07222222, -0.06217617, -0.06201550,…
-$ event_change_ci_low  &lt;dbl&gt; 0.00000000, -0.06799693, -0.11669576, -0.09692794…
-$ event_change_ci_high &lt;dbl&gt; 0.000000000, 0.116322976, -0.024699717, 0.0073964…
-$ event_type           &lt;fct&gt; Before, Before, Before, Before, Before, Before, A…</code></pre>
-</div>
-</div>
-<p>Let’s visualize!</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>(</span>
-<span id="cb5-2">  <span class="at" style="color: #657422;">.data =</span> event_tbl</span>
-<span id="cb5-3">)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Let’s see the median now.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>(</span>
-<span id="cb6-2">  <span class="at" style="color: #657422;">.data =</span> event_tbl,</span>
-<span id="cb6-3">  <span class="at" style="color: #657422;">.plot_type =</span> <span class="st" style="color: #20794D;">"median"</span></span>
-<span id="cb6-4">)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Now let’s see it as an interactive plot.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>(</span>
-<span id="cb7-2">  <span class="at" style="color: #657422;">.data =</span> event_tbl,</span>
-<span id="cb7-3">  <span class="at" style="color: #657422;">.plot_type =</span> <span class="st" style="color: #20794D;">"median"</span>,</span>
-<span id="cb7-4">  <span class="at" style="color: #657422;">.interactive =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb7-5">)</span></code></pre></div>
-<div class="cell-output-display">
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-945e4a59691fdc2cd10e" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-945e4a59691fdc2cd10e">{"x":{"data":[{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13],"y":[0,0.0722222222222222,-0.0621761658031088,-0.062015503875969,0.136986301369863,0.055045871559633,0,-0.0320707070707071,-0.0741502838584922,-0.0442133580168349,0.159581903672639,0.0326775749550742,0],"text":["x:  1<br />median_event_change:  0.00000000","x:  2<br />median_event_change:  0.07222222","x:  3<br />median_event_change: -0.06217617","x:  4<br />median_event_change: -0.06201550","x:  5<br />median_event_change:  0.13698630","x:  6<br />median_event_change:  0.05504587","x:  7<br />median_event_change:  0.00000000","x:  8<br />median_event_change: -0.03207071","x:  9<br />median_event_change: -0.07415028","x: 10<br />median_event_change: -0.04421336","x: 11<br />median_event_change:  0.15958190","x: 12<br />median_event_change:  0.03267757","x: 13<br />median_event_change:  0.00000000"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,1,1,1,null,13,13,13,13,null,7,7],"y":[-0.147190093606673,-0.147190093606673,0.205714187962353,0.205714187962353,null,-0.147190093606673,-0.147190093606673,0.205714187962353,0.205714187962353,null,-0.147190093606673,0.205714187962353],"text":["xintercept:  1","xintercept:  1","xintercept:  1","xintercept:  1",null,"xintercept: 13","xintercept: 13","xintercept: 13","xintercept: 13",null,"xintercept:  7","xintercept:  7"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(70,130,180,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13],"y":[0,0.116322975517891,-0.0246997173810645,0.00739646237526234,0.188543304139531,0.0942337750594631,0,0.0670075757575758,-0.062774871705878,0.00828656966821904,0.18967308425467,0.0539274567294051,0],"text":["x:  1<br />event_change_ci_high:  0.000000000","x:  2<br />event_change_ci_high:  0.116322976","x:  3<br />event_change_ci_high: -0.024699717","x:  4<br />event_change_ci_high:  0.007396462","x:  5<br />event_change_ci_high:  0.188543304","x:  6<br />event_change_ci_high:  0.094233775","x:  7<br />event_change_ci_high:  0.000000000","x:  8<br />event_change_ci_high:  0.067007576","x:  9<br />event_change_ci_high: -0.062774872","x: 10<br />event_change_ci_high:  0.008286570","x: 11<br />event_change_ci_high:  0.189673084","x: 12<br />event_change_ci_high:  0.053927457","x: 13<br />event_change_ci_high:  0.000000000"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(255,0,0,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13],"y":[0,-0.0679969290898939,-0.116695764811895,-0.0969279356876256,0.116766670440394,0.031366751409307,0,-0.13114898989899,-0.0855256960111064,-0.0967132857018889,0.129490723090609,0.0114276931807434,0],"text":["x:  1<br />event_change_ci_low:  0.00000000","x:  2<br />event_change_ci_low: -0.06799693","x:  3<br />event_change_ci_low: -0.11669576","x:  4<br />event_change_ci_low: -0.09692794","x:  5<br />event_change_ci_low:  0.11676667","x:  6<br />event_change_ci_low:  0.03136675","x:  7<br />event_change_ci_low:  0.00000000","x:  8<br />event_change_ci_low: -0.13114899","x:  9<br />event_change_ci_low: -0.08552570","x: 10<br />event_change_ci_low: -0.09671329","x: 11<br />event_change_ci_low:  0.12949072","x: 12<br />event_change_ci_low:  0.01142769","x: 13<br />event_change_ci_low:  0.00000000"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(255,0,0,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":40.1826484018265,"l":48.9497716894977},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Median Event Change Analysis Plot","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["5","10"],"tickvals":[5,10],"categoryorder":"array","categoryarray":["5","10"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Horizon Event","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.147190093606673,0.205714187962353],"tickmode":"array","ticktext":["-10%","0%","10%","20%"],"tickvals":[-0.1,0,0.1,0.2],"categoryorder":"array","categoryarray":["-10%","0%","10%","20%"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Median Change","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"54905d611a4d":{"x":{},"y":{},"type":"scatter"},"54902ea26d60":{"xintercept":{}},"54904f796049":{"x":{},"y":{}},"5490534282b":{"x":{},"y":{}}},"cur_data":"54905d611a4d","visdat":{"54905d611a4d":["function (y) ","x"],"54902ea26d60":["function (y) ","x"],"54904f796049":["function (y) ","x"],"5490534282b":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
-<p>Now let’s see all the individual groups.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>(</span>
-<span id="cb8-2">  <span class="at" style="color: #657422;">.data =</span> event_tbl,</span>
-<span id="cb8-3">  <span class="at" style="color: #657422;">.plot_type =</span> <span class="st" style="color: #20794D;">"individual"</span>,</span>
-<span id="cb8-4">  <span class="at" style="color: #657422;">.interactive =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb8-5">)</span></code></pre></div>
-<div class="cell-output-display">
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-e974de2e0720243b8d25" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-e974de2e0720243b8d25">{"x":{"data":[{"x":[1,2,3,4,5,6,7],"y":[0,0.11864406779661,-0.0227272727272727,-0.062015503875969,0.115702479338843,0.0962962962962963,0],"text":["x:  1<br />event_base_change:  0.00000000<br />group_event_number: 1<br />factor(group_event_number): 1","x:  2<br />event_base_change:  0.11864407<br />group_event_number: 1<br />factor(group_event_number): 1","x:  3<br />event_base_change: -0.02272727<br />group_event_number: 1<br />factor(group_event_number): 1","x:  4<br />event_base_change: -0.06201550<br />group_event_number: 1<br />factor(group_event_number): 1","x:  5<br />event_base_change:  0.11570248<br />group_event_number: 1<br />factor(group_event_number): 1","x:  6<br />event_base_change:  0.09629630<br />group_event_number: 1<br />factor(group_event_number): 1","x:  7<br />event_base_change:  0.00000000<br />group_event_number: 1<br />factor(group_event_number): 1"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(248,118,109,1)","dash":"solid"},"hoveron":"points","name":"1","legendgroup":"1","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13],"y":[0,-0.0753768844221105,-0.119565217391304,-0.0987654320987654,0.136986301369863,0.0301204819277108,0,0.0722222222222222,-0.0621761658031088,0.0110497237569061,0.191256830601093,0.055045871559633,0],"text":["x:  1<br />event_base_change:  0.00000000<br />group_event_number: 2<br />factor(group_event_number): 2","x:  2<br />event_base_change: -0.07537688<br />group_event_number: 2<br />factor(group_event_number): 2","x:  3<br />event_base_change: -0.11956522<br />group_event_number: 2<br />factor(group_event_number): 2","x:  4<br />event_base_change: -0.09876543<br />group_event_number: 2<br />factor(group_event_number): 2","x:  5<br />event_base_change:  0.13698630<br />group_event_number: 2<br />factor(group_event_number): 2","x:  6<br />event_base_change:  0.03012048<br />group_event_number: 2<br />factor(group_event_number): 2","x:  7<br />event_base_change:  0.00000000<br />group_event_number: 2<br />factor(group_event_number): 2","x:  8<br />event_base_change:  0.07222222<br />group_event_number: 2<br />factor(group_event_number): 2","x:  9<br />event_base_change: -0.06217617<br />group_event_number: 2<br />factor(group_event_number): 2","x: 10<br />event_base_change:  0.01104972<br />group_event_number: 2<br />factor(group_event_number): 2","x: 11<br />event_base_change:  0.19125683<br />group_event_number: 2<br />factor(group_event_number): 2","x: 12<br />event_base_change:  0.05504587<br />group_event_number: 2<br />factor(group_event_number): 2","x: 13<br />event_base_change:  0.00000000<br />group_event_number: 2<br />factor(group_event_number): 2"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,186,56,1)","dash":"solid"},"hoveron":"points","name":"2","legendgroup":"2","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,2,3,4,5,6,7,8,9,10,11,12,13],"y":[0,0.0722222222222222,-0.0621761658031088,0.0110497237569061,0.191256830601093,0.055045871559633,0,-0.136363636363636,-0.0861244019138756,-0.0994764397905759,0.127906976744186,0.0103092783505155,0],"text":["x:  1<br />event_base_change:  0.00000000<br />group_event_number: 3<br />factor(group_event_number): 3","x:  2<br />event_base_change:  0.07222222<br />group_event_number: 3<br />factor(group_event_number): 3","x:  3<br />event_base_change: -0.06217617<br />group_event_number: 3<br />factor(group_event_number): 3","x:  4<br />event_base_change:  0.01104972<br />group_event_number: 3<br />factor(group_event_number): 3","x:  5<br />event_base_change:  0.19125683<br />group_event_number: 3<br />factor(group_event_number): 3","x:  6<br />event_base_change:  0.05504587<br />group_event_number: 3<br />factor(group_event_number): 3","x:  7<br />event_base_change:  0.00000000<br />group_event_number: 3<br />factor(group_event_number): 3","x:  8<br />event_base_change: -0.13636364<br />group_event_number: 3<br />factor(group_event_number): 3","x:  9<br />event_base_change: -0.08612440<br />group_event_number: 3<br />factor(group_event_number): 3","x: 10<br />event_base_change: -0.09947644<br />group_event_number: 3<br />factor(group_event_number): 3","x: 11<br />event_base_change:  0.12790698<br />group_event_number: 3<br />factor(group_event_number): 3","x: 12<br />event_base_change:  0.01030928<br />group_event_number: 3<br />factor(group_event_number): 3","x: 13<br />event_base_change:  0.00000000<br />group_event_number: 3<br />factor(group_event_number): 3"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(97,156,255,1)","dash":"solid"},"hoveron":"points","name":"3","legendgroup":"3","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[1,1,null,13,13,null,7,7],"y":[-0.152744659711873,0.207637853949329,null,-0.152744659711873,0.207637853949329,null,-0.152744659711873,0.207637853949329],"text":["xintercept:  1","xintercept:  1",null,"xintercept: 13","xintercept: 13",null,"xintercept:  7","xintercept:  7"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(70,130,180,1)","dash":"dash"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":40.1826484018265,"l":48.9497716894977},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Event Base Change Analysis Plot","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,13.6],"tickmode":"array","ticktext":["5","10"],"tickvals":[5,10],"categoryorder":"array","categoryarray":["5","10"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Horizon Event","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.152744659711873,0.207637853949329],"tickmode":"array","ticktext":["-10%","0%","10%","20%"],"tickvals":[-0.1,0,0.1,0.2],"categoryorder":"array","categoryarray":["-10%","0%","10%","20%"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Event Base Change","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":true,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"title":{"text":"Event Number","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"5490438b50ae":{"x":{},"y":{},"colour":{},"type":"scatter"},"549038b46bf2":{"xintercept":{}}},"cur_data":"5490438b50ae","visdat":{"5490438b50ae":["function (y) ","x"],"549038b46bf2":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
-<p>Single direction plotting.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">ts_time_event_analysis_tbl</span>(</span>
-<span id="cb9-2">  <span class="at" style="color: #657422;">.data =</span> df,</span>
-<span id="cb9-3">  <span class="at" style="color: #657422;">.horizon =</span> <span class="dv" style="color: #AD0000;">6</span>,</span>
-<span id="cb9-4">  <span class="at" style="color: #657422;">.date_col =</span> date_col,</span>
-<span id="cb9-5">  <span class="at" style="color: #657422;">.value_col =</span> value,</span>
-<span id="cb9-6">  <span class="at" style="color: #657422;">.direction =</span> <span class="st" style="color: #20794D;">"backward"</span></span>
-<span id="cb9-7">) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb9-8">  <span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>And…</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">ts_time_event_analysis_tbl</span>(</span>
-<span id="cb10-2">  <span class="at" style="color: #657422;">.data =</span> df,</span>
-<span id="cb10-3">  <span class="at" style="color: #657422;">.horizon =</span> <span class="dv" style="color: #AD0000;">6</span>,</span>
-<span id="cb10-4">  <span class="at" style="color: #657422;">.date_col =</span> date_col,</span>
-<span id="cb10-5">  <span class="at" style="color: #657422;">.value_col =</span> value,</span>
-<span id="cb10-6">  <span class="at" style="color: #657422;">.direction =</span> <span class="st" style="color: #20794D;">"forward"</span></span>
-<span id="cb10-7">) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb10-8">  <span class="fu" style="color: #4758AB;">ts_event_analysis_plot</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>healthyrts</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/weekly-rtip-healthyrts-2022-12-30/index.html</guid>
-  <pubDate>Fri, 30 Dec 2022 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
