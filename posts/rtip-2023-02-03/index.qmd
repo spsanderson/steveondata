@@ -1,0 +1,85 @@
+---
+title: "The Argument Matcher: A Function for Selecting the Right Arguments {tidyAML}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-02-03"
+categories: [code, rtip, list, tidyaml, tidymodels]
+---
+
+# Introduction
+
+I am working on finishing up a few things with my new R package [`{tidyAML}`](https://www.spsanderson.com/tidyAML/) before I release it to CRAN. One of those things is the ability of a user to build a model using a command that might be something like `generate_model()`. One of the things that is necessary to do is to match the function arguments from the `generate_model()` to the actual __parsnip__ call.
+
+This is where and argument matcher of sorts may come in handy. I am doing this because it will take one most step of abstraction away, and instead of say calling `linear_reg()` or `mars()` or something like that, you can just instead use `generate_model()` and type in your engine or the `parsnip` function call there.
+
+Now I am not one hundred percent certain that I'll actually implement this or not, but the exercise was fun enough that I decided to share it. So let's get into it.
+
+# Function
+
+Here is the current state of the function.
+
+```{r}
+argument_matcher <- function(.f = "linear_reg", .args = list()){
+  
+  # TidyEval ----
+  fns <- as.character(.f)
+  
+  fns_args <- formalArgs(fns)
+  fns_args_list <- as.list(fns_args)
+  names(fns_args_list) <- fns_args
+  
+  arg_list <- .args
+  arg_list_names <- unique(names(arg_list))
+  
+  l <- list(arg_list, fns_args_list)
+  
+  arg_idx <- which(arg_list_names %in% fns_args_list)
+  bad_arg_idx <- which(!arg_list_names %in% fns_args_list)
+  
+  bad_args <- arg_list[bad_arg_idx]
+  bad_arg_names <- unique(names(bad_args))
+  
+  final_args <- arg_list[arg_idx]
+  
+  # Return ----
+  if (length(bad_arg_names > 0)){
+    rlang::inform(
+      message = paste0("bad arguments passed: ", bad_arg_names),
+      use_cli_format = TRUE
+    )
+  }
+
+  return(final_args)
+}
+```
+
+When working with R functions, it's not uncommon to encounter a situation where you need to pass arguments to another function. This can be especially challenging when the arguments are not properly matched. Fortunately, the `argument_matcher` function provides an elegant solution to this problem.
+
+The `argument_matcher` function takes two arguments: `.f` and `.args`. The `.f` argument is a string that specifies the name of the function you want to pass arguments to, while the `.args` argument is a list that contains the arguments you want to pass to the specified function.
+
+The `argument_matcher` function first uses the `formalArg`s function to extract the formal arguments of the specified function and store them in `fns_args`. The names of the formal arguments are then used to create a list, `fns_args_list`.
+
+Next, the function extracts the names of the arguments in `.arg`s and stores them in `arg_list_names`. It then checks if the names of the arguments in `.args` match the names of the formal arguments of the specified function, and stores the matching arguments in `final_args`. Any arguments that don't match the formal arguments are stored in bad_args, and a warning message is printed indicating that bad arguments were passed.
+
+The final step is to return the `final_args` list, which contains only the arguments that match the formal arguments of the specified function.
+
+In conclusion, the `argument_matcher` function is a useful tool for ensuring that arguments are properly matched when passed to another function. Whether you're working with linear regression models or any other type of function, the `argument_matche`r function will help you select the right arguments and avoid common errors.
+
+# Example
+
+Let's see a simple example.
+
+```{r warning=FALSE}
+suppressPackageStartupMessages(library(tidymodels))
+
+argument_matcher(
+  .args = list(
+    mode = "regression", 
+    engine = "lm",
+    cost = 0.5,
+    trees = 1, 
+    mtry = 1
+    )
+  )
+```
+
+Voila!

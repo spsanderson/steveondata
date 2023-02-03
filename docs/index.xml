@@ -10,7 +10,108 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Thu, 02 Feb 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 03 Feb 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>The Argument Matcher: A Function for Selecting the Right Arguments {tidyAML}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-03/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>I am working on finishing up a few things with my new R package <a href="https://www.spsanderson.com/tidyAML/"><code>{tidyAML}</code></a> before I release it to CRAN. One of those things is the ability of a user to build a model using a command that might be something like <code>generate_model()</code>. One of the things that is necessary to do is to match the function arguments from the <code>generate_model()</code> to the actual <strong>parsnip</strong> call.</p>
+<p>This is where and argument matcher of sorts may come in handy. I am doing this because it will take one most step of abstraction away, and instead of say calling <code>linear_reg()</code> or <code>mars()</code> or something like that, you can just instead use <code>generate_model()</code> and type in your engine or the <code>parsnip</code> function call there.</p>
+<p>Now I am not one hundred percent certain that I’ll actually implement this or not, but the exercise was fun enough that I decided to share it. So let’s get into it.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Here is the current state of the function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">argument_matcher <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(<span class="at" style="color: #657422;">.f =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>, <span class="at" style="color: #657422;">.args =</span> <span class="fu" style="color: #4758AB;">list</span>()){</span>
+<span id="cb1-2">  </span>
+<span id="cb1-3">  <span class="co" style="color: #5E5E5E;"># TidyEval ----</span></span>
+<span id="cb1-4">  fns <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.character</span>(.f)</span>
+<span id="cb1-5">  </span>
+<span id="cb1-6">  fns_args <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">formalArgs</span>(fns)</span>
+<span id="cb1-7">  fns_args_list <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">as.list</span>(fns_args)</span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;">names</span>(fns_args_list) <span class="ot" style="color: #003B4F;">&lt;-</span> fns_args</span>
+<span id="cb1-9">  </span>
+<span id="cb1-10">  arg_list <span class="ot" style="color: #003B4F;">&lt;-</span> .args</span>
+<span id="cb1-11">  arg_list_names <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">unique</span>(<span class="fu" style="color: #4758AB;">names</span>(arg_list))</span>
+<span id="cb1-12">  </span>
+<span id="cb1-13">  l <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(arg_list, fns_args_list)</span>
+<span id="cb1-14">  </span>
+<span id="cb1-15">  arg_idx <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">which</span>(arg_list_names <span class="sc" style="color: #5E5E5E;">%in%</span> fns_args_list)</span>
+<span id="cb1-16">  bad_arg_idx <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">which</span>(<span class="sc" style="color: #5E5E5E;">!</span>arg_list_names <span class="sc" style="color: #5E5E5E;">%in%</span> fns_args_list)</span>
+<span id="cb1-17">  </span>
+<span id="cb1-18">  bad_args <span class="ot" style="color: #003B4F;">&lt;-</span> arg_list[bad_arg_idx]</span>
+<span id="cb1-19">  bad_arg_names <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">unique</span>(<span class="fu" style="color: #4758AB;">names</span>(bad_args))</span>
+<span id="cb1-20">  </span>
+<span id="cb1-21">  final_args <span class="ot" style="color: #003B4F;">&lt;-</span> arg_list[arg_idx]</span>
+<span id="cb1-22">  </span>
+<span id="cb1-23">  <span class="co" style="color: #5E5E5E;"># Return ----</span></span>
+<span id="cb1-24">  <span class="cf" style="color: #003B4F;">if</span> (<span class="fu" style="color: #4758AB;">length</span>(bad_arg_names <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">0</span>)){</span>
+<span id="cb1-25">    rlang<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">inform</span>(</span>
+<span id="cb1-26">      <span class="at" style="color: #657422;">message =</span> <span class="fu" style="color: #4758AB;">paste0</span>(<span class="st" style="color: #20794D;">"bad arguments passed: "</span>, bad_arg_names),</span>
+<span id="cb1-27">      <span class="at" style="color: #657422;">use_cli_format =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
+<span id="cb1-28">    )</span>
+<span id="cb1-29">  }</span>
+<span id="cb1-30"></span>
+<span id="cb1-31">  <span class="fu" style="color: #4758AB;">return</span>(final_args)</span>
+<span id="cb1-32">}</span></code></pre></div>
+</div>
+<p>When working with R functions, it’s not uncommon to encounter a situation where you need to pass arguments to another function. This can be especially challenging when the arguments are not properly matched. Fortunately, the <code>argument_matcher</code> function provides an elegant solution to this problem.</p>
+<p>The <code>argument_matcher</code> function takes two arguments: <code>.f</code> and <code>.args</code>. The <code>.f</code> argument is a string that specifies the name of the function you want to pass arguments to, while the <code>.args</code> argument is a list that contains the arguments you want to pass to the specified function.</p>
+<p>The <code>argument_matcher</code> function first uses the <code>formalArg</code>s function to extract the formal arguments of the specified function and store them in <code>fns_args</code>. The names of the formal arguments are then used to create a list, <code>fns_args_list</code>.</p>
+<p>Next, the function extracts the names of the arguments in <code>.arg</code>s and stores them in <code>arg_list_names</code>. It then checks if the names of the arguments in <code>.args</code> match the names of the formal arguments of the specified function, and stores the matching arguments in <code>final_args</code>. Any arguments that don’t match the formal arguments are stored in bad_args, and a warning message is printed indicating that bad arguments were passed.</p>
+<p>The final step is to return the <code>final_args</code> list, which contains only the arguments that match the formal arguments of the specified function.</p>
+<p>In conclusion, the <code>argument_matcher</code> function is a useful tool for ensuring that arguments are properly matched when passed to another function. Whether you’re working with linear regression models or any other type of function, the <code>argument_matche</code>r function will help you select the right arguments and avoid common errors.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Let’s see a simple example.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">suppressPackageStartupMessages</span>(<span class="fu" style="color: #4758AB;">library</span>(tidymodels))</span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">argument_matcher</span>(</span>
+<span id="cb2-4">  <span class="at" style="color: #657422;">.args =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb2-5">    <span class="at" style="color: #657422;">mode =</span> <span class="st" style="color: #20794D;">"regression"</span>, </span>
+<span id="cb2-6">    <span class="at" style="color: #657422;">engine =</span> <span class="st" style="color: #20794D;">"lm"</span>,</span>
+<span id="cb2-7">    <span class="at" style="color: #657422;">cost =</span> <span class="fl" style="color: #AD0000;">0.5</span>,</span>
+<span id="cb2-8">    <span class="at" style="color: #657422;">trees =</span> <span class="dv" style="color: #AD0000;">1</span>, </span>
+<span id="cb2-9">    <span class="at" style="color: #657422;">mtry =</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb2-10">    )</span>
+<span id="cb2-11">  )</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>bad arguments passed: cost
+bad arguments passed: trees
+bad arguments passed: mtry</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$mode
+[1] "regression"
+
+$engine
+[1] "lm"</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>list</category>
+  <category>tidyaml</category>
+  <category>tidymodels</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-03/index.html</guid>
+  <pubDate>Fri, 03 Feb 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diverging Lollipop Chart: A Visual Tool for Comparing Data with {healthyR}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3475,152 +3576,6 @@ $ percentage       &lt;chr&gt; "0.054587073624134064", "0.035217467695474625", "
   <category>healthyrts</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-09/index.html</guid>
   <pubDate>Mon, 09 Jan 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Brownian Motion</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/weekly-rtip-2023-01-06/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p><a href="https://en.wikipedia.org/wiki/Brownian_motion">Brownian motion</a>, also known as the random motion of particles suspended in a fluid, is a phenomenon that was first described by Scottish botanist Robert Brown in 1827. It occurs when a particle is subjected to a series of random collisions with the molecules in the fluid.</p>
-<p>The motion of the particle can be described mathematically using the following equation:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%20%5Cfrac%7Bdx_t%7D%7Bdt%7D%20=%20%5Cmu%20+%20%5Csigma%20%5Ccdot%20W_t%20"></p>
-<p>Where <img src="https://latex.codecogs.com/png.latex?x_t"> represents the position of the particle at time t, <img src="https://latex.codecogs.com/png.latex?%5Cmu"> is the drift coefficient, <img src="https://latex.codecogs.com/png.latex?%5Csigma"> is the diffusion coefficient, and <img src="https://latex.codecogs.com/png.latex?W_t"> is a Wiener process (a type of random process).</p>
-<p>Brownian motion has a number of important applications, including in the field of finance. It is used to model the random movements of financial assets, such as stocks, over time. It can also be used to estimate the volatility of an asset, as well as to calculate the prices of financial derivatives such as options.</p>
-<p>In physics, Brownian motion is used to study the behavior of small particles suspended in a fluid, as well as to understand the properties of fluids at the molecular level. It has also been used to study the motion of biological molecules, such as proteins, within cells.</p>
-<p>Overall, Brownian motion is a fundamental concept that has wide-ranging applications in a variety of fields, including finance, physics, and biology.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Let’s take a look at a function to produce such results. This type of functionality will be coming to my R packages <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> and to <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts}</code></a></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'dplyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    filter, lag</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'ggplot2' was built under R version 4.2.2</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">library</span>(forcats)</span>
-<span id="cb7-2"></span>
-<span id="cb7-3">brownian_motion <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(T, N, delta_t) {</span>
-<span id="cb7-4">  <span class="co" style="color: #5E5E5E;"># T: total time of the simulation (in seconds)</span></span>
-<span id="cb7-5">  <span class="co" style="color: #5E5E5E;"># N: number of simulations to generate</span></span>
-<span id="cb7-6">  <span class="co" style="color: #5E5E5E;"># delta_t: time step size (in seconds)</span></span>
-<span id="cb7-7">  </span>
-<span id="cb7-8">  <span class="co" style="color: #5E5E5E;"># Initialize empty data.frame to store the simulations</span></span>
-<span id="cb7-9">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.frame</span>()</span>
-<span id="cb7-10">  </span>
-<span id="cb7-11">  <span class="co" style="color: #5E5E5E;"># Generate N simulations</span></span>
-<span id="cb7-12">  <span class="cf" style="color: #003B4F;">for</span> (i <span class="cf" style="color: #003B4F;">in</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>N) {</span>
-<span id="cb7-13">    <span class="co" style="color: #5E5E5E;"># Initialize the current simulation with a starting value of 0</span></span>
-<span id="cb7-14">    sim <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">0</span>)</span>
-<span id="cb7-15">    </span>
-<span id="cb7-16">    <span class="co" style="color: #5E5E5E;"># Generate the brownian motion values for each time step</span></span>
-<span id="cb7-17">    <span class="cf" style="color: #003B4F;">for</span> (t <span class="cf" style="color: #003B4F;">in</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>(T <span class="sc" style="color: #5E5E5E;">/</span> delta_t)) {</span>
-<span id="cb7-18">      sim <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(sim, sim[t] <span class="sc" style="color: #5E5E5E;">+</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">mean =</span> <span class="dv" style="color: #AD0000;">0</span>, <span class="at" style="color: #657422;">sd =</span> <span class="fu" style="color: #4758AB;">sqrt</span>(delta_t)))</span>
-<span id="cb7-19">    }</span>
-<span id="cb7-20">    </span>
-<span id="cb7-21">    <span class="co" style="color: #5E5E5E;"># Bind the time steps, simulation values, and simulation number together</span></span>
-<span id="cb7-22">    <span class="co" style="color: #5E5E5E;"># in a data.frame and add it to the result</span></span>
-<span id="cb7-23">    sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rbind</span>(</span>
-<span id="cb7-24">      sim_data, </span>
-<span id="cb7-25">      <span class="fu" style="color: #4758AB;">data.frame</span>(</span>
-<span id="cb7-26">        <span class="at" style="color: #657422;">t =</span> <span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">0</span>, T, delta_t), </span>
-<span id="cb7-27">        <span class="at" style="color: #657422;">y =</span> sim, </span>
-<span id="cb7-28">        <span class="at" style="color: #657422;">sim_number =</span> i</span>
-<span id="cb7-29">        )</span>
-<span id="cb7-30">      ) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb7-31">      <span class="fu" style="color: #4758AB;">as_tibble</span>()</span>
-<span id="cb7-32">  }</span>
-<span id="cb7-33">  </span>
-<span id="cb7-34">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> sim_data <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb7-35">    <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="fu" style="color: #4758AB;">as_factor</span>(sim_number)</span>
-<span id="cb7-36">                  )</span>
-<span id="cb7-37">  <span class="fu" style="color: #4758AB;">return</span>(sim_data)</span>
-<span id="cb7-38">}</span></code></pre></div>
-</div>
-<p>We see that the internal variable <code>sim</code> is set to 0, this in the future will be set to an initial value that a user can provide.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>Let’s take a look at a couple of examples.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">brownian_motion</span>(<span class="dv" style="color: #AD0000;">40</span>, <span class="dv" style="color: #AD0000;">25</span>, .<span class="dv" style="color: #AD0000;">2</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb8-2">  <span class="fu" style="color: #4758AB;">ggplot</span>(<span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> t, <span class="at" style="color: #657422;">y =</span> y, <span class="at" style="color: #657422;">group =</span> sim_number, <span class="at" style="color: #657422;">color =</span> sim_number)) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb8-3">  <span class="fu" style="color: #4758AB;">geom_line</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb8-4">  <span class="fu" style="color: #4758AB;">geom_smooth</span>(<span class="at" style="color: #657422;">se =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, </span>
-<span id="cb8-5">              <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">group =</span> <span class="cn" style="color: #8f5902;">FALSE</span>), </span>
-<span id="cb8-6">              <span class="at" style="color: #657422;">color =</span> <span class="st" style="color: #20794D;">"black"</span>, </span>
-<span id="cb8-7">              <span class="at" style="color: #657422;">linetype =</span> <span class="st" style="color: #20794D;">"dashed"</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb8-8">  <span class="fu" style="color: #4758AB;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb8-9">  <span class="fu" style="color: #4758AB;">labs</span>(</span>
-<span id="cb8-10">    <span class="at" style="color: #657422;">x =</span> <span class="st" style="color: #20794D;">"Time t"</span>,</span>
-<span id="cb8-11">    <span class="at" style="color: #657422;">y =</span> <span class="st" style="color: #20794D;">"Brownian Motion Value y"</span></span>
-<span id="cb8-12">  ) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb8-13">  <span class="fu" style="color: #4758AB;">theme</span>(<span class="at" style="color: #657422;">legend.position =</span> <span class="st" style="color: #20794D;">"none"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-2023-01-06/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Now lets take a look at the change in a few different ones at the same time.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">bm_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rbind</span>(</span>
-<span id="cb9-2">  <span class="fu" style="color: #4758AB;">brownian_motion</span>(<span class="dv" style="color: #AD0000;">40</span>, <span class="dv" style="color: #AD0000;">25</span>, .<span class="dv" style="color: #AD0000;">2</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb9-3">    <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"20% Volatility"</span>),</span>
-<span id="cb9-4">  <span class="fu" style="color: #4758AB;">brownian_motion</span>(<span class="dv" style="color: #AD0000;">40</span>, <span class="dv" style="color: #AD0000;">25</span>, .<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb9-5">    <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"10% Volatility"</span>),</span>
-<span id="cb9-6">  <span class="fu" style="color: #4758AB;">brownian_motion</span>(<span class="dv" style="color: #AD0000;">40</span>, <span class="dv" style="color: #AD0000;">25</span>, .<span class="dv" style="color: #AD0000;">05</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb9-7">    <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"5% Volatility"</span>),</span>
-<span id="cb9-8">  <span class="fu" style="color: #4758AB;">brownian_motion</span>(<span class="dv" style="color: #AD0000;">40</span>, <span class="dv" style="color: #AD0000;">25</span>, .<span class="dv" style="color: #AD0000;">025</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb9-9">    <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"2.5% Volatility"</span>)</span>
-<span id="cb9-10">)</span>
-<span id="cb9-11"></span>
-<span id="cb9-12"><span class="fu" style="color: #4758AB;">ggplot</span>(bm_tbl, <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">x =</span> t, <span class="at" style="color: #657422;">y =</span> y, <span class="at" style="color: #657422;">group =</span> sim_number, <span class="at" style="color: #657422;">color =</span> sim_number)) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-13">  <span class="fu" style="color: #4758AB;">geom_line</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-14">  <span class="fu" style="color: #4758AB;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;">~</span> label, <span class="at" style="color: #657422;">scales =</span> <span class="st" style="color: #20794D;">"free"</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-15">    <span class="fu" style="color: #4758AB;">geom_smooth</span>(<span class="at" style="color: #657422;">se =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, </span>
-<span id="cb9-16">              <span class="fu" style="color: #4758AB;">aes</span>(<span class="at" style="color: #657422;">group =</span> <span class="cn" style="color: #8f5902;">FALSE</span>), </span>
-<span id="cb9-17">              <span class="at" style="color: #657422;">color =</span> <span class="st" style="color: #20794D;">"black"</span>, </span>
-<span id="cb9-18">              <span class="at" style="color: #657422;">linetype =</span> <span class="st" style="color: #20794D;">"dashed"</span>) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-19">  <span class="fu" style="color: #4758AB;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-20">    <span class="fu" style="color: #4758AB;">labs</span>(</span>
-<span id="cb9-21">    <span class="at" style="color: #657422;">x =</span> <span class="st" style="color: #20794D;">"Time t"</span>,</span>
-<span id="cb9-22">    <span class="at" style="color: #657422;">y =</span> <span class="st" style="color: #20794D;">"Brownian Motion Value y"</span></span>
-<span id="cb9-23">  ) <span class="sc" style="color: #5E5E5E;">+</span></span>
-<span id="cb9-24">  <span class="fu" style="color: #4758AB;">theme</span>(<span class="at" style="color: #657422;">legend.position =</span> <span class="st" style="color: #20794D;">"none"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/weekly-rtip-2023-01-06/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>weeklytip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/weekly-rtip-2023-01-06/index.html</guid>
-  <pubDate>Fri, 06 Jan 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
