@@ -1,0 +1,81 @@
+---
+title: "Creating and Predicting Fast Regression Parsnip Models with {tidyAML}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-02-09"
+categories: [code, rtip, tidyaml]
+---
+
+# Introduction
+
+I am almost ready for a first release of my R package [`{tidyAML}`](https://www.spsanderson.com/tidyAML/). The purpose of this is to act as a way of quickly generating models using the __parsnip__ package and keeping things inside of the __tidymodels__ framework allowing users to seamlessly create models in __tidyAML__ but pluck and move them over to __tidymodels__ should they prefer. This is because I believe that software should be interchangeable and work well with other libraries. Today I am going to showcase how the function [`fast_regression()`](https://www.spsanderson.com/tidyAML/reference/fast_regression.html)
+
+# Function
+
+Let's take a look at the function.
+
+```{r eval=FALSE}
+fast_regression(
+  .data,
+  .rec_obj,
+  .parsnip_fns = "all",
+  .parsnip_eng = "all",
+  .split_type = "initial_split",
+  .split_args = NULL
+)
+```
+
+Here are the arguments to the function:
+
+*  `.data` - The data being passed to the function for the regression problem
+*  `.rec_obj` - The recipe object being passed.
+*  `.parsnip_fns` - The default is 'all' which will create all possible regression model specifications supported.
+*  `.parsnip_eng` - The default is 'all' which will create all possible regression model specifications supported.
+*  `.split_type` - The default is 'initial_split', you can pass any type of split supported by __rsample__
+*  `.split_args` - The default is NULL, when NULL then the default parameters of the split type will be executed for the rsample split type.
+
+# Example
+
+Let's take a look at an example.
+
+```{r warning=FALSE, message=FALSE}
+library(tidyAML)
+library(dplyr)
+library(recipes)
+library(purrr)
+
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+fast_reg_tbl <- fast_regression(
+  .data = mtcars,
+  .rec_obj = rec_obj,
+  .parsnip_eng = c("lm","glm"),
+  .parsnip_fns = "linear_reg"
+)
+
+glimpse(fast_reg_tbl)
+```
+
+Let's take a look at the model spec.
+
+```{r}
+fast_reg_tbl %>% slice(1) %>% pull(model_spec) %>% pluck(1)
+```
+
+Now the `wflw` column.
+
+```{r}
+fast_reg_tbl %>% slice(1) %>% pull(wflw) %>% pluck(1)
+```
+
+The Fitted workflow.
+
+```{r}
+fast_reg_tbl %>% slice(1) %>% pull(fitted_wflw) %>% pluck(1)
+```
+
+And lastly tne predicted workflow column.
+
+```{r}
+fast_reg_tbl %>% slice(1) %>% pull(pred_wflw) %>% pluck(1)
+```
+
+Voila!

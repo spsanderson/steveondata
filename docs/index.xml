@@ -10,7 +10,155 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Wed, 08 Feb 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 09 Feb 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Creating and Predicting Fast Regression Parsnip Models with {tidyAML}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-09/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>I am almost ready for a first release of my R package <a href="https://www.spsanderson.com/tidyAML/"><code>{tidyAML}</code></a>. The purpose of this is to act as a way of quickly generating models using the <strong>parsnip</strong> package and keeping things inside of the <strong>tidymodels</strong> framework allowing users to seamlessly create models in <strong>tidyAML</strong> but pluck and move them over to <strong>tidymodels</strong> should they prefer. This is because I believe that software should be interchangeable and work well with other libraries. Today I am going to showcase how the function <a href="https://www.spsanderson.com/tidyAML/reference/fast_regression.html"><code>fast_regression()</code></a></p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Let’s take a look at the function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">fast_regression</span>(</span>
+<span id="cb1-2">  .data,</span>
+<span id="cb1-3">  .rec_obj,</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"all"</span>,</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="st" style="color: #20794D;">"all"</span>,</span>
+<span id="cb1-6">  <span class="at" style="color: #657422;">.split_type =</span> <span class="st" style="color: #20794D;">"initial_split"</span>,</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;">.split_args =</span> <span class="cn" style="color: #8f5902;">NULL</span></span>
+<span id="cb1-8">)</span></code></pre></div>
+</div>
+<p>Here are the arguments to the function:</p>
+<ul>
+<li><code>.data</code> - The data being passed to the function for the regression problem</li>
+<li><code>.rec_obj</code> - The recipe object being passed.</li>
+<li><code>.parsnip_fns</code> - The default is ‘all’ which will create all possible regression model specifications supported.</li>
+<li><code>.parsnip_eng</code> - The default is ‘all’ which will create all possible regression model specifications supported.</li>
+<li><code>.split_type</code> - The default is ‘initial_split’, you can pass any type of split supported by <strong>rsample</strong></li>
+<li><code>.split_args</code> - The default is NULL, when NULL then the default parameters of the split type will be executed for the rsample split type.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Let’s take a look at an example.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(tidyAML)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(recipes)</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
+<span id="cb2-5"></span>
+<span id="cb2-6">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;">~</span> ., <span class="at" style="color: #657422;">data =</span> mtcars)</span>
+<span id="cb2-7">fast_reg_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fast_regression</span>(</span>
+<span id="cb2-8">  <span class="at" style="color: #657422;">.data =</span> mtcars,</span>
+<span id="cb2-9">  <span class="at" style="color: #657422;">.rec_obj =</span> rec_obj,</span>
+<span id="cb2-10">  <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>),</span>
+<span id="cb2-11">  <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"linear_reg"</span></span>
+<span id="cb2-12">)</span>
+<span id="cb2-13"></span>
+<span id="cb2-14"><span class="fu" style="color: #4758AB;">glimpse</span>(fast_reg_tbl)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2
+Columns: 8
+$ .model_id       &lt;int&gt; 1, 2
+$ .parsnip_engine &lt;chr&gt; "lm", "glm"
+$ .parsnip_mode   &lt;chr&gt; "regression", "regression"
+$ .parsnip_fns    &lt;chr&gt; "linear_reg", "linear_reg"
+$ model_spec      &lt;list&gt; [~NULL, ~NULL, NULL, regression, TRUE, NULL, lm, TRUE]…
+$ wflw            &lt;list&gt; [cyl, disp, hp, drat, wt, qsec, vs, am, gear, carb, mp…
+$ fitted_wflw     &lt;list&gt; [cyl, disp, hp, drat, wt, qsec, vs, am, gear, carb, mp…
+$ pred_wflw       &lt;list&gt; [&lt;tbl_df[24 x 1]&gt;], [&lt;tbl_df[24 x 1]&gt;]</code></pre>
+</div>
+</div>
+<p>Let’s take a look at the model spec.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">fast_reg_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>(model_spec) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear Regression Model Specification (regression)
+
+Computational engine: lm </code></pre>
+</div>
+</div>
+<p>Now the <code>wflw</code> column.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">fast_reg_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>(wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: linear_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+Linear Regression Model Specification (regression)
+
+Computational engine: lm </code></pre>
+</div>
+</div>
+<p>The Fitted workflow.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">fast_reg_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>(fitted_wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: linear_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+
+Call:
+stats::lm(formula = ..y ~ ., data = data)
+
+Coefficients:
+(Intercept)          cyl         disp           hp         drat           wt  
+ -15.077267     1.107474     0.001161    -0.001014     4.010199    -1.280324  
+       qsec           vs           am         gear         carb  
+   0.512318    -0.488014     2.430052     4.353568    -2.546043  </code></pre>
+</div>
+</div>
+<p>And lastly tne predicted workflow column.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">fast_reg_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>(pred_wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 24 × 1
+   .pred
+   &lt;dbl&gt;
+ 1  24.7
+ 2  28.2
+ 3  18.9
+ 4  12.0
+ 5  14.8
+ 6  15.4
+ 7  14.7
+ 8  20.0
+ 9  11.2
+10  19.1
+# … with 14 more rows</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>tidyaml</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-09/index.html</guid>
+  <pubDate>Thu, 09 Feb 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Creating an R Project Directory</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3137,294 +3285,6 @@ Computational engine: glm </code></pre>
   <category>purrr</category>
   <guid>https://www.spsanderson.com/steveondata/posts/weekly-rtip-tidyaml-2023-01-13/index.html</guid>
   <pubDate>Fri, 13 Jan 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>An Update on {tidyAML}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-12/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>I have been doing a lot of work on a new package called <a href="https://www.spsanderson.com/tidyAML/"><code>{tidyAML}</code></a>. <code>{tidyAML}</code> is a new R package that makes it easy to use the <code>{tidymodels}</code> ecosystem to perform automated machine learning (AutoML). This package provides a simple and intuitive interface that allows users to quickly generate machine learning models without worrying about the underlying details. It also includes a safety mechanism that ensures that the package will fail gracefully if any required extension packages are not installed on the user’s machine. With <code>{tidyAML}</code>, users can easily build high-quality machine learning models in just a few lines of code. Whether you are a beginner or an experienced machine learning practitioner, <code>{tidyAML}</code> has something to offer.</p>
-<p>Some ideas are that we should be able to generate regression models on the fly without having to actually go through the process of building the specification, especially if it is a non-tuning model, meaning we are not planing on tuning hyper-parameters like penalty and cost.</p>
-<p>The idea is not to re-write the excellent work the <code>{tidymodels}</code> team has done (because it’s not possible) but rather to try and make an enhanced easy to use set of functions that do what they say and can generate many models and predictions at once.</p>
-<p>This is similar to the great <code>{h2o}</code> package, but, <code>{tidyAML}</code> does not require <code>java</code> to be setup properly like <code>{h2o}</code> because <code>{tidyAML}</code> is built on <code>{tidymodels}</code>.</p>
-<p>This package is not yet release, so you can only install from <em>GitHub</em> with the following:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;"># install.packages("devtools")</span></span>
-<span id="cb1-2">devtools<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">install_github</span>(<span class="st" style="color: #20794D;">"spsanderson/tidyAML"</span>)</span></code></pre></div>
-</div>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(tidyAML)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">fast_regression_parsnip_spec_tbl</span>(<span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 11 × 5
-   .model_id .parsnip_engine .parsnip_mode .parsnip_fns model_spec
-       &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;         &lt;chr&gt;        &lt;list&gt;    
- 1         1 lm              regression    linear_reg   &lt;spec[+]&gt; 
- 2         2 brulee          regression    linear_reg   &lt;spec[+]&gt; 
- 3         3 gee             regression    linear_reg   &lt;spec[+]&gt; 
- 4         4 glm             regression    linear_reg   &lt;spec[+]&gt; 
- 5         5 glmer           regression    linear_reg   &lt;spec[+]&gt; 
- 6         6 glmnet          regression    linear_reg   &lt;spec[+]&gt; 
- 7         7 gls             regression    linear_reg   &lt;spec[+]&gt; 
- 8         8 lme             regression    linear_reg   &lt;spec[+]&gt; 
- 9         9 lmer            regression    linear_reg   &lt;spec[+]&gt; 
-10        10 stan            regression    linear_reg   &lt;spec[+]&gt; 
-11        11 stan_glmer      regression    linear_reg   &lt;spec[+]&gt; </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">fast_regression_parsnip_spec_tbl</span>(<span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 5
-  .model_id .parsnip_engine .parsnip_mode .parsnip_fns model_spec
-      &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;         &lt;chr&gt;        &lt;list&gt;    
-1         1 lm              regression    linear_reg   &lt;spec[+]&gt; 
-2         2 glm             regression    linear_reg   &lt;spec[+]&gt; 
-3         3 glm             regression    poisson_reg  &lt;spec[+]&gt; </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">fast_regression_parsnip_spec_tbl</span>(<span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>,<span class="st" style="color: #20794D;">"gee"</span>), </span>
-<span id="cb6-2">                                 <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 5
-  .model_id .parsnip_engine .parsnip_mode .parsnip_fns model_spec
-      &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;         &lt;chr&gt;        &lt;list&gt;    
-1         1 lm              regression    linear_reg   &lt;spec[+]&gt; 
-2         2 gee             regression    linear_reg   &lt;spec[+]&gt; 
-3         3 glm             regression    linear_reg   &lt;spec[+]&gt; </code></pre>
-</div>
-</div>
-<p>As shown we can easily select the models we want either by choosing the supported parsnip function like linear_reg() or by choose the desired engine, you can also use them both in conjunction with each other!</p>
-<p>Now, what if you want to create a non-tuning model spec without using the fast_regression_parsnip_spec_tbl() function. Well, you can. The function is called create_model_spec().</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">create_model_spec</span>(</span>
-<span id="cb8-2"> <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>,<span class="st" style="color: #20794D;">"glmnet"</span>,<span class="st" style="color: #20794D;">"cubist"</span>),</span>
-<span id="cb8-3"> <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
-<span id="cb8-4">      <span class="fu" style="color: #4758AB;">rep</span>(</span>
-<span id="cb8-5">        <span class="st" style="color: #20794D;">"linear_reg"</span>, <span class="dv" style="color: #AD0000;">3</span>),</span>
-<span id="cb8-6">        <span class="st" style="color: #20794D;">"cubist_rules"</span></span>
-<span id="cb8-7">     )</span>
-<span id="cb8-8"> )</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 4
-  .parsnip_engine .parsnip_mode .parsnip_fns .model_spec
-  &lt;chr&gt;           &lt;chr&gt;         &lt;chr&gt;        &lt;list&gt;     
-1 lm              regression    linear_reg   &lt;spec[+]&gt;  
-2 glm             regression    linear_reg   &lt;spec[+]&gt;  
-3 glmnet          regression    linear_reg   &lt;spec[+]&gt;  
-4 cubist          regression    cubist_rules &lt;spec[+]&gt;  </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">create_model_spec</span>(</span>
-<span id="cb10-2"> <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>,<span class="st" style="color: #20794D;">"glmnet"</span>,<span class="st" style="color: #20794D;">"cubist"</span>),</span>
-<span id="cb10-3"> <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
-<span id="cb10-4">      <span class="fu" style="color: #4758AB;">rep</span>(</span>
-<span id="cb10-5">        <span class="st" style="color: #20794D;">"linear_reg"</span>, <span class="dv" style="color: #AD0000;">3</span>),</span>
-<span id="cb10-6">        <span class="st" style="color: #20794D;">"cubist_rules"</span></span>
-<span id="cb10-7">     ),</span>
-<span id="cb10-8"> <span class="at" style="color: #657422;">.return_tibble =</span> <span class="cn" style="color: #8f5902;">FALSE</span></span>
-<span id="cb10-9"> )</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$.parsnip_engine
-$.parsnip_engine[[1]]
-[1] "lm"
-
-$.parsnip_engine[[2]]
-[1] "glm"
-
-$.parsnip_engine[[3]]
-[1] "glmnet"
-
-$.parsnip_engine[[4]]
-[1] "cubist"
-
-
-$.parsnip_mode
-$.parsnip_mode[[1]]
-[1] "regression"
-
-
-$.parsnip_fns
-$.parsnip_fns[[1]]
-[1] "linear_reg"
-
-$.parsnip_fns[[2]]
-[1] "linear_reg"
-
-$.parsnip_fns[[3]]
-[1] "linear_reg"
-
-$.parsnip_fns[[4]]
-[1] "cubist_rules"
-
-
-$.model_spec
-$.model_spec[[1]]
-Linear Regression Model Specification (regression)
-
-Computational engine: lm 
-
-
-$.model_spec[[2]]
-Linear Regression Model Specification (regression)
-
-Computational engine: glm 
-
-
-$.model_spec[[3]]
-Linear Regression Model Specification (regression)
-
-Computational engine: glmnet 
-
-
-$.model_spec[[4]]
-Cubist Model Specification (regression)
-
-Computational engine: cubist </code></pre>
-</div>
-</div>
-<p>Now the reason we are here. Let’s take a look at the first function for modeling with tidyAML, fast_regression().</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;">library</span>(recipes)</span>
-<span id="cb12-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb12-3"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
-<span id="cb12-4"></span>
-<span id="cb12-5">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;">~</span> ., <span class="at" style="color: #657422;">data =</span> mtcars)</span>
-<span id="cb12-6">frt_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fast_regression</span>(</span>
-<span id="cb12-7">  <span class="at" style="color: #657422;">.data =</span> mtcars, </span>
-<span id="cb12-8">  <span class="at" style="color: #657422;">.rec_obj =</span> rec_obj, </span>
-<span id="cb12-9">  <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>),</span>
-<span id="cb12-10">  <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"linear_reg"</span></span>
-<span id="cb12-11">)</span>
-<span id="cb12-12"></span>
-<span id="cb12-13"><span class="fu" style="color: #4758AB;">glimpse</span>(frt_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 2
-Columns: 8
-$ .model_id       &lt;int&gt; 1, 2
-$ .parsnip_engine &lt;chr&gt; "lm", "glm"
-$ .parsnip_mode   &lt;chr&gt; "regression", "regression"
-$ .parsnip_fns    &lt;chr&gt; "linear_reg", "linear_reg"
-$ model_spec      &lt;list&gt; [~NULL, ~NULL, NULL, regression, TRUE, NULL, lm, TRUE]…
-$ wflw            &lt;list&gt; [cyl, disp, hp, drat, wt, qsec, vs, am, gear, carb, mp…
-$ fitted_wflw     &lt;list&gt; [cyl, disp, hp, drat, wt, qsec, vs, am, gear, carb, mp…
-$ pred_wflw       &lt;list&gt; [&lt;tbl_df[24 x 1]&gt;], [&lt;tbl_df[24 x 1]&gt;]</code></pre>
-</div>
-</div>
-<p>Now lets take a look at a few different things in the <code>frt_tbl</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;">names</span>(frt_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] ".model_id"       ".parsnip_engine" ".parsnip_mode"   ".parsnip_fns"   
-[5] "model_spec"      "wflw"            "fitted_wflw"     "pred_wflw"      </code></pre>
-</div>
-</div>
-<p>Let’s look at a single model spec.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1">frt_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(model_spec) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Linear Regression Model Specification (regression)
-
-Computational engine: lm </code></pre>
-</div>
-</div>
-<p>Now the <code>wflw</code> column.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1">frt_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
-Preprocessor: Recipe
-Model: linear_reg()
-
-── Preprocessor ────────────────────────────────────────────────────────────────
-0 Recipe Steps
-
-── Model ───────────────────────────────────────────────────────────────────────
-Linear Regression Model Specification (regression)
-
-Computational engine: lm </code></pre>
-</div>
-</div>
-<p>The fitted wflw object.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">frt_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(fitted_wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
-Preprocessor: Recipe
-Model: linear_reg()
-
-── Preprocessor ────────────────────────────────────────────────────────────────
-0 Recipe Steps
-
-── Model ───────────────────────────────────────────────────────────────────────
-
-Call:
-stats::lm(formula = ..y ~ ., data = data)
-
-Coefficients:
-(Intercept)          cyl         disp           hp         drat           wt  
-   11.77621      0.59296      0.01626     -0.03191     -0.55350     -5.30785  
-       qsec           vs           am         gear         carb  
-    0.97840      2.64023      1.68549      0.87059      0.58785  </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1">frt_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(fitted_wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb22-2">  broom<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">glance</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
-<span id="cb22-3">  <span class="fu" style="color: #4758AB;">glimpse</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 1
-Columns: 12
-$ r.squared     &lt;dbl&gt; 0.9085669
-$ adj.r.squared &lt;dbl&gt; 0.8382337
-$ sigma         &lt;dbl&gt; 2.337527
-$ statistic     &lt;dbl&gt; 12.91804
-$ p.value       &lt;dbl&gt; 3.367361e-05
-$ df            &lt;dbl&gt; 10
-$ logLik        &lt;dbl&gt; -47.07551
-$ AIC           &lt;dbl&gt; 118.151
-$ BIC           &lt;dbl&gt; 132.2877
-$ deviance      &lt;dbl&gt; 71.03241
-$ df.residual   &lt;int&gt; 13
-$ nobs          &lt;int&gt; 24</code></pre>
-</div>
-</div>
-<p>And finally the predictions (this one I am probably going to change up).</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1">frt_tbl <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">select</span>(pred_wflw) <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pull</span>() <span class="sc" style="color: #5E5E5E;">%&gt;%</span> <span class="fu" style="color: #4758AB;">pluck</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 24 × 1
-   .pred
-   &lt;dbl&gt;
- 1  17.4
- 2  28.4
- 3  17.2
- 4  10.7
- 5  13.4
- 6  17.0
- 7  22.8
- 8  14.3
- 9  22.4
-10  15.5
-# … with 14 more rows</code></pre>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidyaml</category>
-  <category>automl</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-12/index.html</guid>
-  <pubDate>Thu, 12 Jan 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
