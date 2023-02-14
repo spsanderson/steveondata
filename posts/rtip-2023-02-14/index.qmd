@@ -1,0 +1,148 @@
+---
+title: "An example of using {box}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-02-14"
+categories: [code, rtip, box]
+---
+
+# Introduction
+
+Today I am going to make a short post on the R package [`{box}`](https://klmr.me/box/) which was showcased to me quite nicely by [**Michael Miles**](https://www.linkedin.com/in/milesmichaeld/). It was informative and I was able to immediately see the usefulness of the `{box}` library.
+
+So what is 'box'? Well here is the description straight from their site:
+
+> 'box' allows organising R code in a more modular way, via two mechanisms:
+>
+> -   It enables writing modular code by treating files and folders of R code as independent (potentially nested) modules, without requiring the user to wrap reusable code into packages.
+> -   It provides a new syntax to import reusable code (both from packages and from modules) which is more powerful and less error-prone than library or require, by limiting the number of names that are made available.
+
+So let's see how it all works.
+
+# Function
+
+The main portion of the script looks like this:
+
+```{r eval=FALSE}
+# Main script
+
+# Script setup --------------------------------------
+
+# Load box modules
+box::use(. / box / global_options / global_options)
+box::use(. / box / io / imports)
+box::use(. / box / io / exports)
+box::use(. / box / mod / mod)
+
+# Load global options
+global_options$set_global_options() 
+
+
+# Main script ---------------------------------------
+
+# Load data, process it, and export results
+all_data <- getOption('data_dir') |> 
+  
+  # Load all data
+  imports$load_all() |> 
+  
+  # Modify dataset
+  mod$modify_data() |> 
+  
+  # Export data
+  exports$export_data()
+```
+
+So what does this do? Well it is grabbing data from a predefined location, modifying it and then re-exporting it. Now let's look at all the code that is behind it, which allows us to do these things and then you will see the power of using __box__
+
+# Example
+
+Let's take a look at the global options settings.
+
+```{r eval=FALSE}
+# Set global options
+#' @export
+set_global_options <- function() {
+  options(
+    look_ups = 'look-ups/',
+    data_dir = 'data/input/'
+  )
+}
+```
+
+Ok 6 lines, boxed down to one.
+
+Now the import function.
+
+```{r eval=FALSE}
+# Function for importing data
+
+#' @export
+load_all <- function(file_path) {
+  
+  box::use(purrr)
+  box::use(vroom)
+  
+  file_path |> 
+    
+    # Get all csv files from folder
+    list.files(full.names = TRUE) |> 
+    
+    # Set list names
+    purrr$set_names(\(file) basename(file)) |> 
+    
+    # Load all csvs into list
+    purrr$map(\(file) vroom$vroom(file))
+
+}
+```
+
+Now the `modify_data` function.
+
+```{r eval=FALSE}
+# Function for modifying data
+
+#' @export
+modify_data <- function(df_list) {
+  
+  box::use(dplyr)
+  box::use(purrr)
+  
+  map_fun <- function(df) {
+    
+    df |> 
+      dplyr$select(name:mass) |> 
+      dplyr$mutate(lol = height * mass) |> 
+      dplyr$filter(lol > 1500)
+  }
+  
+  # Apply mapping function to list
+  purrr$map(df_list, map_fun)
+  
+}
+```
+
+Ok again, a big savings here, instead of the above we simply call `mod$modify_data()` which makes things clearner and also modular in that we can go to a very specific spot in our proejct to fix an error or add/subtract functionality.
+
+Lastly the export.
+
+```{r eval=FALSE}
+# Function for exporting data
+
+#' @export
+export_data <- function(df_list) {
+  
+  box::use(vroom)
+  box::use(purrr)
+  
+  # Export data
+  purrr$map2(.x = df_list,
+             .y = names(df_list),
+             ~vroom$vroom_write(x = .x,
+                               file = paste0('data/output/', 
+                                             .y),
+                               delim = ','))
+  
+}
+```
+
+Voila! I think to even a fresh user, the power of boxing your functions is fairly apparent and to the advanced user, eyes are most likely glowing!
