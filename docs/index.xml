@@ -10,7 +10,120 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Thu, 16 Feb 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 17 Feb 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Converting a {tidyAML} tibble to a {workflowsets}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-17/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The <a href="https://www.spsanderson.com/tidyAML/"><code>{tidyAML}</code></a> package is an R package that provides a set of tools for building regression/classification models on the fly with minimal input required. In this post we will discuss the <a href="https://www.spsanderson.com/tidyAML/reference/create_workflow_set.html"><code>create_workflow_set()</code></a> function.</p>
+<p>The <code>create_workflow_set</code> function is a function in the <code>tidyAML</code> package that is used to create a <code>workflowset</code> object from the <code>workflowsets</code> package. A workflow is a sequence of tasks that can be executed in a specific order, and is often used in data analysis and machine learning to automate data processing and model fitting. The <code>create_workflow_set</code> function takes as input a YAML specification of a set of workflows, and returns a list of workflow objects that can be executed using the <code>tidymodels</code> package and its associated packages.</p>
+<p>The <code>create_workflow_set</code> function is particularly useful when working with the <code>tidymodels</code> package and the <code>parsnip</code> framework. The <code>tidymodels</code> package is a collection of packages for modeling and machine learning in R that provides a consistent interface for building, tuning, and evaluating machine learning models. The parsnip package is part of the <code>tidymodels</code> ecosystem and provides a way to specify a wide range of models in a consistent manner.</p>
+<section id="using-the-create_workflow_set-function-with-tidymodels-and-parsnip" class="level2">
+<h2 class="anchored" data-anchor-id="using-the-create_workflow_set-function-with-tidymodels-and-parsnip">Using the create_workflow_set function with tidymodels and parsnip</h2>
+<p>To use the <code>create_workflow_set</code> function with <code>tidymodels</code> and<code>parsnip</code>, you will need to provide a recipe or recipes as a list to the <strong>.recipe_list</strong> parameter and a model_spec tibble that you would get from something like <code>fast_regression_parsnip_spec_tbl()</code>, other classes will be supported in the future.</p>
+<p>The reason this was done was because I did not want to force users to remain inside of <code>tidyAML</code> perhaps and most likely there are other packages out there that are more suited to an end users specific problem at hand.</p>
+</section>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Let’s take a look at the function and it’s arguments.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">create_workflow_set</span>(</span>
+<span id="cb1-2">  <span class="at" style="color: #657422;">.model_tbl =</span> <span class="cn" style="color: #8f5902;">NULL</span>, </span>
+<span id="cb1-3">  <span class="at" style="color: #657422;">.recipe_list =</span> <span class="fu" style="color: #4758AB;">list</span>(), </span>
+<span id="cb1-4">  <span class="at" style="color: #657422;">.cross =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
+<span id="cb1-5">)</span></code></pre></div>
+</div>
+<ul>
+<li><code>.model_tbl</code> - The model table that is generated from a function like <code>fast_regression_parsnip_spec_tbl()</code>. The model spec column will be grabbed automatically as the class of the object must be <code>tidyaml_base_tbl</code></li>
+<li><code>.recipe_list</code> - Provide a list of recipes here that will get added to the workflow set object.</li>
+<li><code>.cross</code> - The default is TRUE, can be set to FALSE. This is passed to the cross parameter as an argument to the workflow_set() function.</li>
+</ul>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Here is a simple example. Remember you really only want to use this if you have a model_spec tibble not a tibble with workflows that have already been fit.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(tidyAML)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(recipes)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;">~</span> ., <span class="at" style="color: #657422;">data =</span> mtcars)</span>
+<span id="cb2-5">spec_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fast_regression_parsnip_spec_tbl</span>(</span>
+<span id="cb2-6">  <span class="at" style="color: #657422;">.parsnip_fns =</span> <span class="st" style="color: #20794D;">"linear_reg"</span>,</span>
+<span id="cb2-7">  <span class="at" style="color: #657422;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"lm"</span>,<span class="st" style="color: #20794D;">"glm"</span>)</span>
+<span id="cb2-8">)</span>
+<span id="cb2-9"></span>
+<span id="cb2-10">wfs_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">create_workflow_set</span>(</span>
+<span id="cb2-11">  spec_tbl,</span>
+<span id="cb2-12">  <span class="fu" style="color: #4758AB;">list</span>(rec_obj)</span>
+<span id="cb2-13">)</span></code></pre></div>
+</div>
+<p>Now let’s inspect.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb3-2"></span>
+<span id="cb3-3">wfs_tbl <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A workflow set/tibble: 1 × 4
+  wflow_id            info             option    result    
+  &lt;chr&gt;               &lt;list&gt;           &lt;list&gt;    &lt;list&gt;    
+1 recipe_linear_reg_1 &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">class</span>(wfs_tbl)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "workflow_set" "tbl_df"       "tbl"          "data.frame"  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">wfs_tbl<span class="sc" style="color: #5E5E5E;">$</span>info</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 1 × 4
+  workflow   preproc model      comment
+  &lt;list&gt;     &lt;chr&gt;   &lt;chr&gt;      &lt;chr&gt;  
+1 &lt;workflow&gt; recipe  linear_reg ""     
+
+[[2]]
+# A tibble: 1 × 4
+  workflow   preproc model      comment
+  &lt;list&gt;     &lt;chr&gt;   &lt;chr&gt;      &lt;chr&gt;  
+1 &lt;workflow&gt; recipe  linear_reg ""     </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">wfs_tbl<span class="sc" style="color: #5E5E5E;">$</span>info[[<span class="dv" style="color: #AD0000;">1</span>]]<span class="sc" style="color: #5E5E5E;">$</span>workflow[[<span class="dv" style="color: #AD0000;">1</span>]]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: linear_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+Linear Regression Model Specification (regression)
+
+Computational engine: lm </code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>tidyaml</category>
+  <category>workflowsets</category>
+  <category>tidymodels</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-17/index.html</guid>
+  <pubDate>Fri, 17 Feb 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Officially on CRAN {tidyAML}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -2836,138 +2949,6 @@ Note: p-value = 0.01 means p.value &lt;= 0.01 </code></pre>
   <category>lapply</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-23/index.html</guid>
   <pubDate>Mon, 23 Jan 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Another Post on Lists</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/weekly-rtip-lists-2023-01-20/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Manipulating lists in R is a powerful tool for organizing and analyzing data. Here are a few common ways to manipulate lists:</p>
-<ol type="1">
-<li>Indexing: Lists can be indexed using square brackets “[ ]” and numeric indices. For example, to access the first element of a list called “mylist”, you would use the expression “mylist[1]”.</li>
-<li>Subsetting: Lists can be subsetted using the same square bracket notation, but with a logical vector indicating which elements to keep. For example, to select all elements of “mylist” that are greater than 5, you would use the expression “mylist[mylist &gt; 5]”.</li>
-<li>Modifying elements: Elements of a list can be modified by assigning new values to them using the assignment operator “&lt;-”. For example, to change the third element of “mylist” to 10, you would use the expression “mylist[3] &lt;- 10”.</li>
-<li>Adding elements: New elements can be added to a list using the concatenation operator “c()” or the “append()” function. For example, to add the number 7 to the end of “mylist”, you would use the expression “mylist &lt;- c(mylist, 7)”.</li>
-<li>Removing elements: Elements can be removed from a list using the “-” operator. For example, to remove the second element of “mylist”, you would use the expression “mylist &lt;- mylist[-2]”.</li>
-</ol>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>Here is an example of how these methods can be used to manipulate a list in R:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">mylist <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>,<span class="dv" style="color: #AD0000;">4</span>,<span class="dv" style="color: #AD0000;">5</span>)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3"><span class="co" style="color: #5E5E5E;"># Indexing</span></span>
-<span id="cb1-4">mylist[[<span class="dv" style="color: #AD0000;">1</span>]] <span class="co" style="color: #5E5E5E;"># Returns 1</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;"># Subsetting</span></span>
-<span id="cb3-2">mylist[mylist <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">3</span>] <span class="co" style="color: #5E5E5E;"># Returns 4 &amp; 5</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 4
-
-[[2]]
-[1] 5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;"># Modifying elements</span></span>
-<span id="cb5-2">mylist[[<span class="dv" style="color: #AD0000;">3</span>]] <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">10</span></span>
-<span id="cb5-3">mylist <span class="co" style="color: #5E5E5E;"># Returns 1 2 10 4 5 7</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1
-
-[[2]]
-[1] 2
-
-[[3]]
-[1] 10
-
-[[4]]
-[1] 4
-
-[[5]]
-[1] 5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;"># Adding elements</span></span>
-<span id="cb7-2">mylist <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(mylist, <span class="dv" style="color: #AD0000;">7</span>)</span>
-<span id="cb7-3">mylist <span class="co" style="color: #5E5E5E;"># Returns 1 2 10 4 5 7</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1
-
-[[2]]
-[1] 2
-
-[[3]]
-[1] 10
-
-[[4]]
-[1] 4
-
-[[5]]
-[1] 5
-
-[[6]]
-[1] 7</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;"># Removing elements</span></span>
-<span id="cb9-2">mylist[<span class="sc" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">3</span>]</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1
-
-[[2]]
-[1] 2
-
-[[3]]
-[1] 4
-
-[[4]]
-[1] 5
-
-[[5]]
-[1] 7</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">mylist <span class="co" style="color: #5E5E5E;"># Returns 1 2 4 5 7</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1
-
-[[2]]
-[1] 2
-
-[[3]]
-[1] 10
-
-[[4]]
-[1] 4
-
-[[5]]
-[1] 5
-
-[[6]]
-[1] 7</code></pre>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>lists</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/weekly-rtip-lists-2023-01-20/index.html</guid>
-  <pubDate>Fri, 20 Jan 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
