@@ -1,0 +1,112 @@
+---
+title: "Calibrate and Plot a Time Series with {healthyR.ts}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-02-17"
+categories: [code, rtip, tidyaml, workflowsets, tidymodels]
+---
+
+# Introduction
+
+In time series analysis, it is common to split the data into training and testing sets to evaluate the accuracy of a model. However, it is important to ensure that the model is calibrated on the training set before evaluating its performance on the testing set. The [`{healthyR.ts}`](https://www.spsanderson.com/healthyR.ts/) library provides a function called [`calibrate_and_plot()`](https://www.spsanderson.com/healthyR.ts/reference/calibrate_and_plot.html) that simplifies this process.
+
+# Function
+
+Here is the full function call:
+
+```{r eval=FALSE}
+calibrate_and_plot(
+  ...,
+  .type = "testing",
+  .splits_obj,
+  .data,
+  .print_info = TRUE,
+  .interactive = FALSE
+)
+```
+
+Here are the arguments to the parameters:
+
+*  `...` - The workflow(s) you want to add to the function.
+*  `.type` - Either the training(splits) or testing(splits) data.
+*  `.splits_obj` - The splits object.
+*  `.data` - The full data set.
+*  `.print_info` - The default is TRUE and will print out the calibration accuracy tibble and the resulting plotly plot.
+*  `.interactive` - The defaults is FALSE. This controls if a forecast plot is interactive or not via plotly.
+
+# Example
+
+By default, `calibrate_and_plot()` will print out a calibration accuracy tibble and a resulting plotly plot. This can be controlled with the print_info argument, which is set to TRUE by default. If you prefer a non-interactive forecast plot, you can set the interactive argument to FALSE.
+
+Here's an example of how to use the `calibrate_and_plot()` function:
+
+```{r warning=FALSE, message=FALSE}
+library(healthyR.ts)
+library(dplyr)
+library(timetk)
+library(parsnip)
+library(recipes)
+library(workflows)
+library(rsample)
+
+# Get the Data
+data <- ts_to_tbl(AirPassengers) |>
+  select(-index)
+
+# Split the data into training and testing sets
+splits <- time_series_split(
+   data
+  , date_col
+  , assess = 12
+  , skip = 3
+  , cumulative = TRUE
+)
+
+# Make the recipe object
+rec_obj <- recipe(value ~ ., data = training(splits))
+
+# Make the Model
+model_spec <- linear_reg(
+   mode = "regression"
+   , penalty = 0.5
+   , mixture = 0.5
+) |>
+   set_engine("lm")
+
+# Make the workflow object
+wflw <- workflow() |>
+   add_recipe(rec_obj) |>
+   add_model(model_spec) |>
+   fit(training(splits))
+
+# Get our output
+output <- calibrate_and_plot(
+  wflw
+  , .type = "training"
+  , .splits_obj = splits
+  , .data = data
+  , .print_info = FALSE
+  , .interactive = TRUE
+ )
+```
+
+The resulting output will include a calibration accuracy tibble and a plotly plot showing the original time series data along with the fitted values for the training set.
+
+Let's take a look at the output.
+
+```{r}
+output$calibration_tbl
+```
+
+```{r}
+output$model_accuracy
+```
+
+
+And...
+```{r}
+output$plot
+```
+
+Overall, the calibrate_and_plot() function is a useful tool for simplifying the process of calibrating time series models on a training set and evaluating their performance on a testing set.
+
+Voila!
