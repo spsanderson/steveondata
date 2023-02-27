@@ -1,0 +1,51 @@
+---
+title: "Quickly Generate Nested Time Series Models"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-02-27"
+categories: [code, rtip, timeseries, autoarima]
+---
+
+# Introduction
+
+There are many approaches to modeling time series data in R. One of the types of data that we might come across is a nested time series. This means the data is grouped simply by one or more keys. There are many methods in which to accomplish this task. This will be a quick post, but if you want a longer more detailed and quite frankly well written out one, then [this is a really good article](https://rpubs.com/alfado/purrr)
+
+# Exampmle
+
+Let's just get to it with a very simple example, the motivation here isn't to be all encompassing, but rather to just showcase it is possible for those who may not know it is.
+
+```{r, warning=FALSE, message=FALSE}
+library(healthyR.data)
+library(dplyr)
+library(timetk)
+
+ts_tbl <- healthyR_data |> 
+  filter(ip_op_flag == "I") |> 
+  select(visit_end_date_time, service_line, length_of_stay) |>
+  mutate(visit_end_date_time = as.Date(visit_end_date_time)) |>
+  group_by(service_line) |>
+  summarise_by_time(
+    .date_var = visit_end_date_time,
+    .by = "month",
+    los = mean(length_of_stay)
+  ) |>
+  ungroup()
+
+glimpse(ts_tbl)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(forecast)
+library(broom)
+library(tidyr)
+
+glanced_models <- ts_tbl |> 
+  nest_by(service_line) |> 
+  mutate(AA = list(auto.arima(data$los))) |> 
+  mutate(perf = list(glance(AA))) |> 
+  unnest(cols = c(perf))
+
+glanced_models |>
+  select(-data)
+```
+
+Voila!

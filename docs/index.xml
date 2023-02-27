@@ -10,7 +10,93 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Fri, 24 Feb 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 27 Feb 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Quickly Generate Nested Time Series Models</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-27/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>There are many approaches to modeling time series data in R. One of the types of data that we might come across is a nested time series. This means the data is grouped simply by one or more keys. There are many methods in which to accomplish this task. This will be a quick post, but if you want a longer more detailed and quite frankly well written out one, then <a href="https://rpubs.com/alfado/purrr">this is a really good article</a></p>
+</section>
+<section id="exampmle" class="level1">
+<h1>Exampmle</h1>
+<p>Let’s just get to it with a very simple example, the motivation here isn’t to be all encompassing, but rather to just showcase it is possible for those who may not know it is.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR.data)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(timetk)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5">ts_tbl <span class="ot" style="color: #003B4F;">&lt;-</span> healthyR_data <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb1-6">  <span class="fu" style="color: #4758AB;">filter</span>(ip_op_flag <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"I"</span>) <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb1-7">  <span class="fu" style="color: #4758AB;">select</span>(visit_end_date_time, service_line, length_of_stay) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">visit_end_date_time =</span> <span class="fu" style="color: #4758AB;">as.Date</span>(visit_end_date_time)) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;">group_by</span>(service_line) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-10">  <span class="fu" style="color: #4758AB;">summarise_by_time</span>(</span>
+<span id="cb1-11">    <span class="at" style="color: #657422;">.date_var =</span> visit_end_date_time,</span>
+<span id="cb1-12">    <span class="at" style="color: #657422;">.by =</span> <span class="st" style="color: #20794D;">"month"</span>,</span>
+<span id="cb1-13">    <span class="at" style="color: #657422;">los =</span> <span class="fu" style="color: #4758AB;">mean</span>(length_of_stay)</span>
+<span id="cb1-14">  ) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-15">  <span class="fu" style="color: #4758AB;">ungroup</span>()</span>
+<span id="cb1-16"></span>
+<span id="cb1-17"><span class="fu" style="color: #4758AB;">glimpse</span>(ts_tbl)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,148
+Columns: 3
+$ service_line        &lt;chr&gt; "Alcohol Abuse", "Alcohol Abuse", "Alcohol Abuse",…
+$ visit_end_date_time &lt;date&gt; 2011-09-01, 2011-10-01, 2011-11-01, 2011-12-01, 2…
+$ los                 &lt;dbl&gt; 3.666667, 3.181818, 4.380952, 3.464286, 3.677419, …</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">library</span>(forecast)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;">library</span>(broom)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;">library</span>(tidyr)</span>
+<span id="cb3-4"></span>
+<span id="cb3-5">glanced_models <span class="ot" style="color: #003B4F;">&lt;-</span> ts_tbl <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb3-6">  <span class="fu" style="color: #4758AB;">nest_by</span>(service_line) <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb3-7">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">AA =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="fu" style="color: #4758AB;">auto.arima</span>(data<span class="sc" style="color: #5E5E5E;">$</span>los))) <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb3-8">  <span class="fu" style="color: #4758AB;">mutate</span>(<span class="at" style="color: #657422;">perf =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="fu" style="color: #4758AB;">glance</span>(AA))) <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;">unnest</span>(<span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(perf))</span>
+<span id="cb3-10"></span>
+<span id="cb3-11">glanced_models <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb3-12">  <span class="fu" style="color: #4758AB;">select</span>(<span class="sc" style="color: #5E5E5E;">-</span>data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 23 × 7
+# Groups:   service_line [23]
+   service_line                  AA         sigma logLik   AIC   BIC  nobs
+   &lt;chr&gt;                         &lt;list&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+ 1 Alcohol Abuse                 &lt;fr_ARIMA&gt; 2.22  -241.   493.  506.   109
+ 2 Bariatric Surgery For Obesity &lt;fr_ARIMA&gt; 0.609  -80.1  168.  178.    88
+ 3 CHF                           &lt;fr_ARIMA&gt; 0.963 -152.   309.  314.   110
+ 4 COPD                          &lt;fr_ARIMA&gt; 0.987 -155.   315.  320.   110
+ 5 CVA                           &lt;fr_ARIMA&gt; 1.50  -201.   407.  412.   110
+ 6 Carotid Endarterectomy        &lt;fr_ARIMA&gt; 6.27  -166.   335.  339.    51
+ 7 Cellulitis                    &lt;fr_ARIMA&gt; 1.07  -163.   329.  335.   110
+ 8 Chest Pain                    &lt;fr_ARIMA&gt; 0.848 -139.   281.  287.   110
+ 9 GI Hemorrhage                 &lt;fr_ARIMA&gt; 1.21  -179.   361.  366.   111
+10 Joint Replacement             &lt;fr_ARIMA&gt; 1.65  -196.   396.  401.   102
+# … with 13 more rows</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <category>autoarima</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-27/index.html</guid>
+  <pubDate>Mon, 27 Feb 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Data Preppers with {healthyR.ai}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -2682,90 +2768,6 @@ $ mday7                 &lt;int&gt; 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3,
   <category>healthyrai</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-26/index.html</guid>
   <pubDate>Thu, 26 Jan 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Simplifying List Filtering in R with purrr’s keep()</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-25/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>The <a href="https://purrr.tidyverse.org/"><code>{purrr}</code></a> package in R is a powerful tool for working with lists and other data structures. One particularly useful function in the package is <a href="https://purrr.tidyverse.org/reference/keep.html"><code>keep()</code></a>, which allows you to filter a list by keeping only the elements that meet certain conditions.</p>
-<p>The <code>keep()</code> function takes two arguments: the list to filter, and a function that returns a logical value indicating whether each element of the list should be kept. The function can be specified as an anonymous function or a named function, and it should take a single argument (the current element of the list).</p>
-<p>For example, let’s say we have a list of numbers and we want to keep only the even numbers. We could use the keep() function with an anonymous function that checks the remainder of the current element divided by 2:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3">numbers <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>, <span class="dv" style="color: #AD0000;">3</span>, <span class="dv" style="color: #AD0000;">4</span>, <span class="dv" style="color: #AD0000;">5</span>, <span class="dv" style="color: #AD0000;">6</span>)</span>
-<span id="cb1-4">even_numbers <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">keep</span>(numbers, <span class="cf" style="color: #003B4F;">function</span>(x) x <span class="sc" style="color: #5E5E5E;">%%</span> <span class="dv" style="color: #AD0000;">2</span> <span class="sc" style="color: #5E5E5E;">==</span> <span class="dv" style="color: #AD0000;">0</span>)</span>
-<span id="cb1-5">even_numbers</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2 4 6</code></pre>
-</div>
-</div>
-<p>We see that this keeps <strong>[1] 2 4 6</strong>.</p>
-<p>The purrr package also provides a convenient shorthand for this operation, <code>.p</code>, which can be used inside the keep function to return the element.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">even_numbers <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">keep</span>(numbers, <span class="sc" style="color: #5E5E5E;">~</span> .x <span class="sc" style="color: #5E5E5E;">%%</span> <span class="dv" style="color: #AD0000;">2</span> <span class="sc" style="color: #5E5E5E;">==</span> <span class="dv" style="color: #AD0000;">0</span>)</span>
-<span id="cb3-2">even_numbers</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2 4 6</code></pre>
-</div>
-</div>
-<p>You can also use the <code>keep()</code> function to filter a list of other types of objects, such as strings or lists. For example, you could use it to keep only the strings that are longer than a certain length:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">words <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"cat"</span>, <span class="st" style="color: #20794D;">"dog"</span>, <span class="st" style="color: #20794D;">"elephant"</span>, <span class="st" style="color: #20794D;">"bird"</span>)</span>
-<span id="cb5-2">long_words <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">keep</span>(words, <span class="cf" style="color: #003B4F;">function</span>(x) <span class="fu" style="color: #4758AB;">nchar</span>(x) <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">4</span>)</span>
-<span id="cb5-3">long_words</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "elephant"</code></pre>
-</div>
-</div>
-<p>We see that this keeps “elephant” &amp; “bird”.</p>
-<p>In summary, the <code>{purrr}</code> package’s <code>keep()</code> function is a powerful tool for filtering lists in R, and the <code>.p</code> parameter can be used as a shorthand. It can be used to keep only the items in a list that meet a user-given condition, and it can be used with a variety of data types.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Here is the <code>keep()</code> function and it’s parameters.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">keep</span>(.x, .p, ...)</span></code></pre></div>
-</div>
-<p>Here are the arguments to the parameters.</p>
-<ul>
-<li><code>.x</code> - A list or vector.</li>
-<li><code>.p</code> - A predicate function (i.e.&nbsp;a function that returns either TRUE or FALSE) specified in one of the following ways:
-<ul>
-<li>A named function, e.g.&nbsp;is.character.</li>
-<li>An anonymous function, e.g.&nbsp;<code>\(x) all(x &lt; 0)</code> or <code>function(x) all(x &lt; 0)</code>.</li>
-<li>A formula, e.g.&nbsp;<code>~ all(.x &lt; 0)</code>. You must use <code>.x</code> to refer to the first argument). Only recommended if you require backward compatibility with older versions of R.</li>
-</ul></li>
-<li><code>...</code> - Additional arguments passed on to .p.</li>
-</ul>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>I recently came across wanting to filter a list that is given as an argument to a parameter. The function I am working for my upcoming <a href="https://www.spsanderson.com/tidyAML/"><code>{tidyAML}</code></a> package has a function called <a href="https://www.spsanderson.com/tidyAML/reference/create_workflow_set.html"><code>create_workflow_set()</code></a> that has a parameter <code>.recipe_list</code> which is set to <code>list()</code>. The user must only place recipes in this list or else I want it to fail. So I was able to write a quick check using <code>keep()</code> like so:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;"># Checks ----</span></span>
-<span id="cb8-2"><span class="co" style="color: #5E5E5E;"># only keep() recipes</span></span>
-<span id="cb8-3">rec_list <span class="ot" style="color: #003B4F;">&lt;-</span> purrr<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">keep</span>(rec_list, <span class="sc" style="color: #5E5E5E;">~</span> <span class="fu" style="color: #4758AB;">inherits</span>(.x, <span class="st" style="color: #20794D;">"recipe"</span>))</span></code></pre></div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>lists</category>
-  <category>purrr</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-01-25/index.html</guid>
-  <pubDate>Wed, 25 Jan 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
