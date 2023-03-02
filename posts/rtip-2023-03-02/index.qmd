@@ -1,0 +1,63 @@
+---
+title: "Forecasting Timeseries in a list with R"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-02"
+categories: [code, rtip, purrr, timeseries]
+---
+
+# Introduction
+
+In this article, we will discuss how to perform an ARIMA forecast on nested data or data that is in a list using R programming language. This is a common scenario in which we have data stored in a list format, where each element of the list corresponds to a different time series. We will use the R programming language, specifically the "forecast" package, to perform the ARIMA forecast.
+
+First, we will need to load the required packages and data. For this example, we will use the "AirPassengers" dataset which is included in the "datasets" package. This dataset contains the number of international airline passengers per month from 1949 to 1960. We will then create a list containing subsets of this data for each year.
+
+```{r warning=FALSE, message=FALSE}
+library(forecast)
+
+yearly_data <- split(AirPassengers, f = ceiling(seq_along(AirPassengers)/12))
+
+yearly_data
+```
+
+In the above code, we use the "split" function to split the data into yearly subsets. The "f" parameter is used to specify the grouping variable which, in this case, is the sequence of numbers from 1 to the length of the dataset divided by 12, rounded up to the nearest integer. This creates a list of 12 elements, one for each year.
+
+# Function
+
+Next, we will define a function that takes a single element of the list, fits an ARIMA model, and generates a forecast.
+
+```{r warning=FALSE, message=FALSE}
+arima_forecast <- function(x){
+  fit <- auto.arima(x)
+  forecast(fit)
+}
+```
+
+This function takes a single argument "x" which is one of the elements of the list. We use the "auto.arima" function from the "forecast" package to fit an ARIMA model to the data. The "forecast" function is then used to generate a forecast based on this model.
+
+# Example
+
+We can now use the "lapply" function to apply this function to each element of the list.
+
+```{r warning=FALSE, message=FALSE}
+forecasts <- lapply(yearly_data, arima_forecast)
+```
+
+The "lapply" function applies the "arima_forecast" function to each element of the "yearly_data" list and returns a list of forecasts.
+
+Finally, we can extract and plot the forecasts for a specific year.
+
+```{r warning=FALSE, message=FALSE}
+plot(forecasts[[5]])
+```
+
+Now lets take a look at them all.
+
+```{r warning=FALSE, message=FALSE}
+par(mfrow = c(2,1))
+
+purrr::map(forecasts, plot)
+
+dev.off()
+```
+
+Voila!
