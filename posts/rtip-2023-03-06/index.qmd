@@ -1,0 +1,98 @@
+---
+title: "Simple examples of imap() from {purrr}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-06"
+categories: [code, rtip, purrr]
+---
+
+# Introduction
+
+The [`imap()`](https://purrr.tidyverse.org/reference/imap.html) function is a powerful tool for iterating over a list or a vector while also keeping track of the index or names of the elements. This function applies a given function to each element of a list, along with the name or index of that element, and returns a new list with the results.
+
+The `imap()` function takes two main arguments: `x` and `.f`. `x` is the list or vector to iterate over, and `.f` is the function to apply to each element. The .f function takes two arguments: x and i, where x is the value of the element and i is the index or name of the element.
+
+# Function
+
+Here is the `imap()` function.
+
+```{r eval=FALSE}
+imap(.x, .f, ...)
+```
+
+Here is the documentation from the function page:
+
+*  `.x` - A list or atomic vector.
+*  `.f` - A function, specified in one of the following ways:
+    *  A named function, e.g. paste.
+    *  An anonymous function, e.g. \(x, idx) x + idx or function(x, idx) x + idx.
+    *  A formula, e.g. ~ .x + .y. You must use .x to refer to the current element and .y to refer to the current index. Only recommended if you require backward compatibility with older versions of R.
+*  `...` - Additional arguments passed on to the mapped function. We now generally recommend against using ... to pass additional (constant) arguments to .f. Instead use a shorthand anonymous function:
+
+```{r eval=FALSE}
+# Instead of
+x |> map(f, 1, 2, collapse = ",")
+# do:
+x |> map(\(x) f(x, 1, 2, collapse = ","))
+```
+This makes it easier to understand which arguments belong to which function and will tend to yield better error messages.
+
+# Example
+
+Here's an example of using imap() with a simple list of integers:
+
+```{r warning=FALSE, message=FALSE}
+library(purrr)
+
+# create a list of integers
+my_list <- list(1, 2, 3, 4, 5)
+
+# define a function to apply to each element of the list
+my_function <- function(x, i) {
+  paste("The element at index", i, "is", x)
+}
+
+# apply the function to each element of the list using imap()
+result <- imap(my_list, my_function)
+
+# print the result
+print(result)
+```
+
+In this example, we create a list of integers called my_list. We define a function called my_function that takes two arguments: x, which is the value of each element in the list, and i, which is the index of that element. We then use imap() to apply my_function to each element of my_list, passing both the value and the index of the element as arguments. The result is a new list where each element contains the output of my_function applied to the corresponding element of my_list.
+
+Now let's take a look at a slightly more complex example. In this case, we will use imap() to iterate over a list of data frames, apply a function to each data frame that subsets the data to include only certain columns, and return a new list of data frames with the subsetted data.
+
+```{r warning=FALSE, message=FALSE}
+# create a list of data frames
+my_list <- list(
+  data.frame(x = 1:5, y = c("a", "b", "c", "d", "e")),
+  data.frame(x = 6:10, y = c("f", "g", "h", "i", "j")),
+  data.frame(x = 11:15, y = c("k", "l", "m", "n", "o"))
+)
+
+# define a function to apply to each element of the list
+my_function <- function(df, i) {
+  # subset the data to include only the x column
+  df_subset <- df[, "x", drop = FALSE]
+  # rename the column to include the index of the element
+  colnames(df_subset) <- paste("x_", i, sep = "")
+  # return the subsetted data frame
+  return(df_subset)
+}
+
+# apply the function to each element of the list using imap
+result <- imap(my_list, my_function)
+
+# print the result
+print(result)
+```
+
+In this example, we create a list of three data frames called my_list. We define a function called my_function that takes two arguments: df, which is the value of each element in the list (a data frame), and i, which is the index of that element. The function subsets the data frame to include only the x column, renames the column to include the index of the element, and returns the subsetted data frame.
+
+We use imap() to apply my_function to each element of my_list, passing both the data frame and the index of the element as arguments. The result is a new list of data frames, where each data frame contains only the x column from the original data frame, with a new name that includes the index of the element.
+
+As you can see, the output is a list of three data frames, each containing only the x column from the corresponding original data frame, with a new name that includes the index of the element.
+
+In summary, the imap() function from the R library purrr is a useful tool for iterating over a list or a vector while also keeping track of the index or names of the elements. The function takes a list or a vector as its first argument, and a function as its second argument, which takes two arguments: the value of each element, and the index or name of that element. The function returns a new list or vector with the results of applying the function to each element of the original list or vector. This function is particularly useful for complex data structures, where the index or name of each element is important for further data analysis or processing.
+
+Voila!
