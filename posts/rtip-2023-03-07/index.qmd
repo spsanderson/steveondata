@@ -1,0 +1,106 @@
+---
+title: "tidy_bernoulli() with {data.table}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-07"
+categories: [code, rtip, data.table]
+---
+
+# Introduction
+
+So I was challanged by Adrian Antico to learn [`data.table`](https://rdatatable.gitlab.io/data.table/), so yesterday I started with a single function from my package [`{TidyDensity}`](https://www.spsanderson.com/TidyDensity/) called __tidy_bernoulli()__.
+
+So let's see how I did (hint, works but needs a lot of improvement, so I'll learn it.)
+
+# Function
+
+Let's see the function in `data.table`
+
+```{r warning=FALSE, message=FALSE}
+library(data.table)
+library(tidyr)
+library(stats)
+library(purrr)
+
+new_func <- function(num_sims, n, pr) {
+
+  # Create a data.table with one row per simulation
+  sim_data <- data.table(sim_number = factor(seq(1, num_sims, 1)))
+  
+  # Group the data by sim_number and add columns for x and y
+  sim_data[, `:=` (
+    x = list(1:n),
+    y = list(stats::rbinom(n = n, size = 1, prob = pr))
+  ), by = sim_number]
+  
+  # Compute the density of the y values and add columns for dx and dy
+  sim_data[, `:=` (
+    d = list(density(unlist(y), n = n)[c("x", "y")] |>
+      set_names("dx", "dy") |>
+      as_tibble())
+  ), by = sim_number]
+  
+  # Compute the p-values for the y values and add a column for p
+  sim_data[, `:=` (
+    p = list(stats::pbinom(unlist(y), size = 1, prob = pr))
+  ), by = sim_number]
+  
+  # Compute the q-values for the p-values and add a column for q
+  sim_data[, `:=` (
+    q = list(stats::qbinom(unlist(p), size = 1, prob = pr))
+  ), by = sim_number]
+  
+  # Unnest the columns for x, y, d, p, and q
+  sim_data <- sim_data[, 
+                       unnest(
+                         .SD, 
+                         cols = c("x", "y", "d", "p", "q")
+                         ), 
+                       by = sim_number]
+  
+  # Remove the grouping
+  sim_data[, sim_number := as.factor(sim_number)]
+  
+  return(sim_data)
+}
+```
+
+# Example
+
+Now, let's see the output of the original function __tidy_bernoulli()__ and __new_func()__.
+
+```{r warning=FALSE, message=FALSE}
+library(TidyDensity)
+n <- 50
+pr <- 0.1
+sims <- 5
+
+set.seed(123)
+tb <- tidy_bernoulli(.n = n, .prob = pr, .num_sims = sims)
+
+set.seed(123)
+nf <- new_func(n = n, num_sims = sims, pr = pr)
+
+print(tb)
+print(nf)
+```
+
+Ok so at least the output is identical which is a good sign. Now let's benchmark the two solutions.
+
+```{r warning=FALSE, message=FALSE}
+library(rbenchmark)
+library(dplyr)
+
+benchmark(
+  "original" = {
+    tidy_bernoulli(.n = n, .prob = pr, .num_sims = sims)
+  },
+  "data.table" = {
+    new_func(n = n, pr = pr, num_sims = sims)
+  },
+  replications = 100,
+  columns = c("test","replications","elapsed","relative","user.self","sys.self"  )
+) |>
+  arrange(relative)
+```
+
+Yeah, needs some work but it's a start.

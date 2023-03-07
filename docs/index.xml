@@ -10,7 +10,155 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Mon, 06 Mar 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 07 Mar 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>tidy_bernoulli() with {data.table}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-07/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>So I was challanged by Adrian Antico to learn <a href="https://rdatatable.gitlab.io/data.table/"><code>data.table</code></a>, so yesterday I started with a single function from my package <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> called <strong>tidy_bernoulli()</strong>.</p>
+<p>So let’s see how I did (hint, works but needs a lot of improvement, so I’ll learn it.)</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>Let’s see the function in <code>data.table</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(data.table)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyr)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(stats)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
+<span id="cb1-5"></span>
+<span id="cb1-6">new_func <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(num_sims, n, pr) {</span>
+<span id="cb1-7"></span>
+<span id="cb1-8">  <span class="co" style="color: #5E5E5E;"># Create a data.table with one row per simulation</span></span>
+<span id="cb1-9">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.table</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="fu" style="color: #4758AB;">factor</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">1</span>, num_sims, <span class="dv" style="color: #AD0000;">1</span>)))</span>
+<span id="cb1-10">  </span>
+<span id="cb1-11">  <span class="co" style="color: #5E5E5E;"># Group the data by sim_number and add columns for x and y</span></span>
+<span id="cb1-12">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb1-13">    <span class="at" style="color: #657422;">x =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n),</span>
+<span id="cb1-14">    <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">rbinom</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb1-15">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb1-16">  </span>
+<span id="cb1-17">  <span class="co" style="color: #5E5E5E;"># Compute the density of the y values and add columns for dx and dy</span></span>
+<span id="cb1-18">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb1-19">    <span class="at" style="color: #657422;">d =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="fu" style="color: #4758AB;">density</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">n =</span> n)[<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>, <span class="st" style="color: #20794D;">"y"</span>)] <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-20">      <span class="fu" style="color: #4758AB;">set_names</span>(<span class="st" style="color: #20794D;">"dx"</span>, <span class="st" style="color: #20794D;">"dy"</span>) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-21">      <span class="fu" style="color: #4758AB;">as_tibble</span>())</span>
+<span id="cb1-22">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb1-23">  </span>
+<span id="cb1-24">  <span class="co" style="color: #5E5E5E;"># Compute the p-values for the y values and add a column for p</span></span>
+<span id="cb1-25">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb1-26">    <span class="at" style="color: #657422;">p =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">pbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb1-27">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb1-28">  </span>
+<span id="cb1-29">  <span class="co" style="color: #5E5E5E;"># Compute the q-values for the p-values and add a column for q</span></span>
+<span id="cb1-30">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb1-31">    <span class="at" style="color: #657422;">q =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">qbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(p), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb1-32">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb1-33">  </span>
+<span id="cb1-34">  <span class="co" style="color: #5E5E5E;"># Unnest the columns for x, y, d, p, and q</span></span>
+<span id="cb1-35">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> sim_data[, </span>
+<span id="cb1-36">                       <span class="fu" style="color: #4758AB;">unnest</span>(</span>
+<span id="cb1-37">                         .SD, </span>
+<span id="cb1-38">                         <span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>, <span class="st" style="color: #20794D;">"y"</span>, <span class="st" style="color: #20794D;">"d"</span>, <span class="st" style="color: #20794D;">"p"</span>, <span class="st" style="color: #20794D;">"q"</span>)</span>
+<span id="cb1-39">                         ), </span>
+<span id="cb1-40">                       by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb1-41">  </span>
+<span id="cb1-42">  <span class="co" style="color: #5E5E5E;"># Remove the grouping</span></span>
+<span id="cb1-43">  sim_data[, sim_number <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> <span class="fu" style="color: #4758AB;">as.factor</span>(sim_number)]</span>
+<span id="cb1-44">  </span>
+<span id="cb1-45">  <span class="fu" style="color: #4758AB;">return</span>(sim_data)</span>
+<span id="cb1-46">}</span></code></pre></div>
+</div>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Now, let’s see the output of the original function <strong>tidy_bernoulli()</strong> and <strong>new_func()</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
+<span id="cb2-2">n <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">50</span></span>
+<span id="cb2-3">pr <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fl" style="color: #AD0000;">0.1</span></span>
+<span id="cb2-4">sims <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">5</span></span>
+<span id="cb2-5"></span>
+<span id="cb2-6"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">123</span>)</span>
+<span id="cb2-7">tb <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">tidy_bernoulli</span>(<span class="at" style="color: #657422;">.n =</span> n, <span class="at" style="color: #657422;">.prob =</span> pr, <span class="at" style="color: #657422;">.num_sims =</span> sims)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">123</span>)</span>
+<span id="cb2-10">nf <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">new_func</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">num_sims =</span> sims, <span class="at" style="color: #657422;">pr =</span> pr)</span>
+<span id="cb2-11"></span>
+<span id="cb2-12"><span class="fu" style="color: #4758AB;">print</span>(tb)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 250 × 7
+   sim_number     x     y      dx     dy     p     q
+   &lt;fct&gt;      &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1 1              1     0 -0.405  0.0292   0.9     0
+ 2 1              2     0 -0.368  0.0637   0.9     0
+ 3 1              3     0 -0.331  0.129    0.9     0
+ 4 1              4     0 -0.294  0.243    0.9     0
+ 5 1              5     1 -0.258  0.424    1       1
+ 6 1              6     0 -0.221  0.688    0.9     0
+ 7 1              7     0 -0.184  1.03     0.9     0
+ 8 1              8     0 -0.147  1.44     0.9     0
+ 9 1              9     0 -0.110  1.87     0.9     0
+10 1             10     0 -0.0727 2.25     0.9     0
+# … with 240 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">print</span>(nf)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     sim_number  x y         dx          dy   p q
+  1:          1  1 0 -0.4053113 0.029196114 0.9 0
+  2:          1  2 0 -0.3683598 0.063683226 0.9 0
+  3:          1  3 0 -0.3314083 0.129227066 0.9 0
+  4:          1  4 0 -0.2944568 0.242967496 0.9 0
+  5:          1  5 1 -0.2575054 0.424395426 1.0 1
+ ---                                             
+246:          5 46 0  1.2575054 0.057872104 0.9 0
+247:          5 47 0  1.2944568 0.033131931 0.9 0
+248:          5 48 1  1.3314083 0.017621873 1.0 1
+249:          5 49 1  1.3683598 0.008684076 1.0 1
+250:          5 50 0  1.4053113 0.003981288 0.9 0</code></pre>
+</div>
+</div>
+<p>Ok so at least the output is identical which is a good sign. Now let’s benchmark the two solutions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">library</span>(rbenchmark)</span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb6-3"></span>
+<span id="cb6-4"><span class="fu" style="color: #4758AB;">benchmark</span>(</span>
+<span id="cb6-5">  <span class="st" style="color: #20794D;">"original"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb6-6">    <span class="fu" style="color: #4758AB;">tidy_bernoulli</span>(<span class="at" style="color: #657422;">.n =</span> n, <span class="at" style="color: #657422;">.prob =</span> pr, <span class="at" style="color: #657422;">.num_sims =</span> sims)</span>
+<span id="cb6-7">  },</span>
+<span id="cb6-8">  <span class="st" style="color: #20794D;">"data.table"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb6-9">    <span class="fu" style="color: #4758AB;">new_func</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">pr =</span> pr, <span class="at" style="color: #657422;">num_sims =</span> sims)</span>
+<span id="cb6-10">  },</span>
+<span id="cb6-11">  <span class="at" style="color: #657422;">replications =</span> <span class="dv" style="color: #AD0000;">100</span>,</span>
+<span id="cb6-12">  <span class="at" style="color: #657422;">columns =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"test"</span>,<span class="st" style="color: #20794D;">"replications"</span>,<span class="st" style="color: #20794D;">"elapsed"</span>,<span class="st" style="color: #20794D;">"relative"</span>,<span class="st" style="color: #20794D;">"user.self"</span>,<span class="st" style="color: #20794D;">"sys.self"</span>  )</span>
+<span id="cb6-13">) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb6-14">  <span class="fu" style="color: #4758AB;">arrange</span>(relative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        test replications elapsed relative user.self sys.self
+1   original          100    3.29     1.00      2.51     0.08
+2 data.table          100    4.64     1.41      3.34     0.04</code></pre>
+</div>
+</div>
+<p>Yeah, needs some work but it’s a start.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>data.table</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-07/index.html</guid>
+  <pubDate>Tue, 07 Mar 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Simple examples of imap() from {purrr}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -2961,96 +3109,6 @@ $engine
   <category>tidymodels</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-03/index.html</guid>
   <pubDate>Fri, 03 Feb 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Diverging Lollipop Chart: A Visual Tool for Comparing Data with {healthyR}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-02/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>A diverging lollipop chart is a useful tool for comparing data that falls into two categories, usually indicated by different colors. This type of chart is particularly well-suited for comparing the differences between two data sets and for identifying which data points are contributing most to the differences.</p>
-<p>The R package <a href="https://www.spsanderson.com/healthyR/"><code>{healthyR}</code></a> offers a function called <a href="https://www.spsanderson.com/healthyR/reference/diverging_lollipop_plt.html"><code>diverging_lollipop_plt()</code></a> that can be used to create a diverging lollipop chart. This function has several parameters that can be used to customize the chart to meet your specific needs.</p>
-<p>In conclusion, the diverging lollipop chart is a useful tool for comparing data sets and can provide insights into the differences between two sets of data. The <a href="https://www.spsanderson.com/healthyR/reference/diverging_lollipop_plt.html"><code>diverging_lollipop_plt()</code></a> function from the <a href="https://www.spsanderson.com/healthyR/"><code>{healthyR}</code></a> package is a great option for creating this type of chart, as it offers a range of customization options to meet your specific needs. Whether you’re working with data related to business, finance, or any other field, a diverging lollipop chart can be a valuable tool in your visual analysis toolkit.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Let’s take a look at the full function call.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">diverging_lollipop_plt</span>(</span>
-<span id="cb1-2">  .data,</span>
-<span id="cb1-3">  .x_axis,</span>
-<span id="cb1-4">  .y_axis,</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;">.plot_title =</span> <span class="cn" style="color: #8f5902;">NULL</span>,</span>
-<span id="cb1-6">  <span class="at" style="color: #657422;">.plot_subtitle =</span> <span class="cn" style="color: #8f5902;">NULL</span>,</span>
-<span id="cb1-7">  <span class="at" style="color: #657422;">.plot_caption =</span> <span class="cn" style="color: #8f5902;">NULL</span>,</span>
-<span id="cb1-8">  <span class="at" style="color: #657422;">.interactive =</span> <span class="cn" style="color: #8f5902;">FALSE</span></span>
-<span id="cb1-9">)</span></code></pre></div>
-</div>
-<p>Now lets see the arguments that get provided to the parameters.</p>
-<ul>
-<li><code>.data</code> - The data to pass to the function, must be a tibble/data.frame.</li>
-<li><code>.x_axis</code> - The data that is passed to the x-axis. This will also be the x and xend parameters of the geom_segment</li>
-<li><code>.y_axis</code> - The data that is passed to the y-axis. This will also equal the parameters of <code>yend</code> and <code>label</code></li>
-<li><code>.plot_title</code> - Default is NULL</li>
-<li><code>.plot_subtitle</code> - Default is NULL</li>
-<li><code>.plot_caption</code> - Default is NULL</li>
-<li><code>.interactive</code> - Default is FALSE. TRUE returns a plotly plot</li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Let’s see an example.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">suppressPackageStartupMessages</span>(<span class="fu" style="color: #4758AB;">library</span>(ggplot2))</span>
-<span id="cb2-4"></span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;">data</span>(<span class="st" style="color: #20794D;">"mtcars"</span>)</span>
-<span id="cb2-6">mtcars<span class="sc" style="color: #5E5E5E;">$</span>car_name <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rownames</span>(mtcars)</span>
-<span id="cb2-7">mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg_z <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">round</span>((mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg <span class="sc" style="color: #5E5E5E;">-</span> <span class="fu" style="color: #4758AB;">mean</span>(mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg))<span class="sc" style="color: #5E5E5E;">/</span><span class="fu" style="color: #4758AB;">sd</span>(mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg), <span class="dv" style="color: #AD0000;">2</span>)</span>
-<span id="cb2-8">mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg_type <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ifelse</span>(mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg_z <span class="sc" style="color: #5E5E5E;">&lt;</span> <span class="dv" style="color: #AD0000;">0</span>, <span class="st" style="color: #20794D;">"below"</span>, <span class="st" style="color: #20794D;">"above"</span>)</span>
-<span id="cb2-9">mtcars <span class="ot" style="color: #003B4F;">&lt;-</span> mtcars[<span class="fu" style="color: #4758AB;">order</span>(mtcars<span class="sc" style="color: #5E5E5E;">$</span>mpg_z), ]  <span class="co" style="color: #5E5E5E;"># sort</span></span>
-<span id="cb2-10">mtcars<span class="sc" style="color: #5E5E5E;">$</span>car_name <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">factor</span>(mtcars<span class="sc" style="color: #5E5E5E;">$</span>car_name, <span class="at" style="color: #657422;">levels =</span> mtcars<span class="sc" style="color: #5E5E5E;">$</span>car_name)</span>
-<span id="cb2-11"></span>
-<span id="cb2-12"><span class="fu" style="color: #4758AB;">diverging_lollipop_plt</span>(</span>
-<span id="cb2-13">  <span class="at" style="color: #657422;">.data =</span> mtcars, </span>
-<span id="cb2-14">  <span class="at" style="color: #657422;">.x_axis =</span> car_name,</span>
-<span id="cb2-15">  <span class="at" style="color: #657422;">.y_axis =</span> mpg_z</span>
-<span id="cb2-16">)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-02/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Now let’s also see the interactive chart.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;">diverging_lollipop_plt</span>(</span>
-<span id="cb3-2">  <span class="at" style="color: #657422;">.data =</span> mtcars, </span>
-<span id="cb3-3">  <span class="at" style="color: #657422;">.x_axis =</span> car_name,</span>
-<span id="cb3-4">  <span class="at" style="color: #657422;">.y_axis =</span> mpg_z,</span>
-<span id="cb3-5">  <span class="at" style="color: #657422;">.interactive =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb3-6">)</span></code></pre></div>
-<div class="cell-output-display">
-<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-464c8a583214626e10fa" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-464c8a583214626e10fa">{"x":{"data":[{"x":[-1.61,-1.61,-1.13,-0.96,-0.89,-0.84,-0.81,-0.81,-0.76,-0.71,-0.61,-0.46,-0.38,-0.33,-0.23,-0.15,-0.15,-0.06,0.15,0.15,0.22,0.22,0.23,0.45,0.45,0.72,0.98,1.2,1.71,1.71,2.04,2.29],"y":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],"text":["car_name: Cadillac Fleetwood<br />mpg_z: -1.61<br />mpg_z: -1.61","car_name: Lincoln Continental<br />mpg_z: -1.61<br />mpg_z: -1.61","car_name: Camaro Z28<br />mpg_z: -1.13<br />mpg_z: -1.13","car_name: Duster 360<br />mpg_z: -0.96<br />mpg_z: -0.96","car_name: Chrysler Imperial<br />mpg_z: -0.89<br />mpg_z: -0.89","car_name: Maserati Bora<br />mpg_z: -0.84<br />mpg_z: -0.84","car_name: Merc 450SLC<br />mpg_z: -0.81<br />mpg_z: -0.81","car_name: AMC Javelin<br />mpg_z: -0.81<br />mpg_z: -0.81","car_name: Dodge Challenger<br />mpg_z: -0.76<br />mpg_z: -0.76","car_name: Ford Pantera L<br />mpg_z: -0.71<br />mpg_z: -0.71","car_name: Merc 450SE<br />mpg_z: -0.61<br />mpg_z: -0.61","car_name: Merc 450SL<br />mpg_z: -0.46<br />mpg_z: -0.46","car_name: Merc 280C<br />mpg_z: -0.38<br />mpg_z: -0.38","car_name: Valiant<br />mpg_z: -0.33<br />mpg_z: -0.33","car_name: Hornet Sportabout<br />mpg_z: -0.23<br />mpg_z: -0.23","car_name: Merc 280<br />mpg_z: -0.15<br />mpg_z: -0.15","car_name: Pontiac Firebird<br />mpg_z: -0.15<br />mpg_z: -0.15","car_name: Ferrari Dino<br />mpg_z: -0.06<br />mpg_z: -0.06","car_name: Mazda RX4<br />mpg_z:  0.15<br />mpg_z:  0.15","car_name: Mazda RX4 Wag<br />mpg_z:  0.15<br />mpg_z:  0.15","car_name: Hornet 4 Drive<br />mpg_z:  0.22<br />mpg_z:  0.22","car_name: Volvo 142E<br />mpg_z:  0.22<br />mpg_z:  0.22","car_name: Toyota Corona<br />mpg_z:  0.23<br />mpg_z:  0.23","car_name: Datsun 710<br />mpg_z:  0.45<br />mpg_z:  0.45","car_name: Merc 230<br />mpg_z:  0.45<br />mpg_z:  0.45","car_name: Merc 240D<br />mpg_z:  0.72<br />mpg_z:  0.72","car_name: Porsche 914-2<br />mpg_z:  0.98<br />mpg_z:  0.98","car_name: Fiat X1-9<br />mpg_z:  1.20<br />mpg_z:  1.20","car_name: Honda Civic<br />mpg_z:  1.71<br />mpg_z:  1.71","car_name: Lotus Europa<br />mpg_z:  1.71<br />mpg_z:  1.71","car_name: Fiat 128<br />mpg_z:  2.04<br />mpg_z:  2.04","car_name: Toyota Corolla<br />mpg_z:  2.29<br />mpg_z:  2.29"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":22.6771653543307,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0,-1.61,null,0,-1.61,null,0,-1.13,null,0,-0.96,null,0,-0.89,null,0,-0.84,null,0,-0.81,null,0,-0.81,null,0,-0.76,null,0,-0.71,null,0,-0.61,null,0,-0.46,null,0,-0.38,null,0,-0.33,null,0,-0.23,null,0,-0.15,null,0,-0.15,null,0,-0.06,null,0,0.15,null,0,0.15,null,0,0.22,null,0,0.22,null,0,0.23,null,0,0.45,null,0,0.45,null,0,0.72,null,0,0.98,null,0,1.2,null,0,1.71,null,0,1.71,null,0,2.04,null,0,2.29],"y":[1,1,null,2,2,null,3,3,null,4,4,null,5,5,null,6,6,null,7,7,null,8,8,null,9,9,null,10,10,null,11,11,null,12,12,null,13,13,null,14,14,null,15,15,null,16,16,null,17,17,null,18,18,null,19,19,null,20,20,null,21,21,null,22,22,null,23,23,null,24,24,null,25,25,null,26,26,null,27,27,null,28,28,null,29,29,null,30,30,null,31,31,null,32,32],"text":["car_name: Cadillac Fleetwood<br />y: 0<br />mpg_z: -1.61<br />mpg_z: -1.61<br />car_name:  1","car_name: Cadillac Fleetwood<br />y: 0<br />mpg_z: -1.61<br />mpg_z: -1.61<br />car_name:  1",null,"car_name: Lincoln Continental<br />y: 0<br />mpg_z: -1.61<br />mpg_z: -1.61<br />car_name:  2","car_name: Lincoln Continental<br />y: 0<br />mpg_z: -1.61<br />mpg_z: -1.61<br />car_name:  2",null,"car_name: Camaro Z28<br />y: 0<br />mpg_z: -1.13<br />mpg_z: -1.13<br />car_name:  3","car_name: Camaro Z28<br />y: 0<br />mpg_z: -1.13<br />mpg_z: -1.13<br />car_name:  3",null,"car_name: Duster 360<br />y: 0<br />mpg_z: -0.96<br />mpg_z: -0.96<br />car_name:  4","car_name: Duster 360<br />y: 0<br />mpg_z: -0.96<br />mpg_z: -0.96<br />car_name:  4",null,"car_name: Chrysler Imperial<br />y: 0<br />mpg_z: -0.89<br />mpg_z: -0.89<br />car_name:  5","car_name: Chrysler Imperial<br />y: 0<br />mpg_z: -0.89<br />mpg_z: -0.89<br />car_name:  5",null,"car_name: Maserati Bora<br />y: 0<br />mpg_z: -0.84<br />mpg_z: -0.84<br />car_name:  6","car_name: Maserati Bora<br />y: 0<br />mpg_z: -0.84<br />mpg_z: -0.84<br />car_name:  6",null,"car_name: Merc 450SLC<br />y: 0<br />mpg_z: -0.81<br />mpg_z: -0.81<br />car_name:  7","car_name: Merc 450SLC<br />y: 0<br />mpg_z: -0.81<br />mpg_z: -0.81<br />car_name:  7",null,"car_name: AMC Javelin<br />y: 0<br />mpg_z: -0.81<br />mpg_z: -0.81<br />car_name:  8","car_name: AMC Javelin<br />y: 0<br />mpg_z: -0.81<br />mpg_z: -0.81<br />car_name:  8",null,"car_name: Dodge Challenger<br />y: 0<br />mpg_z: -0.76<br />mpg_z: -0.76<br />car_name:  9","car_name: Dodge Challenger<br />y: 0<br />mpg_z: -0.76<br />mpg_z: -0.76<br />car_name:  9",null,"car_name: Ford Pantera L<br />y: 0<br />mpg_z: -0.71<br />mpg_z: -0.71<br />car_name: 10","car_name: Ford Pantera L<br />y: 0<br />mpg_z: -0.71<br />mpg_z: -0.71<br />car_name: 10",null,"car_name: Merc 450SE<br />y: 0<br />mpg_z: -0.61<br />mpg_z: -0.61<br />car_name: 11","car_name: Merc 450SE<br />y: 0<br />mpg_z: -0.61<br />mpg_z: -0.61<br />car_name: 11",null,"car_name: Merc 450SL<br />y: 0<br />mpg_z: -0.46<br />mpg_z: -0.46<br />car_name: 12","car_name: Merc 450SL<br />y: 0<br />mpg_z: -0.46<br />mpg_z: -0.46<br />car_name: 12",null,"car_name: Merc 280C<br />y: 0<br />mpg_z: -0.38<br />mpg_z: -0.38<br />car_name: 13","car_name: Merc 280C<br />y: 0<br />mpg_z: -0.38<br />mpg_z: -0.38<br />car_name: 13",null,"car_name: Valiant<br />y: 0<br />mpg_z: -0.33<br />mpg_z: -0.33<br />car_name: 14","car_name: Valiant<br />y: 0<br />mpg_z: -0.33<br />mpg_z: -0.33<br />car_name: 14",null,"car_name: Hornet Sportabout<br />y: 0<br />mpg_z: -0.23<br />mpg_z: -0.23<br />car_name: 15","car_name: Hornet Sportabout<br />y: 0<br />mpg_z: -0.23<br />mpg_z: -0.23<br />car_name: 15",null,"car_name: Merc 280<br />y: 0<br />mpg_z: -0.15<br />mpg_z: -0.15<br />car_name: 16","car_name: Merc 280<br />y: 0<br />mpg_z: -0.15<br />mpg_z: -0.15<br />car_name: 16",null,"car_name: Pontiac Firebird<br />y: 0<br />mpg_z: -0.15<br />mpg_z: -0.15<br />car_name: 17","car_name: Pontiac Firebird<br />y: 0<br />mpg_z: -0.15<br />mpg_z: -0.15<br />car_name: 17",null,"car_name: Ferrari Dino<br />y: 0<br />mpg_z: -0.06<br />mpg_z: -0.06<br />car_name: 18","car_name: Ferrari Dino<br />y: 0<br />mpg_z: -0.06<br />mpg_z: -0.06<br />car_name: 18",null,"car_name: Mazda RX4<br />y: 0<br />mpg_z:  0.15<br />mpg_z:  0.15<br />car_name: 19","car_name: Mazda RX4<br />y: 0<br />mpg_z:  0.15<br />mpg_z:  0.15<br />car_name: 19",null,"car_name: Mazda RX4 Wag<br />y: 0<br />mpg_z:  0.15<br />mpg_z:  0.15<br />car_name: 20","car_name: Mazda RX4 Wag<br />y: 0<br />mpg_z:  0.15<br />mpg_z:  0.15<br />car_name: 20",null,"car_name: Hornet 4 Drive<br />y: 0<br />mpg_z:  0.22<br />mpg_z:  0.22<br />car_name: 21","car_name: Hornet 4 Drive<br />y: 0<br />mpg_z:  0.22<br />mpg_z:  0.22<br />car_name: 21",null,"car_name: Volvo 142E<br />y: 0<br />mpg_z:  0.22<br />mpg_z:  0.22<br />car_name: 22","car_name: Volvo 142E<br />y: 0<br />mpg_z:  0.22<br />mpg_z:  0.22<br />car_name: 22",null,"car_name: Toyota Corona<br />y: 0<br />mpg_z:  0.23<br />mpg_z:  0.23<br />car_name: 23","car_name: Toyota Corona<br />y: 0<br />mpg_z:  0.23<br />mpg_z:  0.23<br />car_name: 23",null,"car_name: Datsun 710<br />y: 0<br />mpg_z:  0.45<br />mpg_z:  0.45<br />car_name: 24","car_name: Datsun 710<br />y: 0<br />mpg_z:  0.45<br />mpg_z:  0.45<br />car_name: 24",null,"car_name: Merc 230<br />y: 0<br />mpg_z:  0.45<br />mpg_z:  0.45<br />car_name: 25","car_name: Merc 230<br />y: 0<br />mpg_z:  0.45<br />mpg_z:  0.45<br />car_name: 25",null,"car_name: Merc 240D<br />y: 0<br />mpg_z:  0.72<br />mpg_z:  0.72<br />car_name: 26","car_name: Merc 240D<br />y: 0<br />mpg_z:  0.72<br />mpg_z:  0.72<br />car_name: 26",null,"car_name: Porsche 914-2<br />y: 0<br />mpg_z:  0.98<br />mpg_z:  0.98<br />car_name: 27","car_name: Porsche 914-2<br />y: 0<br />mpg_z:  0.98<br />mpg_z:  0.98<br />car_name: 27",null,"car_name: Fiat X1-9<br />y: 0<br />mpg_z:  1.20<br />mpg_z:  1.20<br />car_name: 28","car_name: Fiat X1-9<br />y: 0<br />mpg_z:  1.20<br />mpg_z:  1.20<br />car_name: 28",null,"car_name: Honda Civic<br />y: 0<br />mpg_z:  1.71<br />mpg_z:  1.71<br />car_name: 29","car_name: Honda Civic<br />y: 0<br />mpg_z:  1.71<br />mpg_z:  1.71<br />car_name: 29",null,"car_name: Lotus Europa<br />y: 0<br />mpg_z:  1.71<br />mpg_z:  1.71<br />car_name: 30","car_name: Lotus Europa<br />y: 0<br />mpg_z:  1.71<br />mpg_z:  1.71<br />car_name: 30",null,"car_name: Fiat 128<br />y: 0<br />mpg_z:  2.04<br />mpg_z:  2.04<br />car_name: 31","car_name: Fiat 128<br />y: 0<br />mpg_z:  2.04<br />mpg_z:  2.04<br />car_name: 31",null,"car_name: Toyota Corolla<br />y: 0<br />mpg_z:  2.29<br />mpg_z:  2.29<br />car_name: 32","car_name: Toyota Corolla<br />y: 0<br />mpg_z:  2.29<br />mpg_z:  2.29<br />car_name: 32"],"type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-1.61,-1.61,-1.13,-0.96,-0.89,-0.84,-0.81,-0.81,-0.76,-0.71,-0.61,-0.46,-0.38,-0.33,-0.23,-0.15,-0.15,-0.06,0.15,0.15,0.22,0.22,0.23,0.45,0.45,0.72,0.98,1.2,1.71,1.71,2.04,2.29],"y":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],"text":[-1.61,-1.61,-1.13,-0.96,-0.89,-0.84,-0.81,-0.81,-0.76,-0.71,-0.61,-0.46,-0.38,-0.33,-0.23,-0.15,-0.15,-0.06,0.15,0.15,0.22,0.22,0.23,0.45,0.45,0.72,0.98,1.2,1.71,1.71,2.04,2.29],"hovertext":["car_name: Cadillac Fleetwood<br />mpg_z: -1.61<br />mpg_z: -1.61","car_name: Lincoln Continental<br />mpg_z: -1.61<br />mpg_z: -1.61","car_name: Camaro Z28<br />mpg_z: -1.13<br />mpg_z: -1.13","car_name: Duster 360<br />mpg_z: -0.96<br />mpg_z: -0.96","car_name: Chrysler Imperial<br />mpg_z: -0.89<br />mpg_z: -0.89","car_name: Maserati Bora<br />mpg_z: -0.84<br />mpg_z: -0.84","car_name: Merc 450SLC<br />mpg_z: -0.81<br />mpg_z: -0.81","car_name: AMC Javelin<br />mpg_z: -0.81<br />mpg_z: -0.81","car_name: Dodge Challenger<br />mpg_z: -0.76<br />mpg_z: -0.76","car_name: Ford Pantera L<br />mpg_z: -0.71<br />mpg_z: -0.71","car_name: Merc 450SE<br />mpg_z: -0.61<br />mpg_z: -0.61","car_name: Merc 450SL<br />mpg_z: -0.46<br />mpg_z: -0.46","car_name: Merc 280C<br />mpg_z: -0.38<br />mpg_z: -0.38","car_name: Valiant<br />mpg_z: -0.33<br />mpg_z: -0.33","car_name: Hornet Sportabout<br />mpg_z: -0.23<br />mpg_z: -0.23","car_name: Merc 280<br />mpg_z: -0.15<br />mpg_z: -0.15","car_name: Pontiac Firebird<br />mpg_z: -0.15<br />mpg_z: -0.15","car_name: Ferrari Dino<br />mpg_z: -0.06<br />mpg_z: -0.06","car_name: Mazda RX4<br />mpg_z:  0.15<br />mpg_z:  0.15","car_name: Mazda RX4 Wag<br />mpg_z:  0.15<br />mpg_z:  0.15","car_name: Hornet 4 Drive<br />mpg_z:  0.22<br />mpg_z:  0.22","car_name: Volvo 142E<br />mpg_z:  0.22<br />mpg_z:  0.22","car_name: Toyota Corona<br />mpg_z:  0.23<br />mpg_z:  0.23","car_name: Datsun 710<br />mpg_z:  0.45<br />mpg_z:  0.45","car_name: Merc 230<br />mpg_z:  0.45<br />mpg_z:  0.45","car_name: Merc 240D<br />mpg_z:  0.72<br />mpg_z:  0.72","car_name: Porsche 914-2<br />mpg_z:  0.98<br />mpg_z:  0.98","car_name: Fiat X1-9<br />mpg_z:  1.20<br />mpg_z:  1.20","car_name: Honda Civic<br />mpg_z:  1.71<br />mpg_z:  1.71","car_name: Lotus Europa<br />mpg_z:  1.71<br />mpg_z:  1.71","car_name: Fiat 128<br />mpg_z:  2.04<br />mpg_z:  2.04","car_name: Toyota Corolla<br />mpg_z:  2.29<br />mpg_z:  2.29"],"textfont":{"size":7.55905511811024,"color":"rgba(255,255,255,1)"},"type":"scatter","mode":"text","hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":26.2283105022831,"r":7.30593607305936,"b":40.1826484018265,"l":136.62100456621},"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-1.805,2.485],"tickmode":"array","ticktext":["-1","0","1","2"],"tickvals":[-1,0,1,2],"categoryorder":"array","categoryarray":["-1","0","1","2"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"mpg_z","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,32.6],"tickmode":"array","ticktext":["Cadillac Fleetwood","Lincoln Continental","Camaro Z28","Duster 360","Chrysler Imperial","Maserati Bora","Merc 450SLC","AMC Javelin","Dodge Challenger","Ford Pantera L","Merc 450SE","Merc 450SL","Merc 280C","Valiant","Hornet Sportabout","Merc 280","Pontiac Firebird","Ferrari Dino","Mazda RX4","Mazda RX4 Wag","Hornet 4 Drive","Volvo 142E","Toyota Corona","Datsun 710","Merc 230","Merc 240D","Porsche 914-2","Fiat X1-9","Honda Civic","Lotus Europa","Fiat 128","Toyota Corolla"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],"categoryorder":"array","categoryarray":["Cadillac Fleetwood","Lincoln Continental","Camaro Z28","Duster 360","Chrysler Imperial","Maserati Bora","Merc 450SLC","AMC Javelin","Dodge Challenger","Ford Pantera L","Merc 450SE","Merc 450SL","Merc 280C","Valiant","Hornet Sportabout","Merc 280","Pontiac Firebird","Ferrari Dino","Mazda RX4","Mazda RX4 Wag","Hornet 4 Drive","Volvo 142E","Toyota Corona","Datsun 710","Merc 230","Merc 240D","Porsche 914-2","Fiat X1-9","Honda Civic","Lotus Europa","Fiat 128","Toyota Corolla"],"nticks":null,"ticks":"","tickcolor":null,"ticklen":3.65296803652968,"tickwidth":0,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"car_name","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"3ac45aa81e7":{"x":{},"y":{},"label":{},"type":"scatter"},"3ac44cfb1eec":{"x":{},"y":{},"label":{},"yend":{},"xend":{}},"3ac46ead5eed":{"x":{},"y":{},"label":{}}},"cur_data":"3ac45aa81e7","visdat":{"3ac45aa81e7":["function (y) ","x"],"3ac44cfb1eec":["function (y) ","x"],"3ac46ead5eed":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>healthyr</category>
-  <category>plots</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-02/index.html</guid>
-  <pubDate>Thu, 02 Feb 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
