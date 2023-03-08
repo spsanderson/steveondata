@@ -1,0 +1,61 @@
+---
+title: "Getting NYS Home Heating Oil Prices with {rvest}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-08"
+categories: [code, rtip, rvest]
+---
+
+# Introduction
+
+If you live in New York and rely on heating oil to keep your home warm during the colder months, you know how important it is to keep track of heating oil prices. Fortunately, with a bit of R code, you can easily access the latest heating oil prices in New York.
+
+The code uses the `{dplyr}` package to clean and manipulate the data, as well as the `{timetk}` package to plot the time series. Here's a breakdown of what the code does:
+
+*  First, it loads the necessary packages and sets the URL for the data source.
+*  Next, it reads the HTML from the URL using the `read_html` function from the `xml2` package.
+*  It then uses the `html_node` function from the `rvest` package to extract the HTML node that contains the data table.
+
+The resulting data table is then cleaned and transformed using `dplyr` functions such as `html_table`, `as_tibble`, `set_names`, `select`, `mutate`, and `arrange`.
+
+Finally, the resulting time series data is plotted using `plot_time_series` from the `timetk` package.
+
+To run this code, you will need to have these packages installed on your machine. You can install them using the install.packages function in R. Here's how you can install the packages:
+
+```{r eval=FALSE}
+install.packages("dplyr")
+install.packages("xml2")
+install.packages("rvest")
+install.packages("tibble")
+install.packages("purrr")
+install.packages("lubridate")
+install.packages("timetk")
+```
+
+Once you have installed the packages, you can copy and paste the code into your R console or RStudio and run it to get the latest heating oil prices in New York.
+
+In conclusion, the code above provides a simple and efficient way to access and visualize heating oil prices in New York using R. By keeping track of these prices, you can make informed decisions about when to buy heating oil and how much to purchase, ultimately saving you money on your heating bills.
+
+# Example
+
+Now let's run it!
+
+```{r warning=FALSE, message=FALSE}
+url  <- "https://www.eia.gov/opendata/qb.php?sdid=PET.W_EPD2F_PRS_SNY_DPG.W"
+page <- xml2::read_html(url)
+node <- rvest::html_node(
+    x = page
+    , xpath = "/html/body/div[1]/section/div/div/div[2]/div[1]/table"
+)
+ny_tbl <- node |>
+    rvest::html_table() |>
+    tibble::as_tibble() |>
+    purrr::set_names('series_name','period','frequency','value','units') |>
+    dplyr::select(period, frequency, value, units, series_name) |>
+    dplyr::mutate(period = lubridate::ymd(period)) |>
+    dplyr::arrange(period)
+
+ny_tbl |>
+    timetk::plot_time_series(.date_var = period, .value = value)
+```
+
+Voila!
