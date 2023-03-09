@@ -1,0 +1,175 @@
+---
+title: "Multiple Solutions to speedup tidy_bernoulli() with {data.table}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-09"
+categories: [code, rtip, tidydensity, data.table]
+---
+
+# Introduction
+
+I had just recently posted on making an attempt to speedup computations with my
+package [`{TidyDensity}`](https://www.spsanderson.com/TidyDensity/) using a purely
+data.table solution, yes of course I can use `{dtplyr}` or `{tidytable}` but that 
+not the challenge put to me.
+
+My original attempt was worse than the original solution of `tidy_bernoulli()`. 
+After I posted on Mastadon, LinkedIn and Reddit, I recieved potential solutions
+from each site by users. Let's check them out below.
+
+# Function
+
+First let's load in the necessary libraries.
+
+```{r message=FALSE, warning=FALSE}
+library(data.table)
+library(tidyverse)
+library(rbenchmark)
+library(TidyDensity)
+```
+
+Now let's look at the different solutions.
+```{r warning=FALSE, message=FALSE}
+
+# My original new function
+new_func <- function(num_sims, n, pr) {
+
+  # Create a data.table with one row per simulation
+  sim_data <- data.table(sim_number = factor(seq(1, num_sims, 1)))
+
+  # Group the data by sim_number and add columns for x and y
+  sim_data[, `:=` (
+    x = list(1:n),
+    y = list(stats::rbinom(n = n, size = 1, prob = pr))
+  ), by = sim_number]
+
+  # Compute the density of the y values and add columns for dx and dy
+  sim_data[, `:=` (
+    d = list(density(unlist(y), n = n)[c("x", "y")] |>
+               set_names("dx", "dy") |>
+               as_tibble())
+  ), by = sim_number]
+
+  # Compute the p-values for the y values and add a column for p
+  sim_data[, `:=` (
+    p = list(stats::pbinom(unlist(y), size = 1, prob = pr))
+  ), by = sim_number]
+
+  # Compute the q-values for the p-values and add a column for q
+  sim_data[, `:=` (
+    q = list(stats::qbinom(unlist(p), size = 1, prob = pr))
+  ), by = sim_number]
+
+  # Unnest the columns for x, y, d, p, and q
+  sim_data <- sim_data[,
+                       unnest(
+                         .SD,
+                         cols = c("x", "y", "d", "p", "q")
+                       ),
+                       by = sim_number]
+
+  # Remove the grouping
+  sim_data[, sim_number := as.factor(sim_number)]
+
+  return(sim_data)
+}
+
+reddit_func <- function(num_sims, n, pr) {
+  sim_dat <- data.table(sim_number = rep(1:num_sims,each=n),
+                        x          = rep(1:n,num_sims))
+
+  sim_dat[, y := stats::rbinom(n = n, size = 1, prob = pr), by=sim_number]
+  sim_dat[, c("dx","dy") := density(y,n=n)[c("x","y")]    , by=sim_number]
+  sim_dat[, p := stats::pbinom(y, size = 1, prob = pr)    , by=sim_number]
+  sim_dat[, q := stats::qbinom(p, size = 1, prob = pr)    , by=sim_number]
+  
+  return(sim_dat)
+}
+
+mastadon_func <- function(num_sims, n, pr){
+  sim_data <- data.table(sim_number = 1:num_sims
+  )[, `:=`( x = .(1:n), y= .(rbinom(n = n, size = 1, prob = pr))), sim_number
+  ][, `:=`( d = .(density(unlist(y), n = n)[c('x','y')] |> 
+                    as.data.table() |> 
+                    setnames(c('dx','dy'))
+                  )
+            ), sim_number
+  ][, `:=`( p = .(pbinom(unlist(y), size = 1, prob = pr))), sim_number
+  ][, `:=`( q = .(qbinom(unlist(p), size = 1, prob = pr))), sim_number]
+
+    cbind(
+      sim_data[, lapply(.SD, unlist), by = sim_number, .SDcol = c('x','y','p','q')],
+      rbindlist(sim_data$d)
+    ) |>
+    setcolorder(c('sim_number','x','y','dx','dy'))
+    
+    return(sim_data)
+}
+
+linkedin_func <- function(num_sims, n, pr) {
+
+  # Create a data.table with one row per simulation
+  sim_data <- CJ(sim_number = factor(1:num_sims), x = 1:n)
+
+  # Group the data by sim_number and add columns for x and y
+  sim_data[, y := stats::rbinom(n = .N, size = 1, prob = pr)]
+
+
+  # Compute the density of the y values and add columns for dx and dy
+  sim_data[, c("dx", "dy") := density(y, n = n)[c("x", "y")], by = sim_number]
+
+  # Compute the p-values for the y values and add a column for p
+  sim_data[, p := stats::pbinom(y, size = 1, prob = pr)]
+
+  # Compute the q-values for the p-values and add a column for q
+  sim_data[, q := stats::qbinom(p, size = 1, prob = pr)]
+  setkey(sim_data, NULL) # needed only to compare with new_func
+  return(sim_data)
+}
+```
+
+All of the functions work in the same set of three arguments as input:
+*  `num_sims`: an integer value that specifies the number of simulations to run
+*  `n`: an integer value that specifies the sample size
+*  `pr`: a numeric value that specifies the probability of success
+
+The functions use the `data.table` package to create a data table named sim_dat/sim_data. The data table has two columns: sim_number and x. The sim_number column represents the simulation number, and x column represents the observation number.
+
+The functions then generate random binary data using the `rbinom` function from the `stats` package. The function generates n binary data points for each simulation number (sim_number) using the input parameter pr as the probability of success. The resulting binary data points are stored in the y column of sim_dat/data.
+
+Next, the function calculates the density of y using the density function from the stats package. The function calculates the density separately for each simulation number (sim_number) and stores the resulting values in the dx and dy columns of sim_dat/data.
+
+The functions then calculate the cumulative probability (p) of each binary data point using the pbinom function from the stats package. The function calculates the cumulative probability separately for each simulation number (sim_number) and stores the resulting values in the p column of sim_dat.
+
+Finally, the functions calculate the inverse of the cumulative probability (q) using the qbinom function from the stats package. The function calculates the inverse of the cumulative probability separately for each simulation number (sim_number) and stores the resulting values in the q column of sim_dat.
+
+The functions then return the data table containing the results of the simulations.
+
+# Example
+
+How do they stack up to each other? Lets see!
+
+```{r warning=FALSE, message=FALSE}
+n <- 50
+pr <- 0.1
+num_sims <- sims <- 5
+
+benchmark(
+  "tidy_bernoulli()" = {
+    tidy_bernoulli(.n = n, .prob = pr, .num_sims = sims)
+  },
+  "first.attempt" = {
+    new_func(n = n, pr = pr, num_sims = sims)
+  },
+  "linkedin.attempt" = {
+    linkedin_func(n = n, pr = pr, num_sims = sims)
+  },
+  "mastadon.attempt" = {
+    mastadon_func(n = n, pr = pr, num_sims = sims)
+  },
+  replications = 200,
+  columns = c("test","replications","elapsed","relative","user.self","sys.self"  )
+) |>
+  arrange(relative)
+```
+
+Voila!

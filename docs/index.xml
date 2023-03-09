@@ -10,7 +10,182 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Wed, 08 Mar 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 09 Mar 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Multiple Solutions to speedup tidy_bernoulli() with {data.table}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-09/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>I had just recently posted on making an attempt to speedup computations with my package <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> using a purely data.table solution, yes of course I can use <code>{dtplyr}</code> or <code>{tidytable}</code> but that not the challenge put to me.</p>
+<p>My original attempt was worse than the original solution of <code>tidy_bernoulli()</code>. After I posted on Mastadon, LinkedIn and Reddit, I recieved potential solutions from each site by users. Let’s check them out below.</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<p>First let’s load in the necessary libraries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(data.table)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyverse)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(rbenchmark)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span></code></pre></div>
+</div>
+<p>Now let’s look at the different solutions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;"># My original new function</span></span>
+<span id="cb2-2">new_func <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(num_sims, n, pr) {</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">  <span class="co" style="color: #5E5E5E;"># Create a data.table with one row per simulation</span></span>
+<span id="cb2-5">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.table</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="fu" style="color: #4758AB;">factor</span>(<span class="fu" style="color: #4758AB;">seq</span>(<span class="dv" style="color: #AD0000;">1</span>, num_sims, <span class="dv" style="color: #AD0000;">1</span>)))</span>
+<span id="cb2-6"></span>
+<span id="cb2-7">  <span class="co" style="color: #5E5E5E;"># Group the data by sim_number and add columns for x and y</span></span>
+<span id="cb2-8">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb2-9">    <span class="at" style="color: #657422;">x =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n),</span>
+<span id="cb2-10">    <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">rbinom</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb2-11">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-12"></span>
+<span id="cb2-13">  <span class="co" style="color: #5E5E5E;"># Compute the density of the y values and add columns for dx and dy</span></span>
+<span id="cb2-14">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb2-15">    <span class="at" style="color: #657422;">d =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="fu" style="color: #4758AB;">density</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">n =</span> n)[<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>, <span class="st" style="color: #20794D;">"y"</span>)] <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb2-16">               <span class="fu" style="color: #4758AB;">set_names</span>(<span class="st" style="color: #20794D;">"dx"</span>, <span class="st" style="color: #20794D;">"dy"</span>) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb2-17">               <span class="fu" style="color: #4758AB;">as_tibble</span>())</span>
+<span id="cb2-18">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-19"></span>
+<span id="cb2-20">  <span class="co" style="color: #5E5E5E;"># Compute the p-values for the y values and add a column for p</span></span>
+<span id="cb2-21">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb2-22">    <span class="at" style="color: #657422;">p =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">pbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb2-23">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-24"></span>
+<span id="cb2-25">  <span class="co" style="color: #5E5E5E;"># Compute the q-values for the p-values and add a column for q</span></span>
+<span id="cb2-26">  sim_data[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span> (</span>
+<span id="cb2-27">    <span class="at" style="color: #657422;">q =</span> <span class="fu" style="color: #4758AB;">list</span>(stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">qbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(p), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))</span>
+<span id="cb2-28">  ), by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-29"></span>
+<span id="cb2-30">  <span class="co" style="color: #5E5E5E;"># Unnest the columns for x, y, d, p, and q</span></span>
+<span id="cb2-31">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> sim_data[,</span>
+<span id="cb2-32">                       <span class="fu" style="color: #4758AB;">unnest</span>(</span>
+<span id="cb2-33">                         .SD,</span>
+<span id="cb2-34">                         <span class="at" style="color: #657422;">cols =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>, <span class="st" style="color: #20794D;">"y"</span>, <span class="st" style="color: #20794D;">"d"</span>, <span class="st" style="color: #20794D;">"p"</span>, <span class="st" style="color: #20794D;">"q"</span>)</span>
+<span id="cb2-35">                       ),</span>
+<span id="cb2-36">                       by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-37"></span>
+<span id="cb2-38">  <span class="co" style="color: #5E5E5E;"># Remove the grouping</span></span>
+<span id="cb2-39">  sim_data[, sim_number <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> <span class="fu" style="color: #4758AB;">as.factor</span>(sim_number)]</span>
+<span id="cb2-40"></span>
+<span id="cb2-41">  <span class="fu" style="color: #4758AB;">return</span>(sim_data)</span>
+<span id="cb2-42">}</span>
+<span id="cb2-43"></span>
+<span id="cb2-44">reddit_func <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(num_sims, n, pr) {</span>
+<span id="cb2-45">  sim_dat <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.table</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="fu" style="color: #4758AB;">rep</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>num_sims,<span class="at" style="color: #657422;">each=</span>n),</span>
+<span id="cb2-46">                        <span class="at" style="color: #657422;">x          =</span> <span class="fu" style="color: #4758AB;">rep</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n,num_sims))</span>
+<span id="cb2-47"></span>
+<span id="cb2-48">  sim_dat[, y <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">rbinom</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr), by<span class="ot" style="color: #003B4F;">=</span>sim_number]</span>
+<span id="cb2-49">  sim_dat[, <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"dx"</span>,<span class="st" style="color: #20794D;">"dy"</span>) <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> <span class="fu" style="color: #4758AB;">density</span>(y,<span class="at" style="color: #657422;">n=</span>n)[<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>,<span class="st" style="color: #20794D;">"y"</span>)]    , by<span class="ot" style="color: #003B4F;">=</span>sim_number]</span>
+<span id="cb2-50">  sim_dat[, p <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">pbinom</span>(y, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr)    , by<span class="ot" style="color: #003B4F;">=</span>sim_number]</span>
+<span id="cb2-51">  sim_dat[, q <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">qbinom</span>(p, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr)    , by<span class="ot" style="color: #003B4F;">=</span>sim_number]</span>
+<span id="cb2-52">  </span>
+<span id="cb2-53">  <span class="fu" style="color: #4758AB;">return</span>(sim_dat)</span>
+<span id="cb2-54">}</span>
+<span id="cb2-55"></span>
+<span id="cb2-56">mastadon_func <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(num_sims, n, pr){</span>
+<span id="cb2-57">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">data.table</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>num_sims</span>
+<span id="cb2-58">  )[, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span>( <span class="at" style="color: #657422;">x =</span> .(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n), <span class="at" style="color: #657422;">y=</span> .(<span class="fu" style="color: #4758AB;">rbinom</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))), sim_number</span>
+<span id="cb2-59">  ][, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span>( <span class="at" style="color: #657422;">d =</span> .(<span class="fu" style="color: #4758AB;">density</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">n =</span> n)[<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">'x'</span>,<span class="st" style="color: #20794D;">'y'</span>)] <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb2-60">                    <span class="fu" style="color: #4758AB;">as.data.table</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
+<span id="cb2-61">                    <span class="fu" style="color: #4758AB;">setnames</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">'dx'</span>,<span class="st" style="color: #20794D;">'dy'</span>))</span>
+<span id="cb2-62">                  )</span>
+<span id="cb2-63">            ), sim_number</span>
+<span id="cb2-64">  ][, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span>( <span class="at" style="color: #657422;">p =</span> .(<span class="fu" style="color: #4758AB;">pbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(y), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))), sim_number</span>
+<span id="cb2-65">  ][, <span class="st" style="color: #20794D;">`</span><span class="at" style="color: #657422;">:=</span><span class="st" style="color: #20794D;">`</span>( <span class="at" style="color: #657422;">q =</span> .(<span class="fu" style="color: #4758AB;">qbinom</span>(<span class="fu" style="color: #4758AB;">unlist</span>(p), <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr))), sim_number]</span>
+<span id="cb2-66"></span>
+<span id="cb2-67">    <span class="fu" style="color: #4758AB;">cbind</span>(</span>
+<span id="cb2-68">      sim_data[, <span class="fu" style="color: #4758AB;">lapply</span>(.SD, unlist), <span class="at" style="color: #657422;">by =</span> sim_number, <span class="at" style="color: #657422;">.SDcol =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">'x'</span>,<span class="st" style="color: #20794D;">'y'</span>,<span class="st" style="color: #20794D;">'p'</span>,<span class="st" style="color: #20794D;">'q'</span>)],</span>
+<span id="cb2-69">      <span class="fu" style="color: #4758AB;">rbindlist</span>(sim_data<span class="sc" style="color: #5E5E5E;">$</span>d)</span>
+<span id="cb2-70">    ) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb2-71">    <span class="fu" style="color: #4758AB;">setcolorder</span>(<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">'sim_number'</span>,<span class="st" style="color: #20794D;">'x'</span>,<span class="st" style="color: #20794D;">'y'</span>,<span class="st" style="color: #20794D;">'dx'</span>,<span class="st" style="color: #20794D;">'dy'</span>))</span>
+<span id="cb2-72">    </span>
+<span id="cb2-73">    <span class="fu" style="color: #4758AB;">return</span>(sim_data)</span>
+<span id="cb2-74">}</span>
+<span id="cb2-75"></span>
+<span id="cb2-76">linkedin_func <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(num_sims, n, pr) {</span>
+<span id="cb2-77"></span>
+<span id="cb2-78">  <span class="co" style="color: #5E5E5E;"># Create a data.table with one row per simulation</span></span>
+<span id="cb2-79">  sim_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">CJ</span>(<span class="at" style="color: #657422;">sim_number =</span> <span class="fu" style="color: #4758AB;">factor</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>num_sims), <span class="at" style="color: #657422;">x =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n)</span>
+<span id="cb2-80"></span>
+<span id="cb2-81">  <span class="co" style="color: #5E5E5E;"># Group the data by sim_number and add columns for x and y</span></span>
+<span id="cb2-82">  sim_data[, y <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">rbinom</span>(<span class="at" style="color: #657422;">n =</span> .N, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr)]</span>
+<span id="cb2-83"></span>
+<span id="cb2-84"></span>
+<span id="cb2-85">  <span class="co" style="color: #5E5E5E;"># Compute the density of the y values and add columns for dx and dy</span></span>
+<span id="cb2-86">  sim_data[, <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"dx"</span>, <span class="st" style="color: #20794D;">"dy"</span>) <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> <span class="fu" style="color: #4758AB;">density</span>(y, <span class="at" style="color: #657422;">n =</span> n)[<span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"x"</span>, <span class="st" style="color: #20794D;">"y"</span>)], by <span class="ot" style="color: #003B4F;">=</span> sim_number]</span>
+<span id="cb2-87"></span>
+<span id="cb2-88">  <span class="co" style="color: #5E5E5E;"># Compute the p-values for the y values and add a column for p</span></span>
+<span id="cb2-89">  sim_data[, p <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">pbinom</span>(y, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr)]</span>
+<span id="cb2-90"></span>
+<span id="cb2-91">  <span class="co" style="color: #5E5E5E;"># Compute the q-values for the p-values and add a column for q</span></span>
+<span id="cb2-92">  sim_data[, q <span class="sc" style="color: #5E5E5E;">:</span><span class="er" style="color: #AD0000;">=</span> stats<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">qbinom</span>(p, <span class="at" style="color: #657422;">size =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">prob =</span> pr)]</span>
+<span id="cb2-93">  <span class="fu" style="color: #4758AB;">setkey</span>(sim_data, <span class="cn" style="color: #8f5902;">NULL</span>) <span class="co" style="color: #5E5E5E;"># needed only to compare with new_func</span></span>
+<span id="cb2-94">  <span class="fu" style="color: #4758AB;">return</span>(sim_data)</span>
+<span id="cb2-95">}</span></code></pre></div>
+</div>
+<p>All of the functions work in the same set of three arguments as input: * <code>num_sims</code>: an integer value that specifies the number of simulations to run * <code>n</code>: an integer value that specifies the sample size * <code>pr</code>: a numeric value that specifies the probability of success</p>
+<p>The functions use the <code>data.table</code> package to create a data table named sim_dat/sim_data. The data table has two columns: sim_number and x. The sim_number column represents the simulation number, and x column represents the observation number.</p>
+<p>The functions then generate random binary data using the <code>rbinom</code> function from the <code>stats</code> package. The function generates n binary data points for each simulation number (sim_number) using the input parameter pr as the probability of success. The resulting binary data points are stored in the y column of sim_dat/data.</p>
+<p>Next, the function calculates the density of y using the density function from the stats package. The function calculates the density separately for each simulation number (sim_number) and stores the resulting values in the dx and dy columns of sim_dat/data.</p>
+<p>The functions then calculate the cumulative probability (p) of each binary data point using the pbinom function from the stats package. The function calculates the cumulative probability separately for each simulation number (sim_number) and stores the resulting values in the p column of sim_dat.</p>
+<p>Finally, the functions calculate the inverse of the cumulative probability (q) using the qbinom function from the stats package. The function calculates the inverse of the cumulative probability separately for each simulation number (sim_number) and stores the resulting values in the q column of sim_dat.</p>
+<p>The functions then return the data table containing the results of the simulations.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>How do they stack up to each other? Lets see!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">n <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">50</span></span>
+<span id="cb3-2">pr <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fl" style="color: #AD0000;">0.1</span></span>
+<span id="cb3-3">num_sims <span class="ot" style="color: #003B4F;">&lt;-</span> sims <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">5</span></span>
+<span id="cb3-4"></span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;">benchmark</span>(</span>
+<span id="cb3-6">  <span class="st" style="color: #20794D;">"tidy_bernoulli()"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb3-7">    <span class="fu" style="color: #4758AB;">tidy_bernoulli</span>(<span class="at" style="color: #657422;">.n =</span> n, <span class="at" style="color: #657422;">.prob =</span> pr, <span class="at" style="color: #657422;">.num_sims =</span> sims)</span>
+<span id="cb3-8">  },</span>
+<span id="cb3-9">  <span class="st" style="color: #20794D;">"first.attempt"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb3-10">    <span class="fu" style="color: #4758AB;">new_func</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">pr =</span> pr, <span class="at" style="color: #657422;">num_sims =</span> sims)</span>
+<span id="cb3-11">  },</span>
+<span id="cb3-12">  <span class="st" style="color: #20794D;">"linkedin.attempt"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb3-13">    <span class="fu" style="color: #4758AB;">linkedin_func</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">pr =</span> pr, <span class="at" style="color: #657422;">num_sims =</span> sims)</span>
+<span id="cb3-14">  },</span>
+<span id="cb3-15">  <span class="st" style="color: #20794D;">"mastadon.attempt"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
+<span id="cb3-16">    <span class="fu" style="color: #4758AB;">mastadon_func</span>(<span class="at" style="color: #657422;">n =</span> n, <span class="at" style="color: #657422;">pr =</span> pr, <span class="at" style="color: #657422;">num_sims =</span> sims)</span>
+<span id="cb3-17">  },</span>
+<span id="cb3-18">  <span class="at" style="color: #657422;">replications =</span> <span class="dv" style="color: #AD0000;">200</span>,</span>
+<span id="cb3-19">  <span class="at" style="color: #657422;">columns =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"test"</span>,<span class="st" style="color: #20794D;">"replications"</span>,<span class="st" style="color: #20794D;">"elapsed"</span>,<span class="st" style="color: #20794D;">"relative"</span>,<span class="st" style="color: #20794D;">"user.self"</span>,<span class="st" style="color: #20794D;">"sys.self"</span>  )</span>
+<span id="cb3-20">) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb3-21">  <span class="fu" style="color: #4758AB;">arrange</span>(relative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              test replications elapsed relative user.self sys.self
+1 linkedin.attempt          200    0.81    1.000      0.67     0.03
+2 mastadon.attempt          200    1.39    1.716      1.16     0.05
+3 tidy_bernoulli()          200    5.81    7.173      5.03     0.17
+4    first.attempt          200    7.95    9.815      6.79     0.14</code></pre>
+</div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>tidydensity</category>
+  <category>data.table</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-09/index.html</guid>
+  <pubDate>Thu, 09 Mar 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Getting NYS Home Heating Oil Prices with {rvest}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -2887,197 +3062,6 @@ $State
   <category>tidydensity</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-07/index.html</guid>
   <pubDate>Tue, 07 Feb 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Cumulative Measurement Functions with {TidyDensity}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>If you’re looking for an easy-to-use package to calculate cumulative statistics in R, you may want to check out the TidyDensity package. This package offers several functions to calculate cumulative measurements, including mean, median, standard deviation, variance, skewness, kurtosis, harmonic mean, and geometric mean.</p>
-<ul>
-<li><code>cgmean()</code>: Cumulative Geometric Mean</li>
-</ul>
-<p>The <code>cgmean()</code> function calculates the cumulative geometric mean of a set of values. This is the nth root of the product of the first n elements of the set. It’s a useful measurement for sets of values that are multiplied together, such as growth rates.</p>
-<ul>
-<li><code>chmean()</code>: Cumulative Harmonic Mean</li>
-</ul>
-<p>The <code>chmean()</code> function calculates the cumulative harmonic mean of a set of values. This is the inverse of the arithmetic mean of the reciprocals of the values. It’s commonly used for sets of values that represent rates, such as speeds.</p>
-<ul>
-<li><code>ckurtosis()</code>: Cumulative Kurtosis</li>
-</ul>
-<p>The <code>ckurtosis()</code> function calculates the cumulative kurtosis of a set of values. Kurtosis is a measure of the peakedness of a distribution, relative to a normal distribution. The cumulative kurtosis calculates the kurtosis of a set of values up to a specific point in the set.</p>
-<ul>
-<li><code>cmean()</code>: Cumulative Mean</li>
-</ul>
-<p>The <code>cmean()</code> function calculates the cumulative mean of a set of values. It’s a measure of the average of the values up to a specific point in the set.</p>
-<ul>
-<li><code>cmedian()</code>: Cumulative Median</li>
-</ul>
-<p>The <code>cmedian()</code> function calculates the cumulative median of a set of values. It’s the value that separates the lower half of the set from the upper half, up to a specific point in the set.</p>
-<ul>
-<li><code>csd()</code>: Cumulative Standard Deviation</li>
-</ul>
-<p>The <code>csd()</code> function calculates the cumulative standard deviation of a set of values. Standard deviation is a measure of the spread of values in a set. The cumulative standard deviation calculates the standard deviation up to a specific point in the set.</p>
-<ul>
-<li><code>cskewness()</code>: Cumulative Skewness</li>
-</ul>
-<p>The <code>cskewness()</code> function calculates the cumulative skewness of a set of values. Skewness is a measure of the asymmetry of a distribution. The cumulative skewness calculates the skewness up to a specific point in the set.</p>
-<ul>
-<li><code>cvar()</code>: Cumulative Variance</li>
-</ul>
-<p>The <code>cvar()</code> function calculates the cumulative variance of a set of values. Variance is a measure of the spread of values in a set. The cumulative variance calculates the variance up to a specific point in the set.</p>
-<p>In conclusion, the <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> package offers several functions for calculating cumulative statistics, including mean, median, standard deviation, variance, skewness, kurtosis, harmonic mean, and geometric mean. These functions make it easy to calculate cumulative statistics for sets of values in R.</p>
-</section>
-<section id="functions" class="level1">
-<h1>Functions</h1>
-<p>All of the functions perform work strictly on a vector. Because of this I will not go over the function calls separately because they all follow the vectorized for of <code>fun(.x)</code> where <strong><code>.x</code></strong> is the argument passed to the cumulative function.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<p>Here I will go over some examples of each function use the <em>AirPassengers</em> data set.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3">v <span class="ot" style="color: #003B4F;">&lt;-</span> AirPassengers</span></code></pre></div>
-</div>
-<p>Let’s start at the top.</p>
-<p>Cumulative Geometric Mean:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">cgmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 112.0000 114.9609 120.3810 122.4802 122.1827 124.2311</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">cgmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 249.6135 251.1999 252.4577 253.5305 254.2952 255.2328</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cgmean</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Harmonic Mean:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">chmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 112.00000  57.46087  40.03378  30.55222  24.39304  20.66000</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">chmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1.636832 1.632423 1.627194 1.621471 1.614757 1.608744</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">chmean</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Kurtosis:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">ckurtosis</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]      NaN 1.000000 1.500000 1.315839 1.597316 1.597850</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">ckurtosis</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2.668951 2.795314 2.733117 2.674195 2.649894 2.606228</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">ckurtosis</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Mean:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">cmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 112.0000 115.0000 120.6667 122.7500 122.4000 124.5000</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">cmean</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 273.1367 275.5143 277.1631 278.4577 279.2378 280.2986</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cmean</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Median:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">cmedian</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 112.0 115.0 118.0 123.5 121.0 125.0</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">cmedian</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 259.0 261.5 264.0 264.0 264.0 265.5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cmedian</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Standard Deviation:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">csd</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]        NA  4.242641 10.263203  9.358597  8.142481  8.916277</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">csd</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 115.0074 117.9956 119.1924 119.7668 119.7083 119.9663</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">csd</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Skewness:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">cskewness</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]         NaN  0.00000000  0.44510927 -0.14739157 -0.02100016 -0.18544758</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">cskewness</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.5936970 0.6471651 0.6349071 0.6145579 0.5972102 0.5770682</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cskewness</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Cumulative Variance:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><span class="fu" style="color: #4758AB;">head</span>(<span class="fu" style="color: #4758AB;">cvar</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]        NA  18.00000 105.33333  87.58333  66.30000  79.50000</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><span class="fu" style="color: #4758AB;">tail</span>(<span class="fu" style="color: #4758AB;">cvar</span>(v))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 13226.70 13922.96 14206.84 14344.08 14330.07 14391.92</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb41" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">cvar</span>(v), <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidydensity</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-06/inex.html</guid>
-  <pubDate>Mon, 06 Feb 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
