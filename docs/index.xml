@@ -10,7 +10,159 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.269</generator>
-<lastBuildDate>Thu, 09 Mar 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 10 Mar 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Use of the apply family of functions</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-10/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In this post I will talk about the use of the R functions <code>apply()</code>, <code>lapply()</code>, <code>sapply()</code>, <code>tapply()</code>, and <code>vapply()</code> with examples.</p>
+<p>These functions are all designed to help users apply a function to a set of data in R, but they differ in their input and output types, as well as in the way they handle missing values and other complexities. By using the right function for your particular problem, you can make your code more efficient and easier to read.</p>
+<p>Let’s start with the basics.</p>
+<section id="the-basics" class="level2">
+<h2 class="anchored" data-anchor-id="the-basics">The Basics</h2>
+<p>Before we dive into the details of each function, let’s define some terms:</p>
+<ul>
+<li>A vector is a one-dimensional array of data, like a list of numbers or strings.</li>
+<li>A matrix is a two-dimensional array of data, like a table of numbers.</li>
+<li>A data frame is a two-dimensional object that can hold different types of data, like a spreadsheet.</li>
+<li>A list is a collection of objects, which can be of different types, like a shopping bag full of different items.</li>
+</ul>
+<p>Each of the five functions we’ll discuss here takes a list as input (although some can also take vectors or matrices). Let’s create a list object to use in our examples:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">my_list <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb1-2">  <span class="at" style="color: #657422;">a =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>, <span class="dv" style="color: #AD0000;">3</span>),</span>
+<span id="cb1-3">  <span class="at" style="color: #657422;">b =</span> <span class="fu" style="color: #4758AB;">matrix</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">6</span>, <span class="at" style="color: #657422;">nrow =</span> <span class="dv" style="color: #AD0000;">2</span>),</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;">c =</span> <span class="fu" style="color: #4758AB;">data.frame</span>(<span class="at" style="color: #657422;">x =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">3</span>, <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"a"</span>, <span class="st" style="color: #20794D;">"b"</span>, <span class="st" style="color: #20794D;">"c"</span>)),</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;">d =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">4</span>, <span class="cn" style="color: #8f5902;">NA</span>, <span class="dv" style="color: #AD0000;">6</span>),</span>
+<span id="cb1-6">  <span class="at" style="color: #657422;">e =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="st" style="color: #20794D;">"foo"</span>, <span class="st" style="color: #20794D;">"bar"</span>, <span class="st" style="color: #20794D;">"baz"</span>)</span>
+<span id="cb1-7">)</span></code></pre></div>
+</div>
+<p>This list contains five elements:</p>
+<ul>
+<li>A vector of numbers (a)</li>
+<li>A matrix of numbers (b)</li>
+<li>A data frame with two columns (c)</li>
+<li>A vector of numbers with a missing value (d)</li>
+<li>A list of character strings (e)</li>
+</ul>
+<p>Now that we have our data, let’s look at each of the functions in turn.</p>
+</section>
+<section id="the-functions" class="level2">
+<h2 class="anchored" data-anchor-id="the-functions">The Functions</h2>
+<p><strong>apply()</strong></p>
+<p>The <code>apply()</code> function applies a function to the rows or columns of a matrix or array. It is most commonly used with matrices, but can also be used with higher-dimensional arrays. The function takes three arguments:</p>
+<ul>
+<li>The matrix or array to apply the function to</li>
+<li>The margin (1 for rows, 2 for columns, or a vector of dimensions)</li>
+<li>The function to apply</li>
+</ul>
+<p>Let’s apply the <code>mean()</code> function to the columns of our matrix in <code>my_list$b</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">apply</span>(my_list<span class="sc" style="color: #5E5E5E;">$</span>b, <span class="dv" style="color: #AD0000;">2</span>, mean)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1.5 3.5 5.5</code></pre>
+</div>
+</div>
+<p>This will return a vector of means for each column of the matrix</p>
+<p><strong>lapply()</strong></p>
+<p>The <code>lapply()</code> function applies a function to each element of a list and returns a list of the results. It takes two arguments:</p>
+<ul>
+<li>The list to apply the function to</li>
+<li>The function to apply</li>
+</ul>
+<p>Let’s apply the <code>class()</code> function to each element of our list:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">lapply</span>(my_list, class)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$a
+[1] "numeric"
+
+$b
+[1] "matrix" "array" 
+
+$c
+[1] "data.frame"
+
+$d
+[1] "numeric"
+
+$e
+[1] "list"</code></pre>
+</div>
+</div>
+<p>This will return a list of the classes of each element.</p>
+<p><strong>sapply()</strong></p>
+<p>The <code>sapply()</code> function is similar to <code>lapply()</code>, but it simplifies the output to a vector or matrix if possible. It takes the same two arguments as <code>lapply()</code>:</p>
+<ul>
+<li>The list to apply the function</li>
+<li>The function to apply</li>
+</ul>
+<p>Let’s apply the <code>length()</code> function to each element of our list using sapply():</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;">sapply</span>(my_list, length)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>a b c d e 
+3 6 2 3 3 </code></pre>
+</div>
+</div>
+<p>This will return a vector of lengths for each element.</p>
+<p><strong>tapply()</strong></p>
+<p>The <code>tapply()</code> function applies a function to subsets of a vector or data frame, grouped by one or more factors. It takes three arguments:</p>
+<ul>
+<li>The vector or data frame to apply the function to</li>
+<li>The factor(s) to group the data by</li>
+<li>The function to apply</li>
+</ul>
+<p>Let’s apply the <code>mean()</code> function to the elements of our vector <code>my_list$d</code>, grouped by whether they are missing or not:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">tapply</span>(my_list<span class="sc" style="color: #5E5E5E;">$</span>d, <span class="sc" style="color: #5E5E5E;">!</span><span class="fu" style="color: #4758AB;">is.na</span>(my_list<span class="sc" style="color: #5E5E5E;">$</span>d), mean)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FALSE  TRUE 
+   NA     5 </code></pre>
+</div>
+</div>
+<p>This will return a vector of means for each group where they are NOT NA.</p>
+<p><strong>vapply()</strong></p>
+<p>The <code>vapply()</code> function is similar to sapply(), but allows the user to specify the output type and length, making it more efficient and less prone to errors. It takes four arguments:</p>
+<ul>
+<li>The list to apply the function to</li>
+<li>The function to apply</li>
+<li>The output type of the function</li>
+<li>The length of the output vector or matrix</li>
+</ul>
+<p>Let’s apply the <code>length()</code> function to each element of our list, specifying that the output type is an integer and the length is 1:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">vapply</span>(my_list, length, <span class="fu" style="color: #4758AB;">integer</span>(<span class="dv" style="color: #AD0000;">1</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>a b c d e 
+3 6 2 3 3 </code></pre>
+</div>
+</div>
+<p>This will return a matrix of lengths for each element, with 1 row:</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>In this blog post, we have covered the basics of the <code>apply()</code>, <code>lapply()</code>, <code>sapply()</code>, <code>tapply()</code>, and <code>vapply()</code> functions in R. These functions are all useful for applying a function to a set of data in R, but they differ in their input and output types, as well as in the way they handle missing values and other complexities. By using the right function for your particular problem, you can make your code more efficient and easier to read.</p>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>apply</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-10/index.html</guid>
+  <pubDate>Fri, 10 Mar 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Multiple Solutions to speedup tidy_bernoulli() with {data.table}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3009,63 +3161,6 @@ Coefficients:
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-08/index.html</guid>
   <pubDate>Wed, 08 Feb 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Subsetting Named Lists in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-07/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In R, lists are a fundamental data structure that allows us to store multiple objects of different data types under a single name. Often times, we want to extract certain elements of a list based on their names, and this can be accomplished through the use of the subset function. In this blog post, we will take a look at how to use the grep function to subset named lists in R.</p>
-<p>First, we will create a list object as follows:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">asc_list <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>(</span>
-<span id="cb1-2">  <span class="at" style="color: #657422;">Facility =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>,</span>
-<span id="cb1-3">  <span class="at" style="color: #657422;">State =</span> <span class="dv" style="color: #AD0000;">11</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">20</span>,</span>
-<span id="cb1-4">  <span class="at" style="color: #657422;">National =</span> <span class="dv" style="color: #AD0000;">21</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">30</span></span>
-<span id="cb1-5">)</span></code></pre></div>
-</div>
-<p>We now have a list with three elements, each with a different name. Next, we want to make sure that our list does not contain any 0 length items. This can be achieved by using the lapply function and the length function:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">asc_list <span class="ot" style="color: #003B4F;">&lt;-</span> asc_list[<span class="fu" style="color: #4758AB;">lapply</span>(asc_list, length) <span class="sc" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">0</span>]</span></code></pre></div>
-</div>
-<p>The <code>lapply</code> function applies the length function to each element of the list, and returns a logical vector indicating whether each element is of length greater than 0. By using the square bracket operator, we can extract only those elements for which the logical value is TRUE.</p>
-<p>Next, we create a character vector of possible items that we want to match on:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">patterns <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"state"</span>,<span class="st" style="color: #20794D;">"faci"</span>)</span></code></pre></div>
-</div>
-<p>We can now pass this vector of patterns to the grep function, along with the names of our list and the ignore.case argument set to TRUE. The grep function returns the indices of the elements in our list that match the given pattern:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">asc_list[<span class="fu" style="color: #4758AB;">grep</span>(</span>
-<span id="cb4-2">  <span class="fu" style="color: #4758AB;">paste</span>(patterns, <span class="at" style="color: #657422;">collapse =</span> <span class="st" style="color: #20794D;">"|"</span>),</span>
-<span id="cb4-3">  <span class="fu" style="color: #4758AB;">names</span>(asc_list),</span>
-<span id="cb4-4">  <span class="at" style="color: #657422;">ignore.case =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb4-5">  )]</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$Facility
- [1]  1  2  3  4  5  6  7  8  9 10
-
-$State
- [1] 11 12 13 14 15 16 17 18 19 20</code></pre>
-</div>
-</div>
-<p>The result of this code is a new list that contains only the elements of our original list whose names match either “state” or “faci”. The paste function is used to join the patterns in the vector into a single string, with the | character separating each pattern. This allows us to search for multiple patterns at once.</p>
-<p>In conclusion, the grep function is a powerful tool for sub-setting named lists in R, especially when we have multiple patterns that we want to match on. By combining the grep function with other R functions such as <code>lapply</code> and length, we can extract specific elements from our lists with ease.</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidydensity</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-07/index.html</guid>
-  <pubDate>Tue, 07 Feb 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
