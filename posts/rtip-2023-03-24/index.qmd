@@ -1,0 +1,164 @@
+---
+title: "How fast do the files read in?"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-24"
+categories: [rtip, benchmark]
+---
+
+# Introduction
+
+I will demonstrate how to generate a 1,000 row and column matrix with random numbers in R, and then save it in different file formats. I will also show how to get the file size of each saved object and benchmark how long it takes to read in each file using different functions.
+
+## Generating a large matrix
+
+To generate a 1,000 row and column matrix with random numbers, we can use the matrix() function and the runif() function in R. Here's the code to generate the matrix:
+
+```{r}
+# set seed for reproducibility
+set.seed(123)
+
+# number of rows/columns in matrix
+n <- 1000
+
+# generate matrix with random normal values
+mat <- matrix(runif(n^2), nrow = n) 
+```
+
+This code sets the random number generator seed to ensure that the same random numbers are generated every time the code is run. It then generates a vector of 1,000^2 random numbers using the runif() function, and creates a matrix with 1,000 columns using the matrix() function.
+
+## Saving the matrix in different file formats
+
+We can save the generated matrix in different file formats using different functions in R. Here are the functions we will use for each file format:
+
+*    CSV: write.csv()
+*    RDS: saveRDS()
+*    FST: write_fst()
+*    Arrow: write_feather()
+
+Here's the code to save the matrix in each file format:
+
+```{r message=FALSE, warning=FALSE}
+library(fst)
+library(arrow)
+
+# Save matrix in different file formats
+write.csv(mat, "matrix.csv", row.names=FALSE)
+saveRDS(mat, "matrix.rds")
+write_fst(as.data.frame(mat), "matrix.fst")
+write_feather(as_arrow_table(as.data.frame(mat)), "matrix.arrow")
+```
+
+This code saves the matrix in each file format using the corresponding function, with the file name specified as the second argument.
+Getting the file size of each saved object
+
+To get the file size of each saved object, we can use the file.size() function in R. Here's the code to get the file size of each saved object:
+
+```{r}
+# Get file size of each saved object
+csv_size <- file.size("matrix.csv")  / (1024^2)
+rds_size <- file.size("matrix.rds") / (1024^2)
+fst_size <- file.size("matrix.fst") / (1024^2)
+arrow_size <- file.size("matrix.arrow") / (1024^2)
+
+# Print file size in human-readable format
+print(paste("CSV file size in MB:", format(csv_size, units="auto")))
+print(paste("RDS file size in MB:", format(rds_size, units="auto")))
+print(paste("FST file size in MB:", format(fst_size, units="auto")))
+print(paste("Arrow file size in MB:", format(arrow_size, units="auto")))
+```
+
+This code uses the file.size() function to get the file size of each object, and stores the file size of each object in a separate variable.
+
+Finally, it prints the file size of each object in a human-readable format using the format() function with the units="auto" argument. The units="auto" argument automatically chooses the most appropriate unit (e.g., KB, MB, GB) based on the file size.
+
+## Benchmarking file read times
+
+To benchmark how long it takes to read in each file, we can use the `{rbenchmark}` package in R. In this example, we will compare the read times for the CSV file using four different functions: `read.csv()`, `read_csv()` from the `{readr}` package, `fread()` from the `{data.table}` package, and `vroom()` from the `{vroom}` package. We will also benchmark the read times for the RDS file using `readRDS()`, the FST file using `read_fst()`, and the Arrow file using `read_feather()`.
+
+Here's the code to benchmark the read times:
+
+```{r warning=FALSE, message=FALSE}
+# Load rbenchmark package
+library(rbenchmark)
+library(readr)
+library(data.table)
+library(vroom)
+library(dplyr)
+
+n = 30
+
+# Benchmark read times for CSV file
+benchmark(
+  # CSV File
+  "read.csv" = {
+    a <- read.csv("matrix.csv")
+  },
+  "read_csv" = {
+    b <- read_csv("matrix.csv")
+  },
+  "fread" = {
+    c <- fread("matrix.csv")
+  },
+  "vroom alltrep false" = {
+    d <- vroom("matrix.csv")
+  },
+  "vroom alltrep true" = {
+    dd <- vroom("matrix.csv", altrep = TRUE)
+  },
+  
+  # Replications
+  replications = n,
+  
+  # Columns
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+) |>
+  arrange(relative)
+  
+# RDS File
+benchmark(
+  # RDS File
+  "readRDS" = {
+    e <- readRDS("matrix.rds")
+  },
+  "read_rds" = {
+    f <- read_rds("matrix.rds")
+  },
+  
+  # Repications
+  replications = n,
+  
+  # Columns
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+) |>
+  arrange(relative)
+  
+# FST / Arrow
+benchmark(
+  # FST
+  "read_fst" = {
+    g <- read_fst("matrix.fst")
+  },
+  
+  # Arrow
+  "arrow" = {
+    h <- read_feather("matrix.arrow")
+  },
+  
+  # Replications
+  replications = n,
+  
+  # Columns
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+) |>
+  arrange(relative)
+```
+
+This code loads the `{rbenchmark}` package, and uses the `benchmark()` function to compare the read times for each file format. We specify the function to use for each file format, and set the number of replications to 10.
+Conclusion
+
+In this blog post, we demonstrated how to generate a large matrix with random numbers in R, and how to save it in different file formats. We also showed how to get the file size of each saved object, and benchmarked the read times for each file format using different functions.
+
+This example demonstrates the importance of choosing the appropriate file format and read function for your data. Depending on the size of your data and the requirements of your analysis, some file formats and functions may be more efficient than others.
