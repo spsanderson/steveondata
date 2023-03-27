@@ -1,0 +1,115 @@
+---
+title: "How fast does a compressed file in?"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-27"
+categories: [rtip, benchmark]
+---
+
+# Introduction
+
+I received an email over the weekend in regards to my last post not containing the reading in of `gz` compressed file(s) for the benchmarking. While this was not an over site per-se it was a good reminder that people would probably be interested in seeing this as well.
+
+Benchmarking is the process of measuring and comparing the performance of different programs, tools, or configurations in order to identify which one is the most efficient for a specific task. It is a critical step in software development that can help developers identify performance bottlenecks and improve the overall performance of their applications.
+
+In this post I create a square matrix and then convert it to a data.frame (2,000 rows by 2,000 columns) and then saved it as a gz compressed csv file. The benchmark compares different R packages and functions, including base `R`, `data.table`, `vroom`, and `readr`, and measures their relative speeds based on the time it takes to read in the `.csv.gz` file.
+
+Here are some pro's of trying things different ways and properly benchmarking them:
+
+*    Identify the most efficient solution: Benchmarking can help you identify the most efficient solution for a specific task. By measuring the relative speeds of different programs or tools, you can determine which one is the fastest and use it to improve the performance of your application.
+
+*    Optimize resource utilization: Benchmarking can help you optimize resource utilization by identifying programs or tools that consume more resources than others. By choosing the most resource-efficient solution, you can reduce the cost of running your application and improve its scalability.
+
+*    Avoid premature optimization: Benchmarking can help you avoid premature optimization by measuring the performance of different programs or tools before you start optimizing them. By identifying the slowest parts of your application, you can focus your optimization efforts on the most critical areas and avoid wasting time optimizing code that doesn't need it.
+
+*    Keep up with technology: Benchmarking can help you keep up with technology by comparing the performance of different tools and libraries. By staying up to date with the latest technologies, you can improve the performance of your application and stay ahead of your competitors.
+
+*    Improve code quality: Benchmarking can help you improve the quality of your code by identifying performance bottlenecks and areas for optimization. By optimizing your code, you can improve its maintainability, reliability, and readability.
+
+In conclusion, benchmarking is an essential tool for software developers that can help them identify the most efficient solutions for their applications. By measuring the relative speeds of different programs or tools, developers can optimize resource utilization, avoid premature optimization, keep up with technology, and improve the quality of their code.
+
+# Function
+
+The different functions I use in the benchmarking are as follows:
+
+## Base R
+*  `read.csv()`
+*  `read.table()`
+
+## data.table
+*  `fread`
+
+## vroom
+*  `vroom()` with altrep = FALSE
+*  `vroom()` with altrep = TRUE
+
+## readr
+*  `read_csv()`
+
+# Example
+
+Let's make a 2,000 by 2,000 matrix, covert to a `data.frame` and then save it out as a `.csv` file and then convert to a `.gz` file.
+
+```{r warning=FALSE, message=FALSE}
+library(R.utils)
+
+# create a 1000 x 1000 matrix of random numbers
+my_matrix <- matrix(rnorm(2000000), nrow = 2000, ncol = 2000) |>
+  as.data.frame()
+
+# Make and save gzipped file
+write.csv(my_matrix, "my_matrix.csv")
+gzip(filename = "my_matrix.csv", destname = "matrix.csv.gz",
+     overwrite = FALSE, remove = TRUE)
+```
+
+Ok now that the data is written we can benchmark the read in times from various packages.
+
+## Benchmarking
+```{r warning=FALSE, message=FALSE}
+library(rbenchmark)
+library(data.table)
+library(readr)
+library(vroom)
+library(dplyr)
+
+n <- 30
+
+benchmark(
+  # Base R
+  "read.table" = {
+    a <- read.table("matrix.csv.gz", sep = ",")
+  },
+  "read.csv" = {
+    b <- read.csv("matrix.csv.gz", sep = ",")
+  },
+  
+  # data.table
+  "fread" = {
+    c <- fread("matrix.csv.gz", sep = ",")
+  },
+  
+  # vroom
+  "vroom alltrep false" = {
+    d <- vroom("matrix.csv.gz", delim = ",")
+  },
+  "vroom alltrep true" = {
+    e <- vroom("matrix.csv.gz", delim = ",", altrep = TRUE)
+  },
+  
+  # readr
+  "readr" = {
+    f <- read_csv("matrix.csv.gz")
+  },
+  
+  # Replications
+  replications = n,
+  
+  # Columns
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+) |>
+  arrange(relative)
+
+```
+
+Voila!
