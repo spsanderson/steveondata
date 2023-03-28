@@ -1,0 +1,144 @@
+---
+title: "How fast does a compressed file in Part 2"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-28"
+categories: [rtip, benchmark, arrow, duckdb, datatable, readr]
+---
+
+# Introduction
+
+Yesterday I posted on performing a benchmark on reading in a compressed `.csv.gz` file of a 2,000 by 2,000 `data.frame`. It was brought to my attention by someone on Mastadon (@mariviere@fediscience.org - <https://fediscience.org/@mariviere>) that I should also use `{duckdb}` and `{arrow}` so I will perform the same analysis as yesterday but I will also add in the two aforementioned packages.
+
+# Function
+
+The functions that we will be using this time around are as follows:
+
+*  `fread()` - data.table
+*  `duckdb_read_csv()` - duckdb
+*  `read_csv()` - readr
+*  `read.csv()` - base
+*  `read.table()` - base
+*  `vroom()` with altrep = `FALSE` - vroom
+*  `vroom()` with altrep = `TRUE` - vroom
+*  `oprn_csv_dataset()` - arrow
+
+
+# Example
+
+## Make the Data
+Let's make that dataset again:
+
+```{r make_data, warning=FALSE, message=FALSE}
+library(R.utils)
+
+# create a 1000 x 1000 matrix of random numbers
+df <- matrix(rnorm(2000000), nrow = 2000, ncol = 2000) |>
+  as.data.frame()
+
+# Make and save gzipped file
+write.csv(df, "df.csv")
+gzip(
+  filename = "df.csv", 
+  destname = "df.csv.gz",
+  overwrite = FALSE, 
+  remove = TRUE
+)
+```
+
+## Benchmarking
+
+Time to benchmark
+
+```{r benchmarking, warning=FALSE, message=FALSE}
+library(rbenchmark)
+library(data.table)
+library(readr)
+library(duckdb)
+library(arrow)
+library(vroom)
+library(dplyr)
+library(DBI)
+
+n <- 30
+
+benchmark(
+  # Base R
+  "read.table" = {
+    a <- read.table(
+      "df.csv.gz", 
+      sep = ",", 
+      colClasses = list(numeric = 1:2000)
+    )
+  },
+  "read.csv" = {
+    b <- read.csv(
+      "df.csv.gz", 
+      sep = ",", 
+      colClasses = list(numeric = 1:2000)
+    )
+  },
+  
+  # data.table
+  "fread" = {
+    c <- fread(
+      "df.csv.gz", 
+      sep = ",", 
+      colClasses = list(numeric = 1:2000)
+    )
+  },
+  
+  # vroom
+  "vroom alltrep false" = {
+    d <- vroom("df.csv.gz", delim = ",", col_types = "d")
+  },
+  "vroom alltrep true" = {
+    e <- vroom("df.csv.gz", delim = ",", altrep = TRUE, col_types = "d")
+  },
+  
+  # readr
+  "readr" = {
+    f <- read_csv("df.csv.gz", col_types = "d")
+  },
+  
+  # Arrow
+  "arrow" = {
+    g <- open_csv_dataset("df.csv.gz")
+  },
+  
+  # DuckDB
+  "duckdb" = {
+    con <- dbConnect(duckdb())
+    h <- duckdb_read_csv(
+      conn = con,
+      name = "df",
+      files = "C:\\Users\\ssanders\\Documents\\GitHub\\steveondata\\posts\\rtip-2023-03-28\\df.csv.gz"
+    )
+    dbDisconnect(con)
+  },
+  
+  # Replications
+  replications = n,
+  
+  # Columns
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+) |>
+  arrange(relative)
+```
+
+Important note is the session info on the pc I am using to write this:
+
+```{r session_info}
+sessionInfo()
+
+ Sys.info() |> 
+   as.data.frame() |> 
+   tibble::rownames_to_column() |> 
+   as_tibble() |> 
+   slice(1,2,3,5)
+ 
+ memory.profile() |>
+   as.data.frame()
+ 
+ gc()
+```
