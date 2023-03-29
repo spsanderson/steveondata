@@ -252,6 +252,117 @@ Vcells 32950395 251.4   81254422 620.0 81254324 620.0</code></pre>
   <pubDate>Tue, 28 Mar 2023 04:00:00 GMT</pubDate>
 </item>
 <item>
+  <title>A Bootstrapped Time Series Model with auto.arima() from {forecast}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-29/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Time series analysis is a powerful tool for understanding and predicting patterns in data that vary over time. In this tutorial, we will use the AirPassengers dataset to create a bootstrapped timeseries model in R.</p>
+<p>The AirPassengers dataset The AirPassengers dataset contains data on the number of passengers traveling on international flights per month from 1949 to 1960. To begin, we will load the dataset into R and plot it to get an idea of the data’s structure and any underlying patterns.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(forecast)</span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">data</span>(AirPassengers)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">plot</span>(AirPassengers, <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"International Airline Passengers 1949-1960"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-29/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>From the plot, we can see that there is a clear upward trend in the data, as well as some seasonality.</p>
+</section>
+<section id="creating-a-bootstrapped-timeseries-model" class="level1">
+<h1>Creating a bootstrapped timeseries model</h1>
+<p>Now that we have an idea of the structure of the data, we can create a bootstrapped timeseries model using the <code>auto.arima()</code> function from the <code>{forecast}</code> package. The <code>auto.arima()</code> function uses an automated algorithm to determine the best model for a given timeseries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">set.seed</span>(<span class="dv" style="color: #AD0000;">123</span>)</span>
+<span id="cb2-2">n <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">length</span>(AirPassengers)</span>
+<span id="cb2-3">n_boot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">1000</span></span>
+<span id="cb2-4"></span>
+<span id="cb2-5"><span class="co" style="color: #5E5E5E;"># create bootstrap sample indices</span></span>
+<span id="cb2-6">boot_indices <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">replicate</span>(n_boot, <span class="fu" style="color: #4758AB;">sample</span>(<span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n, <span class="at" style="color: #657422;">replace =</span> <span class="cn" style="color: #8f5902;">TRUE</span>))</span>
+<span id="cb2-7"></span>
+<span id="cb2-8"><span class="co" style="color: #5E5E5E;"># create list to store models</span></span>
+<span id="cb2-9">models <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>()</span>
+<span id="cb2-10"></span>
+<span id="cb2-11"><span class="co" style="color: #5E5E5E;"># create bootstrapped models</span></span>
+<span id="cb2-12"><span class="cf" style="color: #003B4F;">for</span>(i <span class="cf" style="color: #003B4F;">in</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n_boot) {</span>
+<span id="cb2-13">  boot_data <span class="ot" style="color: #003B4F;">&lt;-</span> AirPassengers[boot_indices[, i]]</span>
+<span id="cb2-14">  models[[i]] <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">auto.arima</span>(boot_data)</span>
+<span id="cb2-15">}</span>
+<span id="cb2-16"></span>
+<span id="cb2-17">models[[<span class="dv" style="color: #AD0000;">1</span>]]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Series: boot_data 
+ARIMA(0,0,0) with non-zero mean 
+
+Coefficients:
+          mean
+      275.5347
+s.e.    9.5443
+
+sigma^2 = 13209:  log likelihood = -887.01
+AIC=1778.02   AICc=1778.1   BIC=1783.96</code></pre>
+</div>
+</div>
+<p>In the code above, we first set a seed to ensure reproducibility of our results. We then specify the length of the timeseries and the number of bootstrap iterations we want to run. We create a list to store the models and a set of bootstrap sample indices.</p>
+<p>We then loop through each bootstrap iteration, creating a new dataset from the original timeseries by sampling with replacement using the boot_indices. We use the <code>auto.arima()</code> function to create a timeseries model for each bootstrap sample and store it in our models list.</p>
+</section>
+<section id="summarizing-and-plotting-residuals" class="level1">
+<h1>Summarizing and plotting residuals</h1>
+<p>Now that we have created our bootstrapped timeseries models, we can summarize and plot the residuals of each model to get an idea of how well our models fit the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;"># create list to store residuals</span></span>
+<span id="cb4-2">residuals <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>()</span>
+<span id="cb4-3"></span>
+<span id="cb4-4"><span class="co" style="color: #5E5E5E;"># create residuals for each model</span></span>
+<span id="cb4-5"><span class="cf" style="color: #003B4F;">for</span>(i <span class="cf" style="color: #003B4F;">in</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span>n_boot) {</span>
+<span id="cb4-6">  boot_data <span class="ot" style="color: #003B4F;">&lt;-</span> AirPassengers[boot_indices[, i]]</span>
+<span id="cb4-7">  residuals[[i]] <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">residuals</span>(models[[i]])</span>
+<span id="cb4-8">}</span>
+<span id="cb4-9"></span>
+<span id="cb4-10"><span class="co" style="color: #5E5E5E;"># summarize residuals</span></span>
+<span id="cb4-11">residual_means <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">sapply</span>(residuals, mean)</span>
+<span id="cb4-12">residual_sd <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">sapply</span>(residuals, sd)</span>
+<span id="cb4-13"></span>
+<span id="cb4-14"><span class="co" style="color: #5E5E5E;"># plot residuals</span></span>
+<span id="cb4-15"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">2</span>, <span class="dv" style="color: #AD0000;">1</span>))</span>
+<span id="cb4-16"></span>
+<span id="cb4-17"><span class="fu" style="color: #4758AB;">hist</span>(</span>
+<span id="cb4-18">  residual_means, </span>
+<span id="cb4-19">  <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">"Bootstrapped Model Residuals"</span>, </span>
+<span id="cb4-20">  <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"Mean Residuals"</span></span>
+<span id="cb4-21">  )</span>
+<span id="cb4-22"><span class="fu" style="color: #4758AB;">hist</span>(</span>
+<span id="cb4-23">  residual_sd, </span>
+<span id="cb4-24">  <span class="at" style="color: #657422;">col =</span> <span class="st" style="color: #20794D;">"red"</span>, </span>
+<span id="cb4-25">  <span class="at" style="color: #657422;">main =</span> <span class="st" style="color: #20794D;">""</span>, </span>
+<span id="cb4-26">  <span class="at" style="color: #657422;">xlab =</span> <span class="st" style="color: #20794D;">"SD Residuals"</span></span>
+<span id="cb4-27">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-29/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;">par</span>(<span class="at" style="color: #657422;">mfrow =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">1</span>))</span></code></pre></div>
+</div>
+<p>In the code above, we create a list to store the residuals for each model, loop through each model to create residuals using the residuals() function, and summarize the residuals by taking the mean and standard deviation of each set of residuals.</p>
+<p>We then plot the mean residuals and standard deviations for each model using the plot() function and add a legend to indicate the meaning of the two lines.</p>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <category>bootstrap</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-29/index.html</guid>
+  <pubDate>Tue, 28 Mar 2023 04:00:00 GMT</pubDate>
+</item>
+<item>
   <title>How fast does a compressed file in?</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
   <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-27/index.html</link>
@@ -3095,33 +3206,6 @@ Computational engine: lm </code></pre>
   <category>tidymodels</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-17/index.html</guid>
   <pubDate>Fri, 17 Feb 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Officially on CRAN {tidyAML}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-16/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>I’m excited to announce that the R package {tidyAML} is now officially available on CRAN! This package is designed to make it easy for users to perform automated machine learning (AutoML) using the tidymodels ecosystem. With a simple and intuitive interface, tidyAML allows users to quickly generate high-quality machine learning models without worrying about the underlying details.</p>
-<p>One of the key features of tidyAML is its ability to generate regression models on the fly, without the need to build a full specification or tune hyper-parameters. This makes it ideal for users who want to quickly build a machine learning model without spending a lot of time on the setup process.</p>
-<p>tidyAML is also designed to be easy to use, with a set of functions that are straightforward and can generate many models and predictions at once. And because it’s built on top of the tidymodels ecosystem, users don’t need to worry about setting up additional packages or dependencies.</p>
-<p>We’re also happy to announce that tidyAML will be added to the R package {healthyverse} and pushed to CRAN this week. This means that users who install {healthyverse} will automatically get access to tidyAML, as well as other popular packages like ggplot2, dplyr, and tidyr.</p>
-<p>Whether you’re a beginner or an experienced machine learning practitioner, tidyAML is a powerful tool that can help you quickly generate high-quality models with minimal setup. We hope you’ll give it a try and let us know what you think!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidyaml</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-16/index.html</guid>
-  <pubDate>Thu, 16 Feb 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
