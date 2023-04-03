@@ -1,0 +1,160 @@
+---
+title: "A sample Shiny App to view CMS Healthcare Data"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-03-29"
+categories: [rtip, shiny, data, healthcare, cms]
+---
+
+# Introduction
+
+In this blog post, we will be discussing how to create a Shiny application in R that will download and extract data from a zip file and allow users to choose which data they would like to see presented to them in the app from a selection drop-down menu. We will be using the `current_hosp_data()` function to obtain and read in the data. This function is in the upcoming release for the [`{healthyR.data}`](https://www.spsanderson.com/healthyR.data/) package.
+
+# Example
+
+## Install
+
+```{r message=FALSE, warning=FALSE, eval=FALSE}
+install.packages(c("shiny","shinythemes"))
+```
+
+## Current Hospital Data
+
+Here is the `current_hospital_data()` function:
+
+```{r warning=FALSE, message=FALSE}
+current_hosp_data <- function() {
+
+  # URL for file
+  url <- "https://data.cms.gov/provider-data/sites/default/files/archive/Hospitals/current/hospitals_current_data.zip"
+
+  # Create a temporary directory to process the zip file
+  tmp_dir <- tempdir()
+  download_location <- file.path(tmp_dir, "download.zip")
+  extract_location <- file.path(tmp_dir, "extract")
+
+  # Download the zip file to the temporary location
+  utils::download.file(
+    url = url,
+    destfile = download_location
+  )
+
+  # Unzip the file
+  utils::unzip(download_location, exdir = extract_location)
+
+  # Read the csv files into a list
+  csv_file_list <- list.files(
+    path = extract_location,
+    pattern = "\\.csv$",
+    full.names = TRUE
+  )
+
+  # make named list
+  csv_names <-
+    stats::setNames(
+      object = csv_file_list,
+      nm =
+        csv_file_list |>
+        basename() |>
+        gsub(pattern = "\\.csv$", replacement = "") |>
+        janitor::make_clean_names()
+    )
+
+  # Process CSV Files
+  parse_csv_file <- function(file) {
+    # Normalize the path to use C:/path/to/file structure
+    normalizePath(file, "/") |>
+      # read in the csv file and use check.names = FALSE because some of
+      # the names are very long
+      utils::read.csv(check.names = FALSE) |>
+      dplyr::as_tibble() |>
+      # clean the field names
+      janitor::clean_names()
+  }
+
+  list_of_tables <- lapply(csv_names, parse_csv_file)
+
+  unlink(tmp_dir, recursive = TRUE)
+
+  # Return the tibbles
+  # Add and attribute and a class type to the object
+  attr(list_of_tables, ".list_type") <- "current_hosp_data"
+  class(list_of_tables) <- c("current_hosp_data", class(list_of_tables))
+
+  list_of_tables
+}
+```
+
+## App File
+
+Next, let's create a new file called `app.R`. In this file, we will create the Shiny app. The app will have a user interface (UI) and a server.
+
+The UI is responsible for creating the layout of the app, while the server is responsible for processing the data and responding to user input.
+
+First, let's create the UI. The UI will consist of a drop-down menu that will allow users to choose which data they would like to see presented to them in the app.
+
+```{r message=FALSE, warning=FALSE, eval=FALSE}
+library(shiny)
+library(shinythemes)
+
+hosp_data <- current_hosp_data()
+
+ui <- fluidPage(theme = shinytheme("cerulean"),
+                
+                # Set up the dropdown menu
+                selectInput(inputId = "table", 
+                            label = "Select a table:", 
+                            choices = names(hosp_data), 
+                            selected = NULL),
+                
+                # Set up the table output
+                tableOutput(outputId = "table_output")
+)
+```
+
+The `fluidPage()` function creates a new Shiny app page. We also specify the theme using the `{shinythemes}` package. The `selectInput()` function creates the drop-down menu, which allows users to select which data they would like to see presented to them in the app. The choices argument is set to the names of the tables in the [`current_hosp_data()`](https://www.spsanderson.com/healthyR.data/reference/current_hosp_data.html) object. The `tableOutput()` function creates the output for the selected table.
+
+## Server
+
+Next, let's create the server. The server will be responsible for processing the data and generating the output based on user input.
+
+```{r message=FALSE, warning=FALSE, eval=FALSE}
+server <- function(input, output) {
+    
+    # Load the data into a reactive object
+    data <- reactive(hosp_data)
+    
+    # Set up the table output
+    output$table_output <- renderTable({
+        # Get the selected table
+        table_selected <- input$table
+        
+        # Get the table from the data object
+        table_data <- data()[[table_selected]]
+        
+        # Return the table data
+        table_data
+    })
+}
+```
+
+The reactive() function is used to create a reactive object that will load the data when the app starts. The `renderTable()` function generates the output for the selected table. It does this by getting the selected table from the drop-down menu, getting the table data from the reactive data object, and returning the table data.
+
+## Shiny App
+
+Finally, we need to run the appl using the `shinyApp()` function:
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+shinyApp(ui = ui, server = server)
+```
+
+## Pros and Cons
+
+Pros:
+
+*    The app is easy to use, and users can quickly select which data they would like to see presented to them in the app.
+*    The `current_hosp_data()` function is only called once when the app starts, which can save time and resources if the function is time-consuming or resource-intensive.
+
+Cons:
+
+*    The app will not update if the data in the zip file changes. Users will need to restart the app to see the updated data.
+*    The app loads all the data into memory when it starts, which can be an issue if the data is large and memory-intensive.
