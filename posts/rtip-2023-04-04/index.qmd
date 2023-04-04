@@ -1,0 +1,167 @@
+---
+title: "A sample Shiny App to view Forecasts on the AirPassengers Data"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-04-04"
+categories: [rtip, shiny, data, timeseries]
+---
+
+# Introduction
+
+Hello! In this code, we are making a program that will help us predict the number of air passengers in the future. Let me explain what each part of the code does, step by step.
+
+First, we need to load some tools that will help us create the program. These tools are called "packages." We use the library() function to load them. The packages we need are called `shiny`, `forecast`, and `ggplot2`.
+
+## Load Libraries
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+library(shiny)
+library(forecast)
+library(ggplot2)
+```
+
+## Data
+
+Next, we need some data to work with. We will use a dataset of the number of air passengers each month from 1949 to 1960. We load this dataset using the data() function.
+
+```{r eval=FALSE}
+data(AirPassengers)
+```
+
+## User Interface
+Now, we need to create the user interface, or UI. This is what the user will see and interact with. In this case, we will create a simple app with a title, a __dropdown__ menu to choose a forecasting model, and a plot and table to display the forecast results. We use the `fluidPage()` function to create the UI, and we define the UI elements inside it.
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+
+ui <- fluidPage(
+  titlePanel("AirPassengers Forecast"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId = "model", label = "Choose a model:",
+                  choices = c("auto.arima", "ets", "holtwinters"))
+    ),
+    mainPanel(
+      plotOutput(outputId = "forecast_plot"),
+      tableOutput(outputId = "forecast_table")
+    )
+  )
+)
+```
+
+## Server
+
+Now, we need to define the server. The server is where the program does the calculations and generates the output based on what the user selects in the UI. We define the server inside the function(input, output) argument.
+
+```{r warning=FALSE, message=FALSE, eval=FALSE}
+server <- function(input, output) {
+```
+Inside the server, we need to create a reactive expression that generates the forecast based on the model the user selects. We use an if statement to check which model the user selected, and then we use the corresponding function to generate the forecast.
+
+### Forecast the Data
+```{r warning=FALSE, eval=FALSE}
+
+forecast_data <- reactive({
+    if (input$model == "auto.arima") {
+      fit <- auto.arima(AirPassengers)
+      forecast(fit)
+    } else if (input$model == "ets") {
+      fit <- ets(AirPassengers)
+      forecast(fit)
+    } else {
+      fit <- hw(AirPassengers)
+      forecast(fit)
+    }
+  })
+```
+
+### Render Plot
+
+The `renderPlot()` function tells the program to create a plot based on the reactive expression we defined earlier. We use the `plotOutput()` function in the UI to display the plot.
+
+```{r eval = FALSE}
+output$forecast_plot <- renderPlot({
+    plot(forecast_data())
+  })
+```
+
+Similarly, the `renderTable()` function tells the program to create a table based on the reactive expression we defined earlier. We use the `tableOutput()` function in the UI to display the table.
+
+```{r eval=FALSE}
+output$forecast_table <- renderTable({
+    forecast_data()$mean
+  })
+```
+
+Finally, we run the app using the `shinyApp()` function, with the UI and server arguments.
+
+```{r eval=FALSE}
+shinyApp(ui = ui, server = server)
+```
+
+And that's it! This program allows the user to choose a forecasting model, and then generates a plot and table with the predicted number of air passengers based on that model.
+
+Here is the Full code block"
+
+```{r eval=FALSE}
+# Load required packages
+library(shiny)
+library(forecast)
+library(ggplot2)
+
+# Load AirPassengers dataset
+data(AirPassengers)
+
+# Define UI
+ui <- fluidPage(
+  
+  # Title of the app
+  titlePanel("AirPassengers Forecast"),
+  
+  # Sidebar with input controls
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId = "model", label = "Choose a model:",
+                  choices = c("auto.arima", "ets", "holtwinters"))
+    ),
+    
+    # Output plot and table
+    mainPanel(
+      plotOutput(outputId = "forecast_plot"),
+      tableOutput(outputId = "forecast_table")
+    )
+  )
+)
+
+# Define server
+server <- function(input, output) {
+  
+  # Reactive expression to create forecast based on selected model
+  forecast_data <- reactive({
+    if (input$model == "auto.arima") {
+      fit <- auto.arima(AirPassengers)
+      forecast(fit)
+    } else if (input$model == "ets") {
+      fit <- ets(AirPassengers)
+      forecast(fit)
+    } else {
+      fit <- hw(AirPassengers)
+      forecast(fit)
+    }
+  })
+  
+  # Output plot
+  output$forecast_plot <- renderPlot({
+    plot(forecast_data())
+    #checkresiduals(forecast_data())
+  })
+  
+  # Output table
+  output$forecast_table <- renderTable({
+    forecast_data()$mean
+  })
+}
+
+# Run the app
+shinyApp(ui = ui, server = server)
+```
+
+Voila!
