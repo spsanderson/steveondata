@@ -10,7 +10,122 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.335</generator>
-<lastBuildDate>Tue, 04 Apr 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 05 Apr 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Looking at Daily Log Returns with tidyquant, TidyDensity, and Shiny</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-04-05/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In this blog post, we’ll walk through how to create a shiny application that allows users to analyze the weekly returns of FAANG stocks (AAPL, AMZN, FB, GOOGL, and NFLX) using the <a href="https://business-science.github.io/tidyquant/"><code>{tidyquant}</code></a> and <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> packages in R.</p>
+<section id="section-1-package-and-ui-setup" class="level2">
+<h2 class="anchored" data-anchor-id="section-1-package-and-ui-setup">Section 1: Package and UI Setup</h2>
+<p>The first section of the code sets up the necessary R packages and creates the UI for the shiny app. The packages we’ll be using are:</p>
+<ul>
+<li><strong>shiny</strong>: for creating interactive web applications in R</li>
+<li><strong>tidyquant</strong>: for easily getting and analyzing financial data in R</li>
+<li><strong>TidyDensity</strong>: for computing and visualizing probability distributions in a tidy way</li>
+<li><strong>dplyr</strong>: for manipulating data in a tidy way</li>
+<li><strong>DT</strong>: for creating interactive and scrollable data tables</li>
+</ul>
+<p>Analysts assemble your packages!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(tidyquant)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;">library</span>(DT)</span></code></pre></div>
+</div>
+<p>The UI consists of a title panel, a sidebar panel, and a main panel. The sidebar panel contains a select input that allows users to choose which FAANG stock to analyze, as well as a numeric input for the number of simulations to run. The main panel contains two sections: one for the <code>tidy_autoplot()</code> output (a plot of the stock returns), and one for the <code>tidy_empirical()</code> output (a table of the log returns).</p>
+</section>
+<section id="section-2-server-setup" class="level2">
+<h2 class="anchored" data-anchor-id="section-2-server-setup">Section 2: Server Setup</h2>
+<p>The second section of the code defines the server function for the shiny app. The server function takes the input values from the UI (i.e.&nbsp;the selected stock and number of simulations) and uses them to get and analyze the stock data.</p>
+<p>To get the stock data, we use the <code>tq_get()</code> function from the <code>tidyquant</code> package to retrieve the adjusted stock prices for the selected security from January 1, 2010 to the present. We then use the <code>tq_transmute()</code> function to compute the weekly log returns of the stock and rename the resulting column to “log_return”.</p>
+<p>The <code>tidy_empirical()</code> function from the <code>TidyDensity</code> package is used to compute the empirical distribution of the log returns. The resulting table is displayed using the <code>renderDT()</code> function from the <code>DT</code> package, which creates a scrollable data table that can be sorted and filtered.</p>
+<p>The <code>tidy_autoplot()</code> function is used to create a plot of the log returns, which is displayed using the <code>renderPlot()</code> function.</p>
+</section>
+<section id="section-3-running-the-app" class="level2">
+<h2 class="anchored" data-anchor-id="section-3-running-the-app">Section 3: Running the App</h2>
+<p>The final section of the code runs the shiny app using the ui and server functions.</p>
+<p>Overall, this shiny app provides a simple and interactive way for users to analyze the weekly returns of FAANG stocks using <code>tidyquant</code> and <code>TidyDensity</code> in R. By allowing users to choose which stock to analyze and how many simulations to run, the app provides a customizable way to explore the empirical distributions of the log returns.</p>
+</section>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p>Here is a full working example, except for FB for some reason that symbol errors out for me, go figure:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(tidyquant)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;">library</span>(DT)</span>
+<span id="cb2-6"></span>
+<span id="cb2-7"><span class="co" style="color: #5E5E5E;"># define UI</span></span>
+<span id="cb2-8">ui <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fluidPage</span>(</span>
+<span id="cb2-9">  <span class="fu" style="color: #4758AB;">titlePanel</span>(<span class="st" style="color: #20794D;">"FAANG Stock Analysis"</span>),</span>
+<span id="cb2-10">  <span class="fu" style="color: #4758AB;">sidebarLayout</span>(</span>
+<span id="cb2-11">    <span class="fu" style="color: #4758AB;">sidebarPanel</span>(</span>
+<span id="cb2-12">      <span class="fu" style="color: #4758AB;">selectInput</span>(<span class="st" style="color: #20794D;">"ticker"</span>, <span class="st" style="color: #20794D;">"Select a security:"</span>, <span class="at" style="color: #657422;">choices =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"AAPL"</span>, <span class="st" style="color: #20794D;">"AMZN"</span>, <span class="st" style="color: #20794D;">"FB"</span>, <span class="st" style="color: #20794D;">"GOOGL"</span>, <span class="st" style="color: #20794D;">"NFLX"</span>), <span class="at" style="color: #657422;">selected =</span> <span class="st" style="color: #20794D;">"AAPL"</span>),</span>
+<span id="cb2-13">      <span class="fu" style="color: #4758AB;">numericInput</span>(<span class="st" style="color: #20794D;">"num_sims"</span>, <span class="st" style="color: #20794D;">"Enter the number of simulations:"</span>, <span class="at" style="color: #657422;">value =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">min =</span> <span class="dv" style="color: #AD0000;">1</span>, <span class="at" style="color: #657422;">max =</span> <span class="dv" style="color: #AD0000;">25</span>, <span class="at" style="color: #657422;">step =</span> <span class="dv" style="color: #AD0000;">1</span>)</span>
+<span id="cb2-14">    ),</span>
+<span id="cb2-15">    <span class="fu" style="color: #4758AB;">mainPanel</span>(</span>
+<span id="cb2-16">      <span class="fu" style="color: #4758AB;">h3</span>(<span class="st" style="color: #20794D;">"Tidy Autoplot Output"</span>),</span>
+<span id="cb2-17">      <span class="fu" style="color: #4758AB;">plotOutput</span>(<span class="st" style="color: #20794D;">"autoplot_output"</span>),</span>
+<span id="cb2-18">      <span class="fu" style="color: #4758AB;">h3</span>(<span class="st" style="color: #20794D;">"Tidy Empirical Output"</span>),</span>
+<span id="cb2-19">      <span class="fu" style="color: #4758AB;">DTOutput</span>(<span class="st" style="color: #20794D;">"empirical_output"</span>)</span>
+<span id="cb2-20">    )</span>
+<span id="cb2-21">  )</span>
+<span id="cb2-22">)</span>
+<span id="cb2-23"></span>
+<span id="cb2-24"><span class="co" style="color: #5E5E5E;"># define server</span></span>
+<span id="cb2-25">server <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(input, output) {</span>
+<span id="cb2-26">  </span>
+<span id="cb2-27">  <span class="co" style="color: #5E5E5E;"># get stock data using tq_get and tq_transmute</span></span>
+<span id="cb2-28">  stock_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">reactive</span>({</span>
+<span id="cb2-29">    <span class="fu" style="color: #4758AB;">tq_get</span>(input<span class="sc" style="color: #5E5E5E;">$</span>ticker, <span class="at" style="color: #657422;">get =</span> <span class="st" style="color: #20794D;">"stock.prices"</span>, <span class="at" style="color: #657422;">from =</span> <span class="st" style="color: #20794D;">"2010-01-01"</span>) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-30">      <span class="fu" style="color: #4758AB;">tq_transmute</span>(<span class="at" style="color: #657422;">select =</span> adjusted, <span class="at" style="color: #657422;">mutate_fun =</span> periodReturn, <span class="at" style="color: #657422;">period =</span> <span class="st" style="color: #20794D;">"weekly"</span>, <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"log"</span>, <span class="at" style="color: #657422;">col_rename =</span> <span class="st" style="color: #20794D;">"log_return"</span>)</span>
+<span id="cb2-31">  })</span>
+<span id="cb2-32">  </span>
+<span id="cb2-33">  <span class="co" style="color: #5E5E5E;"># output tidy_empirical results</span></span>
+<span id="cb2-34">  output<span class="sc" style="color: #5E5E5E;">$</span>empirical_output <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderDT</span>({</span>
+<span id="cb2-35">    <span class="fu" style="color: #4758AB;">datatable</span>(</span>
+<span id="cb2-36">      <span class="fu" style="color: #4758AB;">tidy_empirical</span>(<span class="fu" style="color: #4758AB;">stock_data</span>()<span class="sc" style="color: #5E5E5E;">$</span>log_return, <span class="at" style="color: #657422;">.num_sims =</span> input<span class="sc" style="color: #5E5E5E;">$</span>num_sims),</span>
+<span id="cb2-37">      <span class="at" style="color: #657422;">options =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="at" style="color: #657422;">scrollY =</span> <span class="st" style="color: #20794D;">"250px"</span>)</span>
+<span id="cb2-38">    )</span>
+<span id="cb2-39">  })</span>
+<span id="cb2-40">  </span>
+<span id="cb2-41">  <span class="co" style="color: #5E5E5E;"># output tidy_autoplot results</span></span>
+<span id="cb2-42">  output<span class="sc" style="color: #5E5E5E;">$</span>autoplot_output <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderPlot</span>({</span>
+<span id="cb2-43">    <span class="fu" style="color: #4758AB;">stock_data</span>()<span class="sc" style="color: #5E5E5E;">$</span>log_return <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-44">      <span class="fu" style="color: #4758AB;">tidy_empirical</span>(<span class="at" style="color: #657422;">.num_sims =</span> input<span class="sc" style="color: #5E5E5E;">$</span>num_sims) <span class="sc" style="color: #5E5E5E;">%&gt;%</span></span>
+<span id="cb2-45">      <span class="fu" style="color: #4758AB;">tidy_autoplot</span>()</span>
+<span id="cb2-46">  })</span>
+<span id="cb2-47">  </span>
+<span id="cb2-48">}</span>
+<span id="cb2-49"></span>
+<span id="cb2-50"><span class="co" style="color: #5E5E5E;"># run the app</span></span>
+<span id="cb2-51"><span class="fu" style="color: #4758AB;">shinyApp</span>(<span class="at" style="color: #657422;">ui =</span> ui, <span class="at" style="color: #657422;">server =</span> server)</span></code></pre></div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>shiny</category>
+  <category>tidydensity</category>
+  <category>tidyquant</category>
+  <category>timeseries</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-04-05/index.html</guid>
+  <pubDate>Wed, 05 Apr 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>A sample Shiny App to view Forecasts on the AirPassengers Data</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3207,97 +3322,6 @@ $ los                 &lt;dbl&gt; 3.666667, 3.181818, 4.380952, 3.464286, 3.6774
   <category>autoarima</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-27/index.html</guid>
   <pubDate>Mon, 27 Feb 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Data Preppers with {healthyR.ai}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-23/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>There are many different methods that one can choose from in order to model their data. This brings with it a fundamental issue of how to prepare your data for the specified algorithm. With the [<code>{healthyR.ai}</code>] package there are many different functions in this family that will help solve this issue for some algorithms but of course not all, that would be utterly exhausting for me to do on my own.</p>
-<p>In <strong>healthyR.ai</strong> I call these <em>Data Preppers</em> because they prep the data you supply to the format necessary for the algorithm to function properly.</p>
-<p>Let’s take a look at one.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>Here we are going to use the <code>hai_c50_data_prepper(.data, .recipe_formula)</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">hai_c50_data_prepper</span>(.data, .recipe_formula)</span></code></pre></div>
-</div>
-<p>Here are the simple arguments:</p>
-<ul>
-<li><code>.data</code> - The data that you are passing to the function. Can be any type of data that is accepted by the data parameter of the recipes::recipe() function.</li>
-<li><code>.recipe_formula</code> - The formula that is going to be passed. For example if you are using the iris data then the formula would most likely be something like <code>Species ~</code> .</li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Here is a small example:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(healthyR.ai)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">hai_c50_data_prepper</span>(<span class="at" style="color: #657422;">.data =</span> Titanic, <span class="at" style="color: #657422;">.recipe_formula =</span> Survived <span class="sc" style="color: #5E5E5E;">~</span> .)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Recipe
-
-Inputs:
-
-      role #variables
-   outcome          1
- predictor          4
-
-Operations:
-
-Factor variables from tidyselect::vars_select_helpers$where(is.charac...</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">hai_c50_data_prepper</span>(Titanic, Survived <span class="sc" style="color: #5E5E5E;">~</span> .)</span>
-<span id="cb4-2"><span class="fu" style="color: #4758AB;">get_juiced_data</span>(rec_obj)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 32 × 5
-   Class Sex    Age       n Survived
-   &lt;fct&gt; &lt;fct&gt;  &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;   
- 1 1st   Male   Child     0 No      
- 2 2nd   Male   Child     0 No      
- 3 3rd   Male   Child    35 No      
- 4 Crew  Male   Child     0 No      
- 5 1st   Female Child     0 No      
- 6 2nd   Female Child     0 No      
- 7 3rd   Female Child    17 No      
- 8 Crew  Female Child     0 No      
- 9 1st   Male   Adult   118 No      
-10 2nd   Male   Adult   154 No      
-# … with 22 more rows</code></pre>
-</div>
-</div>
-<p>Here are the rest of the data-preppers at the time of writing this article:</p>
-<ul>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_c50_data_prepper.html">hai_c50_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_cubist_data_prepper.html">hai_cubist_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_earth_data_prepper.html">hai_earth_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_glmnet_data_prepper.html">hai_glmnet_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_knn_data_prepper.html">hai_knn_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_ranger_data_prepper.html">hai_ranger_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_svm_poly_data_prepper.html">hai_svm_poly_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_svm_rbf_data_prepper.html">hai_svm_rbf_data_prepper()</a></li>
-<li><a href="https://www.spsanderson.com/healthyR.ai/reference/hai_xgboost_data_prepper.html">hai_xgboost_data_prepper()</a></li>
-</ul>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>healthyrai</category>
-  <category>preprocessor</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-02-23/index.html</guid>
-  <pubDate>Fri, 24 Feb 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

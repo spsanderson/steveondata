@@ -1,0 +1,108 @@
+---
+title: "Looking at Daily Log Returns with tidyquant, TidyDensity, and Shiny"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-04-05"
+categories: [rtip, shiny, tidydensity, tidyquant, timeseries]
+---
+
+# Introduction
+
+In this blog post, we'll walk through how to create a shiny application that allows users to analyze the weekly returns of FAANG stocks (AAPL, AMZN, FB, GOOGL, and NFLX) using the [`{tidyquant}`](https://business-science.github.io/tidyquant/) and [`{TidyDensity}`](https://www.spsanderson.com/TidyDensity/) packages in R.
+
+## Section 1: Package and UI Setup
+
+The first section of the code sets up the necessary R packages and creates the UI for the shiny app. The packages we'll be using are:
+
+*   __shiny__: for creating interactive web applications in R
+*   __tidyquant__: for easily getting and analyzing financial data in R
+*   __TidyDensity__: for computing and visualizing probability distributions in a tidy way
+*   __dplyr__: for manipulating data in a tidy way
+*   __DT__: for creating interactive and scrollable data tables
+
+Analysts assemble your packages!
+
+```{r eval=FALSE}
+library(shiny)
+library(tidyquant)
+library(TidyDensity)
+library(dplyr)
+library(DT)
+```
+
+The UI consists of a title panel, a sidebar panel, and a main panel. The sidebar panel contains a select input that allows users to choose which FAANG stock to analyze, as well as a numeric input for the number of simulations to run. The main panel contains two sections: one for the `tidy_autoplot()` output (a plot of the stock returns), and one for the `tidy_empirical()` output (a table of the log returns).
+
+## Section 2: Server Setup
+
+The second section of the code defines the server function for the shiny app. The server function takes the input values from the UI (i.e. the selected stock and number of simulations) and uses them to get and analyze the stock data.
+
+To get the stock data, we use the `tq_get()` function from the `tidyquant` package to retrieve the adjusted stock prices for the selected security from January 1, 2010 to the present. We then use the `tq_transmute()` function to compute the weekly log returns of the stock and rename the resulting column to "log_return".
+
+The `tidy_empirical()` function from the `TidyDensity` package is used to compute the empirical distribution of the log returns. The resulting table is displayed using the `renderDT()` function from the `DT` package, which creates a scrollable data table that can be sorted and filtered.
+
+The `tidy_autoplot()` function is used to create a plot of the log returns, which is displayed using the `renderPlot()` function.
+
+## Section 3: Running the App
+
+The final section of the code runs the shiny app using the ui and server functions.
+
+Overall, this shiny app provides a simple and interactive way for users to analyze the weekly returns of FAANG stocks using `tidyquant` and `TidyDensity` in R. By allowing users to choose which stock to analyze and how many simulations to run, the app provides a customizable way to explore the empirical distributions of the log returns.
+
+# Example
+
+Here is a full working example, except for FB for some reason that symbol errors out for me, go figure:
+
+```{r eval=FALSE}
+library(shiny)
+library(tidyquant)
+library(TidyDensity)
+library(dplyr)
+library(DT)
+
+# define UI
+ui <- fluidPage(
+  titlePanel("FAANG Stock Analysis"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("ticker", "Select a security:", choices = c("AAPL", "AMZN", "FB", "GOOGL", "NFLX"), selected = "AAPL"),
+      numericInput("num_sims", "Enter the number of simulations:", value = 1, min = 1, max = 25, step = 1)
+    ),
+    mainPanel(
+      h3("Tidy Autoplot Output"),
+      plotOutput("autoplot_output"),
+      h3("Tidy Empirical Output"),
+      DTOutput("empirical_output")
+    )
+  )
+)
+
+# define server
+server <- function(input, output) {
+  
+  # get stock data using tq_get and tq_transmute
+  stock_data <- reactive({
+    tq_get(input$ticker, get = "stock.prices", from = "2010-01-01") %>%
+      tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "weekly", type = "log", col_rename = "log_return")
+  })
+  
+  # output tidy_empirical results
+  output$empirical_output <- renderDT({
+    datatable(
+      tidy_empirical(stock_data()$log_return, .num_sims = input$num_sims),
+      options = list(scrollY = "250px")
+    )
+  })
+  
+  # output tidy_autoplot results
+  output$autoplot_output <- renderPlot({
+    stock_data()$log_return %>%
+      tidy_empirical(.num_sims = input$num_sims) %>%
+      tidy_autoplot()
+  })
+  
+}
+
+# run the app
+shinyApp(ui = ui, server = server)
+```
+
+Voila!
