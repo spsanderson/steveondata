@@ -1,0 +1,80 @@
+---
+title: "Reading in Multiple Excel Sheets with lapply and {readxl}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-04-07"
+categories: [rtip, readxl, lapply, healthyr]
+---
+
+# Intruduction
+
+Reading in an Excel file with multiple sheets can be a daunting task, especially for users who are not familiar with the process. In this blog post, we will walk through a sample function that can be used to read in an Excel file with multiple sheets using the R programming language.
+
+# Function
+
+The function we will be using is called `excel_sheet_reader()`. This function takes one argument: `filename`, which is the name of the Excel file we want to read in. This function, since it is using the `{readxl}` package will automatically read that data to a tibble.
+
+# Example
+
+Here is the function:
+
+```{r}
+excel_sheet_reader <- function(filename) {
+  sheets <- excel_sheets(filename)
+  x <- lapply(sheets, function(X) read_excel(filename, sheet = X))
+  names(x) <- sheets
+  x
+}
+```
+
+The first thing the `excel_sheet_reader()` function does is to determine the names of all the sheets in the Excel file using the excel_sheets function from the readxl package. This function returns a character vector containing the names of all the sheets in the Excel file.
+
+```{r eval=FALSE}
+sheets <- excel_sheets(filename)
+```
+
+Next, the function uses the `lapply` function to loop through all the sheet names and read in each sheet using the `read_excel()` function, also from the `readxl` package. This function takes two arguments: filename, which is the name of the Excel file, and sheet, which is the name of the sheet we want to read in. The `lapply` function returns a list containing all the sheets.
+
+```{r eval=FALSE}
+x <- lapply(sheets, function(X) read_excel(filename, sheet = X))
+```
+
+Finally, the function uses the names function to assign the sheet names to the list of sheets and returns the list.
+
+```{r eval=FALSE}
+names(x) <- sheets
+x
+```
+
+Now that we have explained the `excel_sheet_reader()` function, let's use it to read in the iris and mtcars datasets.
+
+```{r warning=FALSE, message=FALSE}
+library(healthyR)
+library(dplyr)
+library(writexl)
+library(readxl)
+
+iris |>
+  named_item_list(Species) |>
+  write_xlsx(path = "iris.xlsx")
+
+mtcars |>
+  named_item_list(cyl) |>
+  write_xlsx(path = "mtcars.xlsx")
+
+iris_sheets <- excel_sheet_reader("iris.xlsx")
+mtcars_sheets <- excel_sheet_reader("mtcars.xlsx")
+```
+
+Now lets see the structure of each file.
+
+```{r}
+iris_sheets
+```
+
+Now `mtcars_sheets`
+
+```{r}
+mtcars_sheets
+```
+
+And that's it! Hope this has been helpful!
