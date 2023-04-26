@@ -1,0 +1,173 @@
+---
+title: "Building models with {shiny} and {tidyAML} Part 2"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-04-26"
+categories: [rtip, shiny, tidymodels, tidyaml]
+---
+
+# Introduction
+
+Yesterday I spoke about building `tidymodels` models using my package [`{tidyAML}`](https://www.spsanderson.com/tidyAML/) and `{shiny}`. I have made an update to it, and will continue to make updates to it this week.
+
+I have added all of the supported engines for __regression__ problems only, _NOT_ __classification__ yet, that will be tomorrow's work. I will then add a drop down for users to pick which backend function they want to use from `{parsnp}` like `linear_reg()`.
+
+Here are some pictures of the udpates.
+
+![New Drop Down Additions](1.PNG)
+
+![reactable Error, not sure on how to fix yet](2.PNG)
+
+![reactable output](3.PNG)
+
+Here is the full application, please steal this code and modify for yourself, you never know what you might come up with!
+
+
+```{r full_app, eval=FALSE}
+library(shiny)
+library(tidyAML)
+library(recipes)
+library(DT)
+library(glmnet)
+library(tidymodels)
+library(reactable)
+
+tidymodels_prefer()
+
+ui <- fluidPage(
+  titlePanel("TidyAML Model Builder"),
+  sidebarLayout(
+    sidebarPanel(
+      fileInput("file", "Upload your data file (csv or txt):"),
+      selectInput("dataset", 
+                  "Choose a built-in dataset:", 
+                  choices = c("mtcars", "iris")
+                  ),
+      selectInput("predictor_col", 
+                  "Select the predictor column:", 
+                  choices = NULL
+                  ),
+      selectInput("model_type", 
+                  "Select a model type:", 
+                  choices = c("regression", "classification")),
+      selectInput("model_fn", "Select a model function:", 
+                  choices = c("all","lm","brulee","gee","glm",
+                              "glmer","glmnet","gls","lme",
+                              "lmer","stan","stan_glmer",
+                              "Cubist","hurdle","zeroinfl","earth",
+                              "rpart","dbarts","xgboost","lightgbm",
+                              "partykit","mgcv","nnet","kknn","ranger",
+                              "randomForest","xrf","LiblineaR","kernlab"
+                            )
+                  ),
+      actionButton("build_model", "Build Model"),
+      verbatimTextOutput("recipe_output")
+    ),
+    mainPanel(
+      verbatimTextOutput("model_table"),
+      reactableOutput("model_reactable")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  data <- reactive({
+    if (!is.null(input$file)) {
+      df <- read.csv(
+        input$file$datapath, 
+        header = TRUE, 
+        stringsAsFactors = FALSE
+        )
+      updateSelectInput(
+        session, 
+        "predictor_col", 
+        choices = names(df)
+        )
+      return(df)
+    } else if (!is.null(input$dataset)) {
+      df <- get(input$dataset)
+      updateSelectInput(
+        session, 
+        "predictor_col", 
+        choices = names(df)
+        )
+      return(df)
+    }
+  })
+  
+  recipe_obj <- eventReactive(input$predictor_col, {
+    rec <- recipe(as.formula(paste(input$predictor_col, "~ .")), 
+                  data = data()
+                  ) |>
+      step_normalize(all_numeric(), -all_outcomes())
+    return(rec)
+  })
+  
+  model_fn <- reactive({
+    switch(input$model_fn,
+           "all" = "all",
+           "lm" = "lm",
+           "brulee" = "brulee",
+           "gee" = "gee",
+           "glm" = "glm",
+           "glmer" = "glmer",
+           "glmnet" = "glmnet",
+           "gls" = "gls",
+           "lme" = "lme",
+           "lmer" = "lmer",
+           "stan" = "stan",
+           "stan_glmer" = "stan_glmer",
+           "Cubist" = "Cubist",
+           "hurdle" = "hurdle",
+           "zeroinfl" = "zeroinfl",
+           "earth" = "earth",
+           "rpart" = "rpart",
+           "dbarts" = "dbarts",
+           "xgboost" = "xgboost"          ,
+           "lightgbm" = "lightgbm",
+           "partykit" = "partykit",
+           "mgcv" = "mgcv",
+           "nnet" = "nnet",
+           "kknn" = "kknn",
+           "ranger" = "ranger",
+           "randomForest" = "randomForest",
+           "xrf" = "xrf",
+           "LiblineaR" = "LiblineaR",
+           "kernlab = kernlab")
+  })
+  
+  model <- eventReactive(input$build_model, {
+    if (input$model_type == "regression") {
+      mod <- fast_regression(.data = data(),
+                             .rec_obj = recipe_obj(),
+                             .parsnip_eng = model_fn())
+    } else if (input$model_type == "classification") {
+      mod <- fast_classification(.data = data(),
+                                 .rec_obj = recipe_obj(),
+                                 .parsnip_eng = model_fn())
+    }
+    return(mod)
+  })
+  
+  output$recipe_output <- renderPrint({
+    if (!is.null(input$predictor_col)) {
+      summary(recipe_obj())
+    }
+  })
+  
+  output$model_table <- renderPrint({
+    if (input$build_model > 0) {
+      print(model())
+    }
+  })
+  
+  output$model_reactable <- renderReactable({
+    if (input$build_model > 0) {
+      reactable(model())
+    }
+  })
+  
+}
+
+shinyApp(ui = ui, server = server)
+```
