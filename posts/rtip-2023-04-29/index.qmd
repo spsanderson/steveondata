@@ -1,0 +1,298 @@
+---
+title: "Building models with {shiny} and {tidyAML} Part 4"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-04-29"
+categories: [rtip, shiny, tidymodels, tidyaml]
+---
+
+# Introduction
+
+This is a Shiny app for building models using the [`{tidyAML}`](https://www.spsanderson.com/tidyAML/) which is based on the  `tidymodels` package in R. The app allows you to upload your own data or choose from one of two built-in datasets (mtcars or iris) and select the type of model you want to build (regression or classification).
+
+Let's take a closer look at the code.
+
+First, the necessary packages are loaded:
+
+```{r load_libs, eval=FALSE}
+library(shiny)
+library(tidyAML)
+library(recipes)
+library(DT)
+library(glmnet)
+library(rules)
+library(tidymodels)
+library(reactable)
+```
+
+The `tidymodels_prefer()` function is called to set some default options for the `tidymodels package`, and `load_deps()` from `tidyAML` is called to make sure all the necessary packages are loaded, you can also separately run `install_deps()` to make sure they all get installed.
+
+```{r tidymodels_pref, eval=FALSE}
+tidymodels_prefer()
+load_deps()
+```
+
+Next, the user interface (UI) is defined using the `fluidPage()` function. The UI consists of a title panel and a sidebar layout with various input elements, such as file input and select input. There are also two conditional panels that are shown depending on the selected model type (regression or classification). The UI also includes an action button and some output elements, such as `verbatimTextOutput` and `reactableOutput`.
+
+```{r ui, eval=FALSE}
+ui <- fluidPage(
+  titlePanel("tidyAML Model Builder"),
+  sidebarLayout(
+    sidebarPanel(
+      fileInput("file", "Upload your data file (csv or txt):"),
+      selectInput("dataset", 
+                  "Choose a built-in dataset:", 
+                  choices = c("mtcars", "iris")
+      ),
+      selectInput("predictor_col",
+                  "Select the predictor column:",
+                  choices = NULL
+      ),
+      selectInput("model_type", 
+                  "Select a model type:", 
+                  choices = c("regression", "classification")
+      ),
+      conditionalPanel(
+        condition = "input.model_type == 'regression'",
+        selectInput("model_engine", 
+                    "Select a model engine:", 
+                    choices = c("all", 
+                                make_regression_base_tbl() %>% 
+                                  pull(.parsnip_engine) %>% 
+                                  unique())),
+        selectInput("model_fns", 
+                    "Select a model function:", 
+                    choices = c("all",
+                                make_regression_base_tbl() %>% 
+                                  pull(.parsnip_fns) %>% 
+                                  unique()))
+      ),
+      
+      conditionalPanel(
+        condition = "input.model_type == 'classification'",
+        selectInput("model_engine", 
+                    "Select a model engine:", 
+                    choices = c("all", 
+                                make_classification_base_tbl() %>% 
+                                  pull(.parsnip_engine) %>% 
+                                  unique())),
+        selectInput("model_fns", 
+                    "Select a model function:", 
+                    choices = c("all",
+                                make_classification_base_tbl() %>% 
+                                  pull(.parsnip_fns) %>% 
+                                  unique())),
+        checkboxInput("predictor_factor",
+                      "Convert predictor column to factor?",
+                      value = TRUE)
+      ),
+      actionButton("build_model", "Build Model"),
+      verbatimTextOutput("recipe_output")
+    ),
+    mainPanel(
+      verbatimTextOutput("model_table"),
+      reactableOutput("model_reactable")
+    )
+  )
+)
+```
+
+After defining the UI, the server function is defined. The server function handles the reactive behavior of the app.
+
+The first reactive element is data, which reads in the data file if one is uploaded or loads the selected built-in dataset if one is chosen. It also converts the predictor column to a factor if the classification model type is selected.
+
+In the server function, we first define a reactive expression `data()` that will read the data file uploaded by the user or one of the built-in datasets (mtcars or iris). If the user has uploaded a file, the function read.csv is used to read the data, and if it's a classification problem, the predictor column is converted to a factor variable. The `updateSelectInput` function is then called to update the predictor_col select input with the names of the columns in the data. If the user has chosen one of the built-in datasets, it is loaded using the get function, and the same preprocessing is performed.
+
+Next, we define an event reactive `recipe_obj()` that creates a recipes object based on the selected predictor column and normalizes the numeric variables in the data. The step_normalize function standardizes all numeric variables (except the outcome variable) to have mean 0 and standard deviation 1. This is a common preprocessing step in machine learning pipelines that can improve model performance.
+
+Two reactive expressions, `model_engine()` and `model_fns()`, are then defined to generate the available model engines and functions based on the selected model type. For regression models, the `make_regression_base_tbl` functions are used, and for classification models, the `make_classification_base_tbl` functions are used. These functions return a table with information about the available model engines and functions for a given problem type. The pull function is used to extract the relevant columns from the table, and unique is used to remove duplicate values. The c function is used to concatenate the "all" choice with the available model engines or functions.
+
+Finally, an event reactive `model()` is defined that builds the model based on the selected parameters. If the model type is regression, the `fast_regression` function from the tidyAML package is used, and if the model type is classification, the `fast_classification` function is used. These functions take as inputs the data, the recipes object, the selected model engine and function, and any additional model parameters.
+
+There are three output functions defined in the server: `output$recipe_output`, `output$model_table`, and `output$model_reactable`. The first output function `output$recipe_output` renders a summary of the recipes object created by `recipe_obj()` if the predictor_col input is not null. The second output function `output$model_table` prints the model object returned by `model()` if the `build_model` button has been clicked. The third output function `output$model_reactable` renders a reactive table using the `reactable` function from the `reactable` package if the `build_model` button has been clicked. This table displays the tidyaml_model_tbl.
+
+Overall, this code creates a Shiny web application that allows users to build machine learning models using the tidymodels framework via `{tidyAML}`. Users can upload their own data or use one of the built-in datasets, select a predictor column, choose a model type, select a model engine and function, and build the model. The output is displayed in a table that provides insights into the model's performance and coefficients. This code is useful for data scientists and analysts who want to quickly build and evaluate machine learning models without having to write code from scratch.
+
+# Full Application
+
+As usual, steal this code and make it your own! See what you can do too!
+
+```{r full_app, eval=FALSE}
+library(shiny)
+library(tidyAML)
+library(recipes)
+library(DT)
+library(glmnet)
+library(rules)
+library(tidymodels)
+library(reactable)
+
+tidymodels_prefer()
+
+ui <- fluidPage(
+  titlePanel("tidyAML Model Builder"),
+  sidebarLayout(
+    sidebarPanel(
+      fileInput("file", "Upload your data file (csv or txt):"),
+      selectInput("dataset", 
+                  "Choose a built-in dataset:", 
+                  choices = c("mtcars", "iris")
+      ),
+      selectInput("predictor_col",
+                  "Select the predictor column:",
+                  choices = NULL
+      ),
+      selectInput("model_type", 
+                  "Select a model type:", 
+                  choices = c("regression", "classification")
+      ),
+      conditionalPanel(
+        condition = "input.model_type == 'regression'",
+        selectInput("model_engine", 
+                    "Select a model engine:", 
+                    choices = c("all", 
+                                make_regression_base_tbl() %>% 
+                                  pull(.parsnip_engine) %>% 
+                                  unique())),
+        selectInput("model_fns", 
+                    "Select a model function:", 
+                    choices = c("all",
+                                make_regression_base_tbl() %>% 
+                                  pull(.parsnip_fns) %>% 
+                                  unique()))
+      ),
+      
+      conditionalPanel(
+        condition = "input.model_type == 'classification'",
+        selectInput("model_engine", 
+                    "Select a model engine:", 
+                    choices = c("all", 
+                                make_classification_base_tbl() %>% 
+                                  pull(.parsnip_engine) %>% 
+                                  unique())),
+        selectInput("model_fns", 
+                    "Select a model function:", 
+                    choices = c("all",
+                                make_classification_base_tbl() %>% 
+                                  pull(.parsnip_fns) %>% 
+                                  unique())),
+        checkboxInput("predictor_factor",
+                      "Convert predictor column to factor?",
+                      value = TRUE)
+      ),
+      actionButton("build_model", "Build Model"),
+      verbatimTextOutput("recipe_output")
+    ),
+    mainPanel(
+      verbatimTextOutput("model_table"),
+      reactableOutput("model_reactable")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  data <- reactive({
+    if (!is.null(input$file)) {
+      df <- read.csv(
+        input$file$datapath, 
+        header = TRUE, 
+        stringsAsFactors = FALSE
+      )
+      if (input$model_type == "classification") {
+        df[[input$predictor_col]] <- as.factor(df[[input$predictor_col]])
+      }
+      updateSelectInput(
+        session, 
+        "predictor_col", 
+        choices = names(df)
+      )
+      return(df)
+    } else if (!is.null(input$dataset)) {
+      df <- get(input$dataset)
+      if (input$model_type == "classification") {
+        df[[input$predictor_col]] <- as.factor(df[[input$predictor_col]])
+      }
+      updateSelectInput(
+        session, 
+        "predictor_col", 
+        choices = names(df)
+      )
+      return(df)
+    }
+  })
+  
+  recipe_obj <- eventReactive(input$predictor_col, {
+    rec <- recipe(as.formula(paste(input$predictor_col, "~ .")), 
+                  data = data()
+    ) |>
+      step_normalize(all_numeric(), -all_outcomes())
+    return(rec)
+  })
+  
+  model_engine <- reactive({
+    if (input$model_type == "regression") {
+      c("all", 
+        make_regression_base_tbl() %>% 
+          pull(.parsnip_engine) %>% 
+          unique())
+    } else if (input$model_type == "classification") {
+      c("all", 
+        make_classification_base_tbl() %>% 
+          pull(.parsnip_engine) %>% 
+          unique())
+    }
+  })
+  
+  model_fns <- reactive({
+    if (input$model_type == "regression") {
+      c("all", 
+        make_regression_base_tbl() %>% 
+          pull(.parsnip_fns) %>% 
+          unique())
+    } else if (input$model_type == "classification") {
+      c("all", 
+        make_classification_base_tbl() %>% 
+          pull(.parsnip_fns) %>% 
+          unique())
+    }
+  })
+  
+  model <- eventReactive(input$build_model, {
+    if (input$model_type == "regression") {
+      mod <- fast_regression(.data = data(),
+                             .rec_obj = recipe_obj(),
+                             .parsnip_eng = model_engine(),
+                             .parsnip_fns = model_fns())
+    } else if (input$model_type == "classification") {
+      mod <- fast_classification(.data = data(),
+                                 .rec_obj = recipe_obj(),
+                                 .parsnip_eng = model_engine(),
+                                 .parsnip_fns = model_fns())
+    }
+    return(mod)
+  })
+  
+  output$recipe_output <- renderPrint({
+    if (!is.null(input$predictor_col)) {
+      summary(recipe_obj())
+    }
+  })
+  
+  output$model_table <- renderPrint({
+    if (input$build_model > 0) {
+      print(model())
+    }
+  })
+  
+  output$model_reactable <- renderReactable({
+    if (input$build_model > 0) {
+      reactable(model())
+    }
+  })
+  
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Voila!
