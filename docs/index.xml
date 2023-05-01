@@ -10,7 +10,100 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.335</generator>
-<lastBuildDate>Sat, 29 Apr 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 01 May 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Extracting a model call from a fitted workflow in {tidymodels}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-01/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In this post, we are using a package called <code>tidymodels</code>, which provides a suite of tools for modeling and machine learning.</p>
+<p>Now, let’s take a closer look at the code itself and how we extract a model call from a fitted <code>workflow</code> object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(tidymodels)</span>
+<span id="cb1-2"></span>
+<span id="cb1-3">rec_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;">~</span> ., <span class="at" style="color: #657422;">data =</span> mtcars)</span>
+<span id="cb1-4">rec_obj</span></code></pre></div>
+</div>
+<p>The first line loads the tidymodels package. Then, we create a “recipe” object called <code>rec_obj</code> using the <code>recipe()</code> function. A recipe is a set of instructions for preparing data for modeling. In this case, we are telling the recipe to use the mpg variable as the outcome or dependent variable, and all other variables in the mtcars dataset as the predictors or independent variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">model_spec <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">linear_reg</span>(<span class="at" style="color: #657422;">mode =</span> <span class="st" style="color: #20794D;">"regression"</span>, <span class="at" style="color: #657422;">engine =</span> <span class="st" style="color: #20794D;">"lm"</span>)</span>
+<span id="cb2-2">model_spec</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear Regression Model Specification (regression)
+
+Computational engine: lm </code></pre>
+</div>
+</div>
+<p>Next, we create a “model specification” object called <code>model_spec</code> using the <code>linear_reg()</code> function. This specifies the type of model we want to use, which is a linear regression model in this case. We also specify that the model is a regression (i.e., we are predicting a continuous outcome variable) and that the model engine is “lm”, which stands for “linear model”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">wflw <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">workflow</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb4-2">  <span class="fu" style="color: #4758AB;">add_recipe</span>(rec_obj) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;">add_model</span>(model_spec)</span>
+<span id="cb4-4">wflw</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow ════════════════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: linear_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+Linear Regression Model Specification (regression)
+
+Computational engine: lm </code></pre>
+</div>
+</div>
+<p>In the next section of code, we create a “workflow” object called <code>wflw</code> using the <code>workflow()</code> function. A workflow is a way of organizing the steps involved in building a machine learning model. In this case, we are using a “pipe” (|&gt;) to sequentially add the recipe and model specification to the workflow. This means that we first add the recipe to the workflow using the <code>add_recipe()</code> function, and then add the model specification using the <code>add_model()</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">wflw_fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fit</span>(wflw, <span class="at" style="color: #657422;">data =</span> mtcars)</span>
+<span id="cb6-2">wflw_fit</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: linear_reg()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+0 Recipe Steps
+
+── Model ───────────────────────────────────────────────────────────────────────
+
+Call:
+stats::lm(formula = ..y ~ ., data = data)
+
+Coefficients:
+(Intercept)          cyl         disp           hp         drat           wt  
+   12.30337     -0.11144      0.01334     -0.02148      0.78711     -3.71530  
+       qsec           vs           am         gear         carb  
+    0.82104      0.31776      2.52023      0.65541     -0.19942  </code></pre>
+</div>
+</div>
+<p>Finally, we fit the workflow to the data using the fit() function, which takes the workflow object (wflw) and the data (mtcars) as input. This creates a new object called <code>wflw_fit</code>, which is the fitted model object. This object contains various pieces of information about the fitted model, such as the model coefficients and the R-squared value.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">wflw_fit<span class="sc" style="color: #5E5E5E;">$</span>fit<span class="sc" style="color: #5E5E5E;">$</span>fit<span class="sc" style="color: #5E5E5E;">$</span>fit<span class="sc" style="color: #5E5E5E;">$</span>call</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>stats::lm(formula = ..y ~ ., data = data)</code></pre>
+</div>
+</div>
+<p>The last line of code extracts the actual function call that was used to fit the model. This can be useful for reproducing the analysis later on.</p>
+<p>Overall, the code you shared shows how to build a simple linear regression model using the tidymodels package in R. We start by creating a recipe that specifies the outcome variable and predictor variables, then create a model specification for a linear regression model, and finally combine these into a workflow and fit the model to the data.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>shiny</category>
+  <category>tidymodels</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-01/index.html</guid>
+  <pubDate>Mon, 01 May 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Building models with {shiny} and {tidyAML} Part 4</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4488,143 +4581,6 @@ Vcells 32950395 251.4   81254422 620.0 81254324 620.0</code></pre>
   <category>benchmark</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-24/index.html</guid>
   <pubDate>Fri, 24 Mar 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Some Examples of Cumulative Mean with {TidyDensity}</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Cumulative mean is a statistical measure that calculates the mean of a set of numbers up to a certain point in time or after a certain number of observations. It is also known as a running average or moving average.</p>
-<p>Cumulative mean can be useful in a variety of contexts. For example:</p>
-<ul>
-<li><p>Tracking progress: Cumulative mean can be used to track progress over time. For instance, a teacher might use it to track the average test scores of her students throughout the school year.</p></li>
-<li><p>Analyzing trends: Cumulative mean can help identify trends in data. For example, a business might use it to track the average revenue generated by a new product over the course of several months.</p></li>
-<li><p>Smoothing data: Cumulative mean can be used to smooth out fluctuations in data. For instance, a meteorologist might use it to calculate the average temperature over the course of a year, which would help to smooth out the effects of daily temperature fluctuations.</p></li>
-</ul>
-<p>In summary, cumulative mean is a useful statistical measure that can help track progress, analyze trends, and smooth out fluctuations in data.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>The function we will review is <code>cmean()</code> from the <a href="https://www.spsanderson.com/TidyDensity/"><code>{TidyDensity}</code></a> R package. Let’s take a look at it.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">cmean</span>()</span></code></pre></div>
-</div>
-<p>The only argument is <code>.x</code> which is a numeric vector as this is a vectorized function. Let’s see it in use.</p>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>First let’s load in <strong>TidyDensity</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(TidyDensity)</span></code></pre></div>
-</div>
-<p>Ok now let’s make some data. For this we are going to use the simple <code>rnorm()</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">x <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>)</span>
-<span id="cb3-2"></span>
-<span id="cb3-3"><span class="fu" style="color: #4758AB;">head</span>(x)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -0.8293250 -1.2983499  2.2782337 -0.1521549  0.6859169  0.3809020</code></pre>
-</div>
-</div>
-<p>Ok, now that we have our vector, let’s run it through the function and see what it outputs and then we will graph it.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">cmx <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">cmean</span>(x)</span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;">head</span>(cmx)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -0.8293249774 -1.0638374319  0.0501862766 -0.0003990095  0.1368641726
-[6]  0.1775371452</code></pre>
-</div>
-</div>
-<p>Now let’s graph it.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;">plot</span>(cmx, <span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Ok nice, so can we do this on grouped data or lists of data? Of course! First let’s use a for loop to generate a list of <strong>rnorm()</strong> values.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;"># Initialize an empty list to store the generated values</span></span>
-<span id="cb8-2">my_list <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">list</span>()</span>
-<span id="cb8-3"></span>
-<span id="cb8-4"><span class="co" style="color: #5E5E5E;"># Generate values using rnorm(5) in a for loop and store them in the list</span></span>
-<span id="cb8-5"><span class="cf" style="color: #003B4F;">for</span> (i <span class="cf" style="color: #003B4F;">in</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">5</span>) {</span>
-<span id="cb8-6">  my_list[[i]] <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">100</span>)</span>
-<span id="cb8-7">}</span>
-<span id="cb8-8"></span>
-<span id="cb8-9"><span class="co" style="color: #5E5E5E;"># Print the generated list</span></span>
-<span id="cb8-10">purrr<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">map</span>(my_list, head)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] -0.8054353 -0.4596541 -0.2362475  1.1486398 -0.7242154  0.5184610
-
-[[2]]
-[1]  0.3243327  0.7170802 -0.5963424 -1.0307104  0.3388504  0.5717486
-
-[[3]]
-[1]  1.7360816 -1.0359467 -0.3206138 -1.2157684 -0.8841356  0.1856481
-
-[[4]]
-[1] -1.1401642 -0.4437817 -0.2555245 -0.1809040 -0.2131763 -0.1251750
-
-[[5]]
-[1]  0.08835903 -1.79153379 -2.15010900  0.67344844  1.06125849  0.99848796</code></pre>
-</div>
-</div>
-<p>Now that we have our list object let’s go ahead and plot the values out after we pass the data through <code>cmean()</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;">library</span>(purrr)</span>
-<span id="cb10-2"></span>
-<span id="cb10-3">my_list <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb10-4">  <span class="fu" style="color: #4758AB;">map</span>(\(x) x <span class="sc" style="color: #5E5E5E;">|&gt;</span> <span class="fu" style="color: #4758AB;">cmean</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> <span class="fu" style="color: #4758AB;">plot</span>(<span class="at" style="color: #657422;">type =</span> <span class="st" style="color: #20794D;">"l"</span>))</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-7-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-7-4.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index_files/figure-html/unnamed-chunk-7-5.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-NULL
-
-[[2]]
-NULL
-
-[[3]]
-NULL
-
-[[4]]
-NULL
-
-[[5]]
-NULL</code></pre>
-</div>
-</div>
-<p>From here I think it is easy to see how one could do this on gruoped data as well with dplyr’s <strong>group_by()</strong>.</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>tidydensity</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-22/index.html</guid>
-  <pubDate>Wed, 22 Mar 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
