@@ -10,7 +10,115 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.335</generator>
-<lastBuildDate>Wed, 03 May 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 04 May 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Maps with {shiny}</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-04/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The code is used to create a Shiny app that allows the user to search for a type of amenity (such as a pharmacy) in a particular city, state, and country, and then display the results on a map. Here is a step-by-step explanation of how the code works.</p>
+</section>
+<section id="libraries" class="level1">
+<h1>Libraries</h1>
+<p>The code starts by loading four libraries - <code>shiny</code>, <code>osmdata</code>, <code>mapview</code>, and <code>leaflet</code>. These libraries contain functions that will be used later in the code.</p>
+</section>
+<section id="user-interface" class="level1">
+<h1>User Interface</h1>
+<p>The user interface (UI) is defined using the <code>fluidPage</code> function from the shiny library. The UI consists of four text input boxes, a submit button, and a map output. The four text input boxes allow the user to enter the name of a city, state, and country, as well as the type of amenity they are looking for (e.g., pharmacy).</p>
+</section>
+<section id="server-function" class="level1">
+<h1>Server Function</h1>
+<p>The server function is where the “backend” of the app is defined. It is responsible for taking the user inputs, performing calculations or processing on them, and returning the output to the UI.</p>
+<p>The server function is defined using the server function from the shiny library. Within the server function, we have an <code>observeEvent</code> function that listens for a click on the submit button. When the submit button is clicked, the function inside the <code>observeEvent</code> is executed.</p>
+<section id="concatenating-the-address" class="level2">
+<h2 class="anchored" data-anchor-id="concatenating-the-address">Concatenating the Address</h2>
+<p>The first thing that the <code>observeEvent</code> function does is concatenate the user inputs for city, state, and country into a single string. This is done using the paste function. The <code>sep</code> argument specifies that the words should be separated by a comma and space. The resulting string is the address that will be used to search for the specified amenity.</p>
+</section>
+<section id="obtaining-the-bounding-box" class="level2">
+<h2 class="anchored" data-anchor-id="obtaining-the-bounding-box">Obtaining the Bounding Box</h2>
+<p>Next, the code uses the <code>getbb</code> function from the <code>osmdata</code> library to obtain the bounding box for the specified address. A bounding box is a rectangle that contains the entire area of interest (in this case, the specified city, state, and country). The bounding box is necessary to limit the search for the specified amenity to only the specified area.</p>
+</section>
+<section id="creating-the-query" class="level2">
+<h2 class="anchored" data-anchor-id="creating-the-query">Creating the Query</h2>
+<p>The code then creates a query object using the opq function from the <code>osmdata</code> library. The <code>bbox</code> argument specifies the bounding box that was obtained in the previous step. The <code>add_osm_feature</code> function is then used to specify the amenity that the user is searching for. The key argument specifies that we are searching for an “amenity”, and the value argument specifies the specific type of amenity that the user entered (e.g., pharmacy).</p>
+</section>
+<section id="obtaining-the-results" class="level2">
+<h2 class="anchored" data-anchor-id="obtaining-the-results">Obtaining the Results</h2>
+<p>The <code>osmdata_sf</code> function is used to retrieve the results of the query. This function returns a sf object that contains the spatial data for the points that match the specified amenity. The resulting sf object is then passed to the <code>mapview</code> function from the <code>mapview</code> library, which creates an interactive map of the results.</p>
+</section>
+<section id="displaying-the-map" class="level2">
+<h2 class="anchored" data-anchor-id="displaying-the-map">Displaying the Map</h2>
+<p>Finally, the r<code>enderLeaflet</code> function is used to display the map in the UI. The <code>m@map</code> argument specifies that we want to display the map that was created by the <code>mapview</code> function. The resulting map is displayed in the <code>leafletOutput</code> that was defined in the UI.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>In summary, this R code creates a Shiny app that allows the user to search for a specific type of amenity in a particular city, state, and country,</p>
+</section>
+<section id="full-application" class="level1">
+<h1>Full Application</h1>
+<p>Here is the full script of the app. Please steal this code and modify for yourself, see what you can come up with (PS it needs work for sure).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(osmdata)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(mapview)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">library</span>(leaflet)</span>
+<span id="cb1-5"></span>
+<span id="cb1-6">ui <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fluidPage</span>(</span>
+<span id="cb1-7">  <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"city"</span>, <span class="st" style="color: #20794D;">"City"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. Queens"</span>),</span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"state"</span>, <span class="st" style="color: #20794D;">"State"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. New York"</span>),</span>
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"country"</span>, <span class="st" style="color: #20794D;">"Country"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. USA"</span>),</span>
+<span id="cb1-10">  <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"amenity"</span>, <span class="st" style="color: #20794D;">"Amenity Type"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. pharmacy"</span>),</span>
+<span id="cb1-11">  <span class="fu" style="color: #4758AB;">actionButton</span>(<span class="st" style="color: #20794D;">"submit"</span>, <span class="st" style="color: #20794D;">"Submit"</span>),</span>
+<span id="cb1-12">  <span class="fu" style="color: #4758AB;">leafletOutput</span>(<span class="st" style="color: #20794D;">"map"</span>)</span>
+<span id="cb1-13">)</span>
+<span id="cb1-14"></span>
+<span id="cb1-15">server <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(input, output, session) {</span>
+<span id="cb1-16">  </span>
+<span id="cb1-17">  <span class="fu" style="color: #4758AB;">observeEvent</span>(input<span class="sc" style="color: #5E5E5E;">$</span>submit, {</span>
+<span id="cb1-18">    <span class="co" style="color: #5E5E5E;"># Concatenate city, state, and country inputs into a single string</span></span>
+<span id="cb1-19">    address <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">paste</span>(input<span class="sc" style="color: #5E5E5E;">$</span>city, input<span class="sc" style="color: #5E5E5E;">$</span>state, input<span class="sc" style="color: #5E5E5E;">$</span>country, <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">", "</span>)</span>
+<span id="cb1-20">    bbox <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">getbb</span>(address)</span>
+<span id="cb1-21">    query <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">opq</span>(<span class="at" style="color: #657422;">bbox =</span> bbox) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-22">      <span class="fu" style="color: #4758AB;">add_osm_feature</span>(<span class="at" style="color: #657422;">key =</span> <span class="st" style="color: #20794D;">"amenity"</span>, <span class="at" style="color: #657422;">value =</span> input<span class="sc" style="color: #5E5E5E;">$</span>amenity)</span>
+<span id="cb1-23">    </span>
+<span id="cb1-24">    <span class="fu" style="color: #4758AB;">assign</span>(<span class="st" style="color: #20794D;">"has_internet_via_proxy"</span>, <span class="cn" style="color: #8f5902;">TRUE</span>, <span class="fu" style="color: #4758AB;">environment</span>(curl<span class="sc" style="color: #5E5E5E;">::</span>has_internet))</span>
+<span id="cb1-25">    sf_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">osmdata_sf</span>(query)</span>
+<span id="cb1-26">    m <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">mapview</span>(sf_obj<span class="sc" style="color: #5E5E5E;">$</span>osm_points)</span>
+<span id="cb1-27">    output<span class="sc" style="color: #5E5E5E;">$</span>map <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderLeaflet</span>({</span>
+<span id="cb1-28">      m<span class="sc" style="color: #5E5E5E;">@</span>map</span>
+<span id="cb1-29">    })</span>
+<span id="cb1-30">  })</span>
+<span id="cb1-31">  </span>
+<span id="cb1-32">}</span>
+<span id="cb1-33"></span>
+<span id="cb1-34"><span class="fu" style="color: #4758AB;">shinyApp</span>(ui, server)</span></code></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-05-04/Capture.PNG" class="img-fluid figure-img"></p>
+<p></p><figcaption class="figure-caption">Maps with Shiny</figcaption><p></p>
+</figure>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>shiny</category>
+  <category>mapping</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-04/index.html</guid>
+  <pubDate>Thu, 04 May 2023 04:00:00 GMT</pubDate>
+  <media:content url="https://www.spsanderson.com/steveondata/posts/rtip-2023-05-04/Capture.PNG" medium="image"/>
+</item>
 <item>
   <title>How to Download a File from the Internet using download.file()</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4328,144 +4436,6 @@ Vcells 32950395 251.4   81254422 620.0 81254324 620.0</code></pre>
   <category>readr</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-28/index.html</guid>
   <pubDate>Tue, 28 Mar 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How fast does a compressed file in?</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-27/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>I received an email over the weekend in regards to my last post not containing the reading in of <code>gz</code> compressed file(s) for the benchmarking. While this was not an over site per-se it was a good reminder that people would probably be interested in seeing this as well.</p>
-<p>Benchmarking is the process of measuring and comparing the performance of different programs, tools, or configurations in order to identify which one is the most efficient for a specific task. It is a critical step in software development that can help developers identify performance bottlenecks and improve the overall performance of their applications.</p>
-<p>In this post I create a square matrix and then convert it to a data.frame (2,000 rows by 2,000 columns) and then saved it as a gz compressed csv file. The benchmark compares different R packages and functions, including base <code>R</code>, <code>data.table</code>, <code>vroom</code>, and <code>readr</code>, and measures their relative speeds based on the time it takes to read in the <code>.csv.gz</code> file.</p>
-<p>Here are some pro’s of trying things different ways and properly benchmarking them:</p>
-<ul>
-<li><p>Identify the most efficient solution: Benchmarking can help you identify the most efficient solution for a specific task. By measuring the relative speeds of different programs or tools, you can determine which one is the fastest and use it to improve the performance of your application.</p></li>
-<li><p>Optimize resource utilization: Benchmarking can help you optimize resource utilization by identifying programs or tools that consume more resources than others. By choosing the most resource-efficient solution, you can reduce the cost of running your application and improve its scalability.</p></li>
-<li><p>Avoid premature optimization: Benchmarking can help you avoid premature optimization by measuring the performance of different programs or tools before you start optimizing them. By identifying the slowest parts of your application, you can focus your optimization efforts on the most critical areas and avoid wasting time optimizing code that doesn’t need it.</p></li>
-<li><p>Keep up with technology: Benchmarking can help you keep up with technology by comparing the performance of different tools and libraries. By staying up to date with the latest technologies, you can improve the performance of your application and stay ahead of your competitors.</p></li>
-<li><p>Improve code quality: Benchmarking can help you improve the quality of your code by identifying performance bottlenecks and areas for optimization. By optimizing your code, you can improve its maintainability, reliability, and readability.</p></li>
-</ul>
-<p>In conclusion, benchmarking is an essential tool for software developers that can help them identify the most efficient solutions for their applications. By measuring the relative speeds of different programs or tools, developers can optimize resource utilization, avoid premature optimization, keep up with technology, and improve the quality of their code.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>The different functions I use in the benchmarking are as follows:</p>
-<section id="base-r" class="level2">
-<h2 class="anchored" data-anchor-id="base-r">Base R</h2>
-<ul>
-<li><code>read.csv()</code></li>
-<li><code>read.table()</code></li>
-</ul>
-</section>
-<section id="data.table" class="level2">
-<h2 class="anchored" data-anchor-id="data.table">data.table</h2>
-<ul>
-<li><code>fread</code></li>
-</ul>
-</section>
-<section id="vroom" class="level2">
-<h2 class="anchored" data-anchor-id="vroom">vroom</h2>
-<ul>
-<li><code>vroom()</code> with altrep = FALSE</li>
-<li><code>vroom()</code> with altrep = TRUE</li>
-</ul>
-</section>
-<section id="readr" class="level2">
-<h2 class="anchored" data-anchor-id="readr">readr</h2>
-<ul>
-<li><code>read_csv()</code></li>
-</ul>
-</section>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p>Let’s make a 2,000 by 2,000 matrix, covert to a <code>data.frame</code> and then save it out as a <code>.csv</code> file and then convert to a <code>.gz</code> file.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(R.utils)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3"><span class="co" style="color: #5E5E5E;"># create a 1000 x 1000 matrix of random numbers</span></span>
-<span id="cb1-4">my_matrix <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">matrix</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">2000000</span>), <span class="at" style="color: #657422;">nrow =</span> <span class="dv" style="color: #AD0000;">2000</span>, <span class="at" style="color: #657422;">ncol =</span> <span class="dv" style="color: #AD0000;">2000</span>) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb1-5">  <span class="fu" style="color: #4758AB;">as.data.frame</span>()</span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="co" style="color: #5E5E5E;"># Make and save gzipped file</span></span>
-<span id="cb1-8"><span class="fu" style="color: #4758AB;">write.csv</span>(my_matrix, <span class="st" style="color: #20794D;">"my_matrix.csv"</span>)</span>
-<span id="cb1-9"><span class="fu" style="color: #4758AB;">gzip</span>(<span class="at" style="color: #657422;">filename =</span> <span class="st" style="color: #20794D;">"my_matrix.csv"</span>, <span class="at" style="color: #657422;">destname =</span> <span class="st" style="color: #20794D;">"matrix.csv.gz"</span>,</span>
-<span id="cb1-10">     <span class="at" style="color: #657422;">overwrite =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, <span class="at" style="color: #657422;">remove =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span></code></pre></div>
-</div>
-<p>Ok now that the data is written we can benchmark the read in times from various packages.</p>
-<section id="benchmarking" class="level2">
-<h2 class="anchored" data-anchor-id="benchmarking">Benchmarking</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(rbenchmark)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(data.table)</span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(readr)</span>
-<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(vroom)</span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb2-6"></span>
-<span id="cb2-7">n <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">30</span></span>
-<span id="cb2-8"></span>
-<span id="cb2-9"><span class="fu" style="color: #4758AB;">benchmark</span>(</span>
-<span id="cb2-10">  <span class="co" style="color: #5E5E5E;"># Base R</span></span>
-<span id="cb2-11">  <span class="st" style="color: #20794D;">"read.table"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-12">    a <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read.table</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>, <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>)</span>
-<span id="cb2-13">  },</span>
-<span id="cb2-14">  <span class="st" style="color: #20794D;">"read.csv"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-15">    b <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read.csv</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>, <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>)</span>
-<span id="cb2-16">  },</span>
-<span id="cb2-17">  </span>
-<span id="cb2-18">  <span class="co" style="color: #5E5E5E;"># data.table</span></span>
-<span id="cb2-19">  <span class="st" style="color: #20794D;">"fread"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-20">    c <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fread</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>, <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>)</span>
-<span id="cb2-21">  },</span>
-<span id="cb2-22">  </span>
-<span id="cb2-23">  <span class="co" style="color: #5E5E5E;"># vroom</span></span>
-<span id="cb2-24">  <span class="st" style="color: #20794D;">"vroom alltrep false"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-25">    d <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">vroom</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>, <span class="at" style="color: #657422;">delim =</span> <span class="st" style="color: #20794D;">","</span>)</span>
-<span id="cb2-26">  },</span>
-<span id="cb2-27">  <span class="st" style="color: #20794D;">"vroom alltrep true"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-28">    e <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">vroom</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>, <span class="at" style="color: #657422;">delim =</span> <span class="st" style="color: #20794D;">","</span>, <span class="at" style="color: #657422;">altrep =</span> <span class="cn" style="color: #8f5902;">TRUE</span>)</span>
-<span id="cb2-29">  },</span>
-<span id="cb2-30">  </span>
-<span id="cb2-31">  <span class="co" style="color: #5E5E5E;"># readr</span></span>
-<span id="cb2-32">  <span class="st" style="color: #20794D;">"readr"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-33">    f <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read_csv</span>(<span class="st" style="color: #20794D;">"matrix.csv.gz"</span>)</span>
-<span id="cb2-34">  },</span>
-<span id="cb2-35">  </span>
-<span id="cb2-36">  <span class="co" style="color: #5E5E5E;"># Replications</span></span>
-<span id="cb2-37">  <span class="at" style="color: #657422;">replications =</span> n,</span>
-<span id="cb2-38">  </span>
-<span id="cb2-39">  <span class="co" style="color: #5E5E5E;"># Columns</span></span>
-<span id="cb2-40">  <span class="at" style="color: #657422;">columns =</span> <span class="fu" style="color: #4758AB;">c</span>(</span>
-<span id="cb2-41">    <span class="st" style="color: #20794D;">"test"</span>,<span class="st" style="color: #20794D;">"replications"</span>,<span class="st" style="color: #20794D;">"elapsed"</span>,<span class="st" style="color: #20794D;">"relative"</span>,<span class="st" style="color: #20794D;">"user.self"</span>,<span class="st" style="color: #20794D;">"sys.self"</span>)</span>
-<span id="cb2-42">) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb2-43">  <span class="fu" style="color: #4758AB;">arrange</span>(relative)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>                 test replications elapsed relative user.self sys.self
-1               fread           30   19.44    1.000     13.56     1.59
-2  vroom alltrep true           30   22.06    1.135     10.54     2.63
-3 vroom alltrep false           30   24.75    1.273     10.22     2.84
-4          read.table           30   94.34    4.853     79.02     0.64
-5            read.csv           30  143.28    7.370    115.64     0.74
-6               readr           30  177.61    9.136     50.37    10.05</code></pre>
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>benchmark</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-27/index.html</guid>
-  <pubDate>Mon, 27 Mar 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

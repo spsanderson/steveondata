@@ -1,0 +1,94 @@
+---
+title: "Maps with {shiny}"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-05-04"
+categories: [rtip, shiny, mapping]
+---
+
+
+# Introduction
+
+The code is used to create a Shiny app that allows the user to search for a type of amenity (such as a pharmacy) in a particular city, state, and country, and then display the results on a map. Here is a step-by-step explanation of how the code works.
+
+# Libraries
+
+The code starts by loading four libraries - `shiny`, `osmdata`, `mapview`, and `leaflet`. These libraries contain functions that will be used later in the code.
+
+# User Interface
+
+The user interface (UI) is defined using the `fluidPage` function from the shiny library. The UI consists of four text input boxes, a submit button, and a map output. The four text input boxes allow the user to enter the name of a city, state, and country, as well as the type of amenity they are looking for (e.g., pharmacy).
+
+# Server Function
+
+The server function is where the "backend" of the app is defined. It is responsible for taking the user inputs, performing calculations or processing on them, and returning the output to the UI.
+
+The server function is defined using the server function from the shiny library. Within the server function, we have an `observeEvent` function that listens for a click on the submit button. When the submit button is clicked, the function inside the `observeEvent` is executed.
+
+## Concatenating the Address
+
+The first thing that the `observeEvent` function does is concatenate the user inputs for city, state, and country into a single string. This is done using the paste function. The `sep` argument specifies that the words should be separated by a comma and space. The resulting string is the address that will be used to search for the specified amenity.
+
+## Obtaining the Bounding Box
+
+Next, the code uses the `getbb` function from the `osmdata` library to obtain the bounding box for the specified address. A bounding box is a rectangle that contains the entire area of interest (in this case, the specified city, state, and country). The bounding box is necessary to limit the search for the specified amenity to only the specified area.
+
+## Creating the Query
+
+The code then creates a query object using the opq function from the `osmdata` library. The `bbox` argument specifies the bounding box that was obtained in the previous step. The `add_osm_feature` function is then used to specify the amenity that the user is searching for. The key argument specifies that we are searching for an "amenity", and the value argument specifies the specific type of amenity that the user entered (e.g., pharmacy).
+
+## Obtaining the Results
+
+The `osmdata_sf` function is used to retrieve the results of the query. This function returns a sf object that contains the spatial data for the points that match the specified amenity. The resulting sf object is then passed to the `mapview` function from the `mapview` library, which creates an interactive map of the results.
+
+## Displaying the Map
+
+Finally, the r`enderLeaflet` function is used to display the map in the UI. The `m@map` argument specifies that we want to display the map that was created by the `mapview` function. The resulting map is displayed in the `leafletOutput` that was defined in the UI.
+
+# Conclusion
+
+In summary, this R code creates a Shiny app that allows the user to search for a specific type of amenity in a particular city, state, and country,
+
+# Full Application
+
+Here is the full script of the app. Please steal this code and modify for yourself, see what you can come up with (PS it needs work for sure).
+
+```{r full_app, eval=FALSE}
+library(shiny)
+library(osmdata)
+library(mapview)
+library(leaflet)
+
+ui <- fluidPage(
+  textInput("city", "City", placeholder = "e.g. Queens"),
+  textInput("state", "State", placeholder = "e.g. New York"),
+  textInput("country", "Country", placeholder = "e.g. USA"),
+  textInput("amenity", "Amenity Type", placeholder = "e.g. pharmacy"),
+  actionButton("submit", "Submit"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  observeEvent(input$submit, {
+    # Concatenate city, state, and country inputs into a single string
+    address <- paste(input$city, input$state, input$country, sep = ", ")
+    bbox <- getbb(address)
+    query <- opq(bbox = bbox) |>
+      add_osm_feature(key = "amenity", value = input$amenity)
+    
+    assign("has_internet_via_proxy", TRUE, environment(curl::has_internet))
+    sf_obj <- osmdata_sf(query)
+    m <- mapview(sf_obj$osm_points)
+    output$map <- renderLeaflet({
+      m@map
+    })
+  })
+  
+}
+
+shinyApp(ui, server)
+```
+
+![Maps with Shiny](Capture.PNG)
+
+Voila!
