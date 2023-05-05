@@ -1,0 +1,100 @@
+---
+title: "Maps with {shiny} Pt 2"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-05-05"
+categories: [rtip, shiny, mapping]
+---
+
+# Introduction
+
+The code provided at the end of this post is an example of how to create a simple Shiny app in R that utilizes the OpenStreetMap (OSM) API to create a map of amenities in a specific location.
+
+The app has two main parts: the user interface (UI) and the server.
+
+The UI section is defined using the `fluidPage` function from the Shiny library, which creates a responsive, fluid layout for the app. It includes a title panel, a sidebar panel with text input fields for the city, state, country, and amenity type, and a submit button. The main panel of the UI includes a `leafletOutput` object, which will display the map of amenities.
+
+The `server` section is defined using the server function from the Shiny library. This function is responsible for processing the inputs from the UI, performing any necessary calculations, and rendering the output.
+
+The `observeEvent` function is used to capture the click event of the submit button. When the button is clicked, the function `getbb` from the `osmdata` library is used to retrieve the bounding box (`bbox`) for the specified location.
+
+Next, the `opq` function from the `osmdata` library is used to create a query object that searches for amenities of the specified type (`input$amenity`) within the retrieved `bbox`.
+
+The assign function is used to set a variable `has_internet_via_proxy` to TRUE in the curl environment. This is necessary to ensure that the `osmdata_sf` function, which downloads the OSM data, works properly.
+
+The `osmdata_sf` function is then called with the created query object as its argument. This function downloads the OSM data and converts it to an `sf` object. The resulting `sf` object contains a data frame with information about the amenities found in the specified location.
+
+A `mapview` object is then created using the osm_points part of the `sf` object. This object is assigned to the variable m.
+
+Finally, the `renderLeaflet` function is used to display the resulting map. The `mapview` object `m` is accessed and its @map attribute is used as the input to the `renderLeaflet` function. This displays the map of amenities in the specified location.
+
+There is also some commented out code in the server section that provides an alternative way to display the map using the `leaflet` library instead of the `mapview` library. This code creates a `leaflet` object, adds tiles to the map, and then adds circle markers to represent the amenities found in the specified location. The popup argument specifies what information is displayed in the popups that appear when the user clicks on a marker.
+
+Overall, this code demonstrates how to use the Shiny library to create an interactive web application that utilizes the OSM API to display maps of amenities in specific locations.
+
+# Full Application
+
+As usual, here is the full code. Please take it and see what you can do with it.
+
+```{r full_app, eval=FALSE}
+library(shiny)
+library(osmdata)
+library(mapview)
+library(leaflet)
+library(htmltools)
+
+ui <- fluidPage(
+  titlePanel("Mapping with Shiny"),
+  sidebarLayout(
+    sidebarPanel(
+      textInput("city", "City", placeholder = "e.g. Queens"),
+      textInput("state", "State", placeholder = "e.g. New York"),
+      textInput("country", "Country", placeholder = "e.g. USA"),
+      textInput("amenity", "Amenity Type", placeholder = "e.g. pharmacy"),
+      actionButton("submit", "Submit")
+    ),
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  
+  observeEvent(input$submit, {
+    # Concatenate city, state, and country inputs into a single string
+    address <- paste(input$city, input$state, input$country, sep = ", ")
+    
+    bbox <- getbb(address)
+    
+    query <- opq(bbox = bbox) |>
+      add_osm_feature(key = "amenity", value = input$amenity)
+    
+    assign("has_internet_via_proxy", TRUE, environment(curl::has_internet))
+    sf_obj <- osmdata_sf(query)
+    
+    m <- mapview(sf_obj$osm_points)
+    output$map <- renderLeaflet({
+      m@map
+    })
+    
+    # output$map <- renderLeaflet({
+    #   leaflet(sf_obj$osm_points) |>
+    #     addTiles() |>
+    #     addCircleMarkers(
+    #       radius = 3, 
+    #       popup = ~as.character(
+    #         paste(
+    #           "Name: ", name, "<br/>",
+    #           "OSM ID: ", osm_id, "<br/>"
+    #         )
+    #       ),
+    #       opacity = 0.3
+    #     )
+    # })
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Voila!

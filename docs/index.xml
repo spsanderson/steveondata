@@ -10,7 +10,107 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.335</generator>
-<lastBuildDate>Thu, 04 May 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 05 May 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Maps with {shiny} Pt 2</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-05/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The code provided at the end of this post is an example of how to create a simple Shiny app in R that utilizes the OpenStreetMap (OSM) API to create a map of amenities in a specific location.</p>
+<p>The app has two main parts: the user interface (UI) and the server.</p>
+<p>The UI section is defined using the <code>fluidPage</code> function from the Shiny library, which creates a responsive, fluid layout for the app. It includes a title panel, a sidebar panel with text input fields for the city, state, country, and amenity type, and a submit button. The main panel of the UI includes a <code>leafletOutput</code> object, which will display the map of amenities.</p>
+<p>The <code>server</code> section is defined using the server function from the Shiny library. This function is responsible for processing the inputs from the UI, performing any necessary calculations, and rendering the output.</p>
+<p>The <code>observeEvent</code> function is used to capture the click event of the submit button. When the button is clicked, the function <code>getbb</code> from the <code>osmdata</code> library is used to retrieve the bounding box (<code>bbox</code>) for the specified location.</p>
+<p>Next, the <code>opq</code> function from the <code>osmdata</code> library is used to create a query object that searches for amenities of the specified type (<code>input$amenity</code>) within the retrieved <code>bbox</code>.</p>
+<p>The assign function is used to set a variable <code>has_internet_via_proxy</code> to TRUE in the curl environment. This is necessary to ensure that the <code>osmdata_sf</code> function, which downloads the OSM data, works properly.</p>
+<p>The <code>osmdata_sf</code> function is then called with the created query object as its argument. This function downloads the OSM data and converts it to an <code>sf</code> object. The resulting <code>sf</code> object contains a data frame with information about the amenities found in the specified location.</p>
+<p>A <code>mapview</code> object is then created using the osm_points part of the <code>sf</code> object. This object is assigned to the variable m.</p>
+<p>Finally, the <code>renderLeaflet</code> function is used to display the resulting map. The <code>mapview</code> object <code>m</code> is accessed and its <span class="citation" data-cites="map">@map</span> attribute is used as the input to the <code>renderLeaflet</code> function. This displays the map of amenities in the specified location.</p>
+<p>There is also some commented out code in the server section that provides an alternative way to display the map using the <code>leaflet</code> library instead of the <code>mapview</code> library. This code creates a <code>leaflet</code> object, adds tiles to the map, and then adds circle markers to represent the amenities found in the specified location. The popup argument specifies what information is displayed in the popups that appear when the user clicks on a marker.</p>
+<p>Overall, this code demonstrates how to use the Shiny library to create an interactive web application that utilizes the OSM API to display maps of amenities in specific locations.</p>
+</section>
+<section id="full-application" class="level1">
+<h1>Full Application</h1>
+<p>As usual, here is the full code. Please take it and see what you can do with it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(osmdata)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(mapview)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;">library</span>(leaflet)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;">library</span>(htmltools)</span>
+<span id="cb1-6"></span>
+<span id="cb1-7">ui <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fluidPage</span>(</span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;">titlePanel</span>(<span class="st" style="color: #20794D;">"Mapping with Shiny"</span>),</span>
+<span id="cb1-9">  <span class="fu" style="color: #4758AB;">sidebarLayout</span>(</span>
+<span id="cb1-10">    <span class="fu" style="color: #4758AB;">sidebarPanel</span>(</span>
+<span id="cb1-11">      <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"city"</span>, <span class="st" style="color: #20794D;">"City"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. Queens"</span>),</span>
+<span id="cb1-12">      <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"state"</span>, <span class="st" style="color: #20794D;">"State"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. New York"</span>),</span>
+<span id="cb1-13">      <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"country"</span>, <span class="st" style="color: #20794D;">"Country"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. USA"</span>),</span>
+<span id="cb1-14">      <span class="fu" style="color: #4758AB;">textInput</span>(<span class="st" style="color: #20794D;">"amenity"</span>, <span class="st" style="color: #20794D;">"Amenity Type"</span>, <span class="at" style="color: #657422;">placeholder =</span> <span class="st" style="color: #20794D;">"e.g. pharmacy"</span>),</span>
+<span id="cb1-15">      <span class="fu" style="color: #4758AB;">actionButton</span>(<span class="st" style="color: #20794D;">"submit"</span>, <span class="st" style="color: #20794D;">"Submit"</span>)</span>
+<span id="cb1-16">    ),</span>
+<span id="cb1-17">    <span class="fu" style="color: #4758AB;">mainPanel</span>(</span>
+<span id="cb1-18">      <span class="fu" style="color: #4758AB;">leafletOutput</span>(<span class="st" style="color: #20794D;">"map"</span>)</span>
+<span id="cb1-19">    )</span>
+<span id="cb1-20">  )</span>
+<span id="cb1-21">)</span>
+<span id="cb1-22"></span>
+<span id="cb1-23">server <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(input, output, session) {</span>
+<span id="cb1-24">  </span>
+<span id="cb1-25">  <span class="fu" style="color: #4758AB;">observeEvent</span>(input<span class="sc" style="color: #5E5E5E;">$</span>submit, {</span>
+<span id="cb1-26">    <span class="co" style="color: #5E5E5E;"># Concatenate city, state, and country inputs into a single string</span></span>
+<span id="cb1-27">    address <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">paste</span>(input<span class="sc" style="color: #5E5E5E;">$</span>city, input<span class="sc" style="color: #5E5E5E;">$</span>state, input<span class="sc" style="color: #5E5E5E;">$</span>country, <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">", "</span>)</span>
+<span id="cb1-28">    </span>
+<span id="cb1-29">    bbox <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">getbb</span>(address)</span>
+<span id="cb1-30">    </span>
+<span id="cb1-31">    query <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">opq</span>(<span class="at" style="color: #657422;">bbox =</span> bbox) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
+<span id="cb1-32">      <span class="fu" style="color: #4758AB;">add_osm_feature</span>(<span class="at" style="color: #657422;">key =</span> <span class="st" style="color: #20794D;">"amenity"</span>, <span class="at" style="color: #657422;">value =</span> input<span class="sc" style="color: #5E5E5E;">$</span>amenity)</span>
+<span id="cb1-33">    </span>
+<span id="cb1-34">    <span class="fu" style="color: #4758AB;">assign</span>(<span class="st" style="color: #20794D;">"has_internet_via_proxy"</span>, <span class="cn" style="color: #8f5902;">TRUE</span>, <span class="fu" style="color: #4758AB;">environment</span>(curl<span class="sc" style="color: #5E5E5E;">::</span>has_internet))</span>
+<span id="cb1-35">    sf_obj <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">osmdata_sf</span>(query)</span>
+<span id="cb1-36">    </span>
+<span id="cb1-37">    m <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">mapview</span>(sf_obj<span class="sc" style="color: #5E5E5E;">$</span>osm_points)</span>
+<span id="cb1-38">    output<span class="sc" style="color: #5E5E5E;">$</span>map <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderLeaflet</span>({</span>
+<span id="cb1-39">      m<span class="sc" style="color: #5E5E5E;">@</span>map</span>
+<span id="cb1-40">    })</span>
+<span id="cb1-41">    </span>
+<span id="cb1-42">    <span class="co" style="color: #5E5E5E;"># output$map &lt;- renderLeaflet({</span></span>
+<span id="cb1-43">    <span class="co" style="color: #5E5E5E;">#   leaflet(sf_obj$osm_points) |&gt;</span></span>
+<span id="cb1-44">    <span class="co" style="color: #5E5E5E;">#     addTiles() |&gt;</span></span>
+<span id="cb1-45">    <span class="co" style="color: #5E5E5E;">#     addCircleMarkers(</span></span>
+<span id="cb1-46">    <span class="co" style="color: #5E5E5E;">#       radius = 3, </span></span>
+<span id="cb1-47">    <span class="co" style="color: #5E5E5E;">#       popup = ~as.character(</span></span>
+<span id="cb1-48">    <span class="co" style="color: #5E5E5E;">#         paste(</span></span>
+<span id="cb1-49">    <span class="co" style="color: #5E5E5E;">#           "Name: ", name, "&lt;br/&gt;",</span></span>
+<span id="cb1-50">    <span class="co" style="color: #5E5E5E;">#           "OSM ID: ", osm_id, "&lt;br/&gt;"</span></span>
+<span id="cb1-51">    <span class="co" style="color: #5E5E5E;">#         )</span></span>
+<span id="cb1-52">    <span class="co" style="color: #5E5E5E;">#       ),</span></span>
+<span id="cb1-53">    <span class="co" style="color: #5E5E5E;">#       opacity = 0.3</span></span>
+<span id="cb1-54">    <span class="co" style="color: #5E5E5E;">#     )</span></span>
+<span id="cb1-55">    <span class="co" style="color: #5E5E5E;"># })</span></span>
+<span id="cb1-56">  })</span>
+<span id="cb1-57">}</span>
+<span id="cb1-58"></span>
+<span id="cb1-59"><span class="fu" style="color: #4758AB;">shinyApp</span>(ui, server)</span></code></pre></div>
+</div>
+<p>Voila!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>shiny</category>
+  <category>mapping</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-05/index.html</guid>
+  <pubDate>Fri, 05 May 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Maps with {shiny}</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4196,246 +4296,6 @@ AIC=1778.02   AICc=1778.1   BIC=1783.96</code></pre>
   <category>bootstrap</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-29/index.html</guid>
   <pubDate>Wed, 29 Mar 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How fast does a compressed file in Part 2</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-28/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Yesterday I posted on performing a benchmark on reading in a compressed <code>.csv.gz</code> file of a 2,000 by 2,000 <code>data.frame</code>. It was brought to my attention by someone on Mastadon (<span class="citation" data-cites="mariviere">@mariviere</span><span class="citation" data-cites="fediscience.org">@fediscience.org</span> - <a href="https://fediscience.org/@mariviere" class="uri">https://fediscience.org/@mariviere</a>) that I should also use <code>{duckdb}</code> and <code>{arrow}</code> so I will perform the same analysis as yesterday but I will also add in the two aforementioned packages.</p>
-</section>
-<section id="function" class="level1">
-<h1>Function</h1>
-<p>The functions that we will be using this time around are as follows:</p>
-<ul>
-<li><code>fread()</code> - data.table</li>
-<li><code>duckdb_read_csv()</code> - duckdb</li>
-<li><code>read_csv()</code> - readr</li>
-<li><code>read.csv()</code> - base</li>
-<li><code>read.table()</code> - base</li>
-<li><code>vroom()</code> with altrep = <code>FALSE</code> - vroom</li>
-<li><code>vroom()</code> with altrep = <code>TRUE</code> - vroom</li>
-<li><code>oprn_csv_dataset()</code> - arrow</li>
-</ul>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<section id="make-the-data" class="level2">
-<h2 class="anchored" data-anchor-id="make-the-data">Make the Data</h2>
-<p>Let’s make that dataset again:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(R.utils)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3"><span class="co" style="color: #5E5E5E;"># create a 1000 x 1000 matrix of random numbers</span></span>
-<span id="cb1-4">df <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">matrix</span>(<span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">2000000</span>), <span class="at" style="color: #657422;">nrow =</span> <span class="dv" style="color: #AD0000;">2000</span>, <span class="at" style="color: #657422;">ncol =</span> <span class="dv" style="color: #AD0000;">2000</span>) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb1-5">  <span class="fu" style="color: #4758AB;">as.data.frame</span>()</span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="co" style="color: #5E5E5E;"># Make and save gzipped file</span></span>
-<span id="cb1-8"><span class="fu" style="color: #4758AB;">write.csv</span>(df, <span class="st" style="color: #20794D;">"df.csv"</span>)</span>
-<span id="cb1-9"><span class="fu" style="color: #4758AB;">gzip</span>(</span>
-<span id="cb1-10">  <span class="at" style="color: #657422;">filename =</span> <span class="st" style="color: #20794D;">"df.csv"</span>, </span>
-<span id="cb1-11">  <span class="at" style="color: #657422;">destname =</span> <span class="st" style="color: #20794D;">"df.csv.gz"</span>,</span>
-<span id="cb1-12">  <span class="at" style="color: #657422;">overwrite =</span> <span class="cn" style="color: #8f5902;">FALSE</span>, </span>
-<span id="cb1-13">  <span class="at" style="color: #657422;">remove =</span> <span class="cn" style="color: #8f5902;">TRUE</span></span>
-<span id="cb1-14">)</span></code></pre></div>
-</div>
-</section>
-<section id="benchmarking" class="level2">
-<h2 class="anchored" data-anchor-id="benchmarking">Benchmarking</h2>
-<p>Time to benchmark</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">library</span>(rbenchmark)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;">library</span>(data.table)</span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;">library</span>(readr)</span>
-<span id="cb2-4"><span class="fu" style="color: #4758AB;">library</span>(duckdb)</span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;">library</span>(arrow)</span>
-<span id="cb2-6"><span class="fu" style="color: #4758AB;">library</span>(vroom)</span>
-<span id="cb2-7"><span class="fu" style="color: #4758AB;">library</span>(dplyr)</span>
-<span id="cb2-8"><span class="fu" style="color: #4758AB;">library</span>(DBI)</span>
-<span id="cb2-9"></span>
-<span id="cb2-10">n <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="dv" style="color: #AD0000;">30</span></span>
-<span id="cb2-11"></span>
-<span id="cb2-12"><span class="fu" style="color: #4758AB;">benchmark</span>(</span>
-<span id="cb2-13">  <span class="co" style="color: #5E5E5E;"># Base R</span></span>
-<span id="cb2-14">  <span class="st" style="color: #20794D;">"read.table"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-15">    a <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read.table</span>(</span>
-<span id="cb2-16">      <span class="st" style="color: #20794D;">"df.csv.gz"</span>, </span>
-<span id="cb2-17">      <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>, </span>
-<span id="cb2-18">      <span class="at" style="color: #657422;">colClasses =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="at" style="color: #657422;">numeric =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2000</span>)</span>
-<span id="cb2-19">    )</span>
-<span id="cb2-20">  },</span>
-<span id="cb2-21">  <span class="st" style="color: #20794D;">"read.csv"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-22">    b <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read.csv</span>(</span>
-<span id="cb2-23">      <span class="st" style="color: #20794D;">"df.csv.gz"</span>, </span>
-<span id="cb2-24">      <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>, </span>
-<span id="cb2-25">      <span class="at" style="color: #657422;">colClasses =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="at" style="color: #657422;">numeric =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2000</span>)</span>
-<span id="cb2-26">    )</span>
-<span id="cb2-27">  },</span>
-<span id="cb2-28">  </span>
-<span id="cb2-29">  <span class="co" style="color: #5E5E5E;"># data.table</span></span>
-<span id="cb2-30">  <span class="st" style="color: #20794D;">"fread"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-31">    c <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fread</span>(</span>
-<span id="cb2-32">      <span class="st" style="color: #20794D;">"df.csv.gz"</span>, </span>
-<span id="cb2-33">      <span class="at" style="color: #657422;">sep =</span> <span class="st" style="color: #20794D;">","</span>, </span>
-<span id="cb2-34">      <span class="at" style="color: #657422;">colClasses =</span> <span class="fu" style="color: #4758AB;">list</span>(<span class="at" style="color: #657422;">numeric =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">2000</span>)</span>
-<span id="cb2-35">    )</span>
-<span id="cb2-36">  },</span>
-<span id="cb2-37">  </span>
-<span id="cb2-38">  <span class="co" style="color: #5E5E5E;"># vroom</span></span>
-<span id="cb2-39">  <span class="st" style="color: #20794D;">"vroom alltrep false"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-40">    d <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">vroom</span>(<span class="st" style="color: #20794D;">"df.csv.gz"</span>, <span class="at" style="color: #657422;">delim =</span> <span class="st" style="color: #20794D;">","</span>, <span class="at" style="color: #657422;">col_types =</span> <span class="st" style="color: #20794D;">"d"</span>)</span>
-<span id="cb2-41">  },</span>
-<span id="cb2-42">  <span class="st" style="color: #20794D;">"vroom alltrep true"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-43">    e <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">vroom</span>(<span class="st" style="color: #20794D;">"df.csv.gz"</span>, <span class="at" style="color: #657422;">delim =</span> <span class="st" style="color: #20794D;">","</span>, <span class="at" style="color: #657422;">altrep =</span> <span class="cn" style="color: #8f5902;">TRUE</span>, <span class="at" style="color: #657422;">col_types =</span> <span class="st" style="color: #20794D;">"d"</span>)</span>
-<span id="cb2-44">  },</span>
-<span id="cb2-45">  </span>
-<span id="cb2-46">  <span class="co" style="color: #5E5E5E;"># readr</span></span>
-<span id="cb2-47">  <span class="st" style="color: #20794D;">"readr"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-48">    f <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">read_csv</span>(<span class="st" style="color: #20794D;">"df.csv.gz"</span>, <span class="at" style="color: #657422;">col_types =</span> <span class="st" style="color: #20794D;">"d"</span>)</span>
-<span id="cb2-49">  },</span>
-<span id="cb2-50">  </span>
-<span id="cb2-51">  <span class="co" style="color: #5E5E5E;"># Arrow</span></span>
-<span id="cb2-52">  <span class="st" style="color: #20794D;">"arrow"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-53">    g <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">open_csv_dataset</span>(<span class="st" style="color: #20794D;">"df.csv.gz"</span>)</span>
-<span id="cb2-54">  },</span>
-<span id="cb2-55">  </span>
-<span id="cb2-56">  <span class="co" style="color: #5E5E5E;"># DuckDB</span></span>
-<span id="cb2-57">  <span class="st" style="color: #20794D;">"duckdb"</span> <span class="ot" style="color: #003B4F;">=</span> {</span>
-<span id="cb2-58">    con <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">dbConnect</span>(<span class="fu" style="color: #4758AB;">duckdb</span>())</span>
-<span id="cb2-59">    h <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">duckdb_read_csv</span>(</span>
-<span id="cb2-60">      <span class="at" style="color: #657422;">conn =</span> con,</span>
-<span id="cb2-61">      <span class="at" style="color: #657422;">name =</span> <span class="st" style="color: #20794D;">"df"</span>,</span>
-<span id="cb2-62">      <span class="at" style="color: #657422;">files =</span> <span class="st" style="color: #20794D;">"C:</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">Users</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">ssanders</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">Documents</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">GitHub</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">steveondata</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">posts</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">rtip-2023-03-28</span><span class="sc" style="color: #5E5E5E;">\\</span><span class="st" style="color: #20794D;">df.csv.gz"</span></span>
-<span id="cb2-63">    )</span>
-<span id="cb2-64">    <span class="fu" style="color: #4758AB;">dbDisconnect</span>(con)</span>
-<span id="cb2-65">  },</span>
-<span id="cb2-66">  </span>
-<span id="cb2-67">  <span class="co" style="color: #5E5E5E;"># Replications</span></span>
-<span id="cb2-68">  <span class="at" style="color: #657422;">replications =</span> n,</span>
-<span id="cb2-69">  </span>
-<span id="cb2-70">  <span class="co" style="color: #5E5E5E;"># Columns</span></span>
-<span id="cb2-71">  <span class="at" style="color: #657422;">columns =</span> <span class="fu" style="color: #4758AB;">c</span>(</span>
-<span id="cb2-72">    <span class="st" style="color: #20794D;">"test"</span>,<span class="st" style="color: #20794D;">"replications"</span>,<span class="st" style="color: #20794D;">"elapsed"</span>,<span class="st" style="color: #20794D;">"relative"</span>,<span class="st" style="color: #20794D;">"user.self"</span>,<span class="st" style="color: #20794D;">"sys.self"</span>)</span>
-<span id="cb2-73">) <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb2-74">  <span class="fu" style="color: #4758AB;">arrange</span>(relative)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>                 test replications elapsed relative user.self sys.self
-1               arrow           30    3.01    1.000      5.04     0.25
-2               fread           30   28.28    9.395     19.56     4.30
-3 vroom alltrep false           30   31.89   10.595     26.25    10.75
-4  vroom alltrep true           30   33.72   11.203     25.75    10.67
-5              duckdb           30   94.09   31.259     90.70     2.77
-6               readr           30   98.28   32.651    113.05    45.12
-7          read.table           30  109.97   36.535    107.78     1.24
-8            read.csv           30  153.79   51.093    152.44     0.56</code></pre>
-</div>
-</div>
-<p>Important note is the session info on the pc I am using to write this:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;">sessionInfo</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>R version 4.2.3 (2023-03-15 ucrt)
-Platform: x86_64-w64-mingw32/x64 (64-bit)
-Running under: Windows 10 x64 (build 19045)
-
-Matrix products: default
-
-locale:
-[1] LC_COLLATE=English_United States.utf8 
-[2] LC_CTYPE=English_United States.utf8   
-[3] LC_MONETARY=English_United States.utf8
-[4] LC_NUMERIC=C                          
-[5] LC_TIME=English_United States.utf8    
-
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
-
-other attached packages:
- [1] dplyr_1.1.1       vroom_1.6.1       arrow_11.0.0.3    duckdb_0.7.1-1   
- [5] DBI_1.1.3         readr_2.1.4       data.table_1.14.8 rbenchmark_1.0.0 
- [9] R.utils_2.12.2    R.oo_1.25.0       R.methodsS3_1.8.2
-
-loaded via a namespace (and not attached):
- [1] pillar_1.9.0      compiler_4.2.3    tools_4.2.3       digest_0.6.31    
- [5] bit_4.0.5         jsonlite_1.8.4    evaluate_0.20     lifecycle_1.0.3  
- [9] tibble_3.2.1      pkgconfig_2.0.3   rlang_1.1.0       cli_3.6.1        
-[13] rstudioapi_0.14   parallel_4.2.3    yaml_2.3.7        xfun_0.38        
-[17] fastmap_1.1.1     knitr_1.42        generics_0.1.3    vctrs_0.6.1      
-[21] htmlwidgets_1.6.2 hms_1.1.3         bit64_4.0.5       tidyselect_1.2.0 
-[25] glue_1.6.2        R6_2.5.1          fansi_1.0.4       rmarkdown_2.21   
-[29] tzdb_0.3.0        purrr_1.0.1       magrittr_2.0.3    htmltools_0.5.5  
-[33] assertthat_0.2.1  utf8_1.2.3        crayon_1.5.2     </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"> <span class="fu" style="color: #4758AB;">Sys.info</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
-<span id="cb6-2">   <span class="fu" style="color: #4758AB;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
-<span id="cb6-3">   tibble<span class="sc" style="color: #5E5E5E;">::</span><span class="fu" style="color: #4758AB;">rownames_to_column</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
-<span id="cb6-4">   <span class="fu" style="color: #4758AB;">as_tibble</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span> </span>
-<span id="cb6-5">   <span class="fu" style="color: #4758AB;">slice</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">2</span>,<span class="dv" style="color: #AD0000;">3</span>,<span class="dv" style="color: #AD0000;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 2
-  rowname `Sys.info()`
-  &lt;chr&gt;   &lt;chr&gt;       
-1 sysname Windows     
-2 release 10 x64      
-3 version build 19045 
-4 machine x86-64      </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"> <span class="fu" style="color: #4758AB;">memory.profile</span>() <span class="sc" style="color: #5E5E5E;">|&gt;</span></span>
-<span id="cb8-2">   <span class="fu" style="color: #4758AB;">as.data.frame</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>            memory.profile()
-NULL                       1
-symbol                 24303
-pairlist              642504
-closure                11189
-environment             4009
-promise                22963
-language              189766
-special                   47
-builtin                  701
-char                 2039073
-logical                18866
-integer               108132
-double                 20060
-complex                    5
-character             160381
-...                       21
-any                        0
-list                   58500
-expression                 5
-bytecode               41555
-externalptr            12382
-weakref                13860
-raw                    10113
-S4                      1362</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"> <span class="fu" style="color: #4758AB;">gc</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>           used  (Mb) gc trigger  (Mb) max used  (Mb)
-Ncells  3363479 179.7    5830931 311.5  5830931 311.5
-Vcells 32950395 251.4   81254422 620.0 81254324 620.0</code></pre>
-</div>
-</div>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>benchmark</category>
-  <category>arrow</category>
-  <category>duckdb</category>
-  <category>datatable</category>
-  <category>readr</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-03-28/index.html</guid>
-  <pubDate>Tue, 28 Mar 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
