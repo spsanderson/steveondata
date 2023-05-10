@@ -1,0 +1,103 @@
+---
+title: "VBA to R and Back Again: Running R from VBA Pt 2"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-05-10"
+categories: [rtip, vba, excel]
+---
+
+# Introduction
+
+Yesterday I posted on using VBA to execute R code that is written inside of the VBA script. So today, I will go over a simple example on executing an R script from VBA. So let's get into the code and what it does.
+
+First, let's look at the Function called "Run_R_Script". This function takes four arguments, where the first two are mandatory, and the last two are optional.
+
+*    sRApplicationPath - This is the path to the R application that you want to use to run your script. It is a required argument, and you need to provide the full path to the Rscript.exe file on your machine.
+
+*    sRFilePath - This is the path to the R script file that you want to execute. It is also a required argument, and you need to provide the full path to your R script file.
+
+*    iStyle - This is an optional argument that specifies how the script will be executed. By default, it is set to 1, which means that the script will run in a minimized window.
+
+*    bWaitTillComplete - This is another optional argument that specifies whether the function should wait until the script has finished running before returning control to the caller. By default, it is set to True, which means that the function will not return control until the script has completed execution.
+
+The first line inside the Function defines two variables: sPath and shell.
+
+*    sPath - This variable will hold the path to the Rscript.exe file and the path to the R script file, which will be used later to run the script.
+
+*    shell - This variable is used to create an instance of the WScript.Shell object.
+
+Next, we wrap the R path with double quotations to avoid any issues with spaces in the path.
+
+After that, the script deletes Column A.
+
+Then, instead of using the "shell.Run" function, the code uses the "shell.Exec" function to execute the R script. This function returns an object that has a "StdOut" property, which contains the output of the script.
+
+The output is then read using the "ReadAll" method, and the resulting string is split into an array using the "Split" function. The array is then iterated using a "For" loop, and each element of the array is written to Column A, starting at cell A1.
+
+Finally, the Function returns an Integer value, which is the result of the "shell.Run" function.
+
+The Subroutine called "Demo" just demonstrates how to use the "Run_R_Script" function by calling it with the appropriate parameters.
+
+# Full Code
+
+Here is the R Script
+
+```{r eval=FALSE}
+data.frame(
+    x = 1:10,
+    y = rnorm(10)
+)
+
+list(
+    data.frame(
+        x = 1:10,
+        y = rnorm(10)
+    ),
+    data.frame(
+        x = 1:10,
+        y = rnorm(10)
+    )
+)
+```
+
+Full VBA
+
+```vb
+Function Run_R_Script(sRApplicationPath As String, _
+                        sRFilePath As String, _
+                        Optional iStyle As Integer = 1, _
+                        Optional bWaitTillComplete As Boolean = True) As Integer
+
+    Dim sPath As String
+    Dim shell As Object
+
+    'Define shell object
+    Set shell = VBA.CreateObject("WScript.Shell")
+
+    'Wrap the R path with double quotations
+    sPath = """" & sRApplicationPath & """"
+    sPath = sPath & " "
+    sPath = sPath & sRFilePath
+
+    'Delete Coumn A
+    Columns("A").Delete
+    
+    'Get Result
+    result = shell.Exec(sPath).StdOut.ReadAll
+    result = Split(result, vbCrLf)
+    For i = 0 To UBound(result)
+        ActiveSheet.Range("A1").Offset(i, 0).Value = result(i)
+    Next i
+    
+End Function
+
+Sub Demo()
+    Dim iEerrorCode As Integer
+    iEerrorCode = Run_R_Script("C:\Program Files\R\R-4.1.2\bin\x64\Rscript.exe", "C:\Users\ssanders\Desktop\test.R")
+End Sub
+```
+
+# Picture
+![Example Output, VBA, and R](Capture.PNG)
+
+# Reference
+[https://stackoverflow.com/a/54816881](https://stackoverflow.com/a/54816881)

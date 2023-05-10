@@ -10,7 +10,116 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.2.335</generator>
-<lastBuildDate>Tue, 09 May 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 10 May 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>VBA to R and Back Again: Running R from VBA Pt 2</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-10/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Yesterday I posted on using VBA to execute R code that is written inside of the VBA script. So today, I will go over a simple example on executing an R script from VBA. So let’s get into the code and what it does.</p>
+<p>First, let’s look at the Function called “Run_R_Script”. This function takes four arguments, where the first two are mandatory, and the last two are optional.</p>
+<ul>
+<li><p>sRApplicationPath - This is the path to the R application that you want to use to run your script. It is a required argument, and you need to provide the full path to the Rscript.exe file on your machine.</p></li>
+<li><p>sRFilePath - This is the path to the R script file that you want to execute. It is also a required argument, and you need to provide the full path to your R script file.</p></li>
+<li><p>iStyle - This is an optional argument that specifies how the script will be executed. By default, it is set to 1, which means that the script will run in a minimized window.</p></li>
+<li><p>bWaitTillComplete - This is another optional argument that specifies whether the function should wait until the script has finished running before returning control to the caller. By default, it is set to True, which means that the function will not return control until the script has completed execution.</p></li>
+</ul>
+<p>The first line inside the Function defines two variables: sPath and shell.</p>
+<ul>
+<li><p>sPath - This variable will hold the path to the Rscript.exe file and the path to the R script file, which will be used later to run the script.</p></li>
+<li><p>shell - This variable is used to create an instance of the WScript.Shell object.</p></li>
+</ul>
+<p>Next, we wrap the R path with double quotations to avoid any issues with spaces in the path.</p>
+<p>After that, the script deletes Column A.</p>
+<p>Then, instead of using the “shell.Run” function, the code uses the “shell.Exec” function to execute the R script. This function returns an object that has a “StdOut” property, which contains the output of the script.</p>
+<p>The output is then read using the “ReadAll” method, and the resulting string is split into an array using the “Split” function. The array is then iterated using a “For” loop, and each element of the array is written to Column A, starting at cell A1.</p>
+<p>Finally, the Function returns an Integer value, which is the result of the “shell.Run” function.</p>
+<p>The Subroutine called “Demo” just demonstrates how to use the “Run_R_Script” function by calling it with the appropriate parameters.</p>
+</section>
+<section id="full-code" class="level1">
+<h1>Full Code</h1>
+<p>Here is the R Script</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">data.frame</span>(</span>
+<span id="cb1-2">    <span class="at" style="color: #657422;">x =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>,</span>
+<span id="cb1-3">    <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb1-4">)</span>
+<span id="cb1-5"></span>
+<span id="cb1-6"><span class="fu" style="color: #4758AB;">list</span>(</span>
+<span id="cb1-7">    <span class="fu" style="color: #4758AB;">data.frame</span>(</span>
+<span id="cb1-8">        <span class="at" style="color: #657422;">x =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>,</span>
+<span id="cb1-9">        <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb1-10">    ),</span>
+<span id="cb1-11">    <span class="fu" style="color: #4758AB;">data.frame</span>(</span>
+<span id="cb1-12">        <span class="at" style="color: #657422;">x =</span> <span class="dv" style="color: #AD0000;">1</span><span class="sc" style="color: #5E5E5E;">:</span><span class="dv" style="color: #AD0000;">10</span>,</span>
+<span id="cb1-13">        <span class="at" style="color: #657422;">y =</span> <span class="fu" style="color: #4758AB;">rnorm</span>(<span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb1-14">    )</span>
+<span id="cb1-15">)</span></code></pre></div>
+</div>
+<p>Full VBA</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode vb code-with-copy"><code class="sourceCode monobasic"><span id="cb2-1"><span class="kw" style="color: #003B4F;">Function </span>Run_R_Script(sRApplicationPath <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">String</span>, _</span>
+<span id="cb2-2">                        sRFilePath <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">String</span>, _</span>
+<span id="cb2-3">                        <span class="kw" style="color: #003B4F;">Optional</span> iStyle <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">Integer</span> = 1, _</span>
+<span id="cb2-4">                        <span class="kw" style="color: #003B4F;">Optional</span> bWaitTillComplete <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">Boolean</span> = <span class="kw" style="color: #003B4F;">True</span>) <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">Integer</span></span>
+<span id="cb2-5"></span>
+<span id="cb2-6">    <span class="kw" style="color: #003B4F;">Dim</span> sPath <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">String</span></span>
+<span id="cb2-7">    <span class="kw" style="color: #003B4F;">Dim</span> shell <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">Object</span></span>
+<span id="cb2-8"></span>
+<span id="cb2-9">    <span class="co" style="color: #5E5E5E;">'Define shell object</span></span>
+<span id="cb2-10">    <span class="kw" style="color: #003B4F;">Set </span>shell = VBA.CreateObject(<span class="st" style="color: #20794D;">"WScript.Shell"</span>)</span>
+<span id="cb2-11"></span>
+<span id="cb2-12">    <span class="co" style="color: #5E5E5E;">'Wrap the R path with double quotations</span></span>
+<span id="cb2-13">    sPath = <span class="st" style="color: #20794D;">""""</span> &amp; sRApplicationPath &amp; <span class="st" style="color: #20794D;">""""</span></span>
+<span id="cb2-14">    sPath = sPath &amp; <span class="st" style="color: #20794D;">" "</span></span>
+<span id="cb2-15">    sPath = sPath &amp; sRFilePath</span>
+<span id="cb2-16"></span>
+<span id="cb2-17">    <span class="co" style="color: #5E5E5E;">'Delete Coumn A</span></span>
+<span id="cb2-18">    Columns(<span class="st" style="color: #20794D;">"A"</span>).Delete</span>
+<span id="cb2-19">    </span>
+<span id="cb2-20">    <span class="co" style="color: #5E5E5E;">'Get Result</span></span>
+<span id="cb2-21">    result = shell.Exec(sPath).StdOut.ReadAll</span>
+<span id="cb2-22">    result = Split(result, vbCrLf)</span>
+<span id="cb2-23">    <span class="kw" style="color: #003B4F;">For </span>i = 0 <span class="kw" style="color: #003B4F;">To</span> UBound(result)</span>
+<span id="cb2-24">        ActiveSheet.Range(<span class="st" style="color: #20794D;">"A1"</span>).Offset(i, 0).Value = result(i)</span>
+<span id="cb2-25">    <span class="kw" style="color: #003B4F;">Next </span>i</span>
+<span id="cb2-26">    </span>
+<span id="cb2-27"><span class="kw" style="color: #003B4F;">End Function</span></span>
+<span id="cb2-28"></span>
+<span id="cb2-29"><span class="kw" style="color: #003B4F;">Sub </span>Demo()</span>
+<span id="cb2-30">    <span class="kw" style="color: #003B4F;">Dim</span> iEerrorCode <span class="kw" style="color: #003B4F;">As</span> <span class="dt" style="color: #AD0000;">Integer</span></span>
+<span id="cb2-31">    iEerrorCode = Run_R_Script(<span class="st" style="color: #20794D;">"C:\Program Files\R\R-4.1.2</span><span class="sc" style="color: #5E5E5E;">\b</span><span class="st" style="color: #20794D;">in</span><span class="sc" style="color: #5E5E5E;">\x64</span><span class="st" style="color: #20794D;">\Rscript.exe"</span>, <span class="st" style="color: #20794D;">"C:\Users\ssanders\Desktop</span><span class="sc" style="color: #5E5E5E;">\t</span><span class="st" style="color: #20794D;">est.R"</span>)</span>
+<span id="cb2-32"><span class="kw" style="color: #003B4F;">End Sub</span></span></code></pre></div>
+</section>
+<section id="picture" class="level1">
+<h1>Picture</h1>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/rtip-2023-05-10/Capture.PNG" class="img-fluid figure-img"></p>
+<p></p><figcaption class="figure-caption">Example Output, VBA, and R</figcaption><p></p>
+</figure>
+</div>
+</section>
+<section id="reference" class="level1">
+<h1>Reference</h1>
+<p><a href="https://stackoverflow.com/a/54816881">https://stackoverflow.com/a/54816881</a></p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>vba</category>
+  <category>excel</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-05-10/index.html</guid>
+  <pubDate>Wed, 10 May 2023 04:00:00 GMT</pubDate>
+  <media:content url="https://www.spsanderson.com/steveondata/posts/rtip-2023-05-10/Capture.PNG" medium="image"/>
+</item>
 <item>
   <title>VBA to R and Back Again: Running R from VBA</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3959,174 +4068,6 @@ font-style: italic;">## We can use devtools</span></span>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-04-05/index.html</guid>
   <pubDate>Wed, 05 Apr 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>A sample Shiny App to view Forecasts on the AirPassengers Data</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/rtip-2023-04-04/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Hello! In this code, we are making a program that will help us predict the number of air passengers in the future. Let me explain what each part of the code does, step by step.</p>
-<p>First, we need to load some tools that will help us create the program. These tools are called “packages.” We use the library() function to load them. The packages we need are called <code>shiny</code>, <code>forecast</code>, and <code>ggplot2</code>.</p>
-<section id="load-libraries" class="level2">
-<h2 class="anchored" data-anchor-id="load-libraries">Load Libraries</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;">library</span>(forecast)</span>
-<span id="cb1-3"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span></code></pre></div>
-</div>
-</section>
-<section id="data" class="level2">
-<h2 class="anchored" data-anchor-id="data">Data</h2>
-<p>Next, we need some data to work with. We will use a dataset of the number of air passengers each month from 1949 to 1960. We load this dataset using the data() function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;">data</span>(AirPassengers)</span></code></pre></div>
-</div>
-</section>
-<section id="user-interface" class="level2">
-<h2 class="anchored" data-anchor-id="user-interface">User Interface</h2>
-<p>Now, we need to create the user interface, or UI. This is what the user will see and interact with. In this case, we will create a simple app with a title, a <strong>dropdown</strong> menu to choose a forecasting model, and a plot and table to display the forecast results. We use the <code>fluidPage()</code> function to create the UI, and we define the UI elements inside it.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">ui <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fluidPage</span>(</span>
-<span id="cb3-2">  <span class="fu" style="color: #4758AB;">titlePanel</span>(<span class="st" style="color: #20794D;">"AirPassengers Forecast"</span>),</span>
-<span id="cb3-3">  <span class="fu" style="color: #4758AB;">sidebarLayout</span>(</span>
-<span id="cb3-4">    <span class="fu" style="color: #4758AB;">sidebarPanel</span>(</span>
-<span id="cb3-5">      <span class="fu" style="color: #4758AB;">selectInput</span>(<span class="at" style="color: #657422;">inputId =</span> <span class="st" style="color: #20794D;">"model"</span>, <span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"Choose a model:"</span>,</span>
-<span id="cb3-6">                  <span class="at" style="color: #657422;">choices =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"auto.arima"</span>, <span class="st" style="color: #20794D;">"ets"</span>, <span class="st" style="color: #20794D;">"holtwinters"</span>))</span>
-<span id="cb3-7">    ),</span>
-<span id="cb3-8">    <span class="fu" style="color: #4758AB;">mainPanel</span>(</span>
-<span id="cb3-9">      <span class="fu" style="color: #4758AB;">plotOutput</span>(<span class="at" style="color: #657422;">outputId =</span> <span class="st" style="color: #20794D;">"forecast_plot"</span>),</span>
-<span id="cb3-10">      <span class="fu" style="color: #4758AB;">tableOutput</span>(<span class="at" style="color: #657422;">outputId =</span> <span class="st" style="color: #20794D;">"forecast_table"</span>)</span>
-<span id="cb3-11">    )</span>
-<span id="cb3-12">  )</span>
-<span id="cb3-13">)</span></code></pre></div>
-</div>
-</section>
-<section id="server" class="level2">
-<h2 class="anchored" data-anchor-id="server">Server</h2>
-<p>Now, we need to define the server. The server is where the program does the calculations and generates the output based on what the user selects in the UI. We define the server inside the function(input, output) argument.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">server <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(input, output) {</span></code></pre></div>
-</div>
-<p>Inside the server, we need to create a reactive expression that generates the forecast based on the model the user selects. We use an if statement to check which model the user selected, and then we use the corresponding function to generate the forecast.</p>
-<section id="forecast-the-data" class="level3">
-<h3 class="anchored" data-anchor-id="forecast-the-data">Forecast the Data</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">forecast_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">reactive</span>({</span>
-<span id="cb5-2">    <span class="cf" style="color: #003B4F;">if</span> (input<span class="sc" style="color: #5E5E5E;">$</span>model <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"auto.arima"</span>) {</span>
-<span id="cb5-3">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">auto.arima</span>(AirPassengers)</span>
-<span id="cb5-4">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb5-5">    } <span class="cf" style="color: #003B4F;">else</span> <span class="cf" style="color: #003B4F;">if</span> (input<span class="sc" style="color: #5E5E5E;">$</span>model <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"ets"</span>) {</span>
-<span id="cb5-6">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ets</span>(AirPassengers)</span>
-<span id="cb5-7">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb5-8">    } <span class="cf" style="color: #003B4F;">else</span> {</span>
-<span id="cb5-9">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">hw</span>(AirPassengers)</span>
-<span id="cb5-10">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb5-11">    }</span>
-<span id="cb5-12">  })</span></code></pre></div>
-</div>
-</section>
-<section id="render-plot" class="level3">
-<h3 class="anchored" data-anchor-id="render-plot">Render Plot</h3>
-<p>The <code>renderPlot()</code> function tells the program to create a plot based on the reactive expression we defined earlier. We use the <code>plotOutput()</code> function in the UI to display the plot.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">output<span class="sc" style="color: #5E5E5E;">$</span>forecast_plot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderPlot</span>({</span>
-<span id="cb6-2">    <span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">forecast_data</span>())</span>
-<span id="cb6-3">  })</span></code></pre></div>
-</div>
-<p>Similarly, the <code>renderTable()</code> function tells the program to create a table based on the reactive expression we defined earlier. We use the <code>tableOutput()</code> function in the UI to display the table.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">output<span class="sc" style="color: #5E5E5E;">$</span>forecast_table <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderTable</span>({</span>
-<span id="cb7-2">    <span class="fu" style="color: #4758AB;">forecast_data</span>()<span class="sc" style="color: #5E5E5E;">$</span>mean</span>
-<span id="cb7-3">  })</span></code></pre></div>
-</div>
-<p>Finally, we run the app using the <code>shinyApp()</code> function, with the UI and server arguments.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;">shinyApp</span>(<span class="at" style="color: #657422;">ui =</span> ui, <span class="at" style="color: #657422;">server =</span> server)</span></code></pre></div>
-</div>
-<p>And that’s it! This program allows the user to choose a forecasting model, and then generates a plot and table with the predicted number of air passengers based on that model.</p>
-<p>Here is the Full code block”</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;"># Load required packages</span></span>
-<span id="cb9-2"><span class="fu" style="color: #4758AB;">library</span>(shiny)</span>
-<span id="cb9-3"><span class="fu" style="color: #4758AB;">library</span>(forecast)</span>
-<span id="cb9-4"><span class="fu" style="color: #4758AB;">library</span>(ggplot2)</span>
-<span id="cb9-5"></span>
-<span id="cb9-6"><span class="co" style="color: #5E5E5E;"># Load AirPassengers dataset</span></span>
-<span id="cb9-7"><span class="fu" style="color: #4758AB;">data</span>(AirPassengers)</span>
-<span id="cb9-8"></span>
-<span id="cb9-9"><span class="co" style="color: #5E5E5E;"># Define UI</span></span>
-<span id="cb9-10">ui <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">fluidPage</span>(</span>
-<span id="cb9-11">  </span>
-<span id="cb9-12">  <span class="co" style="color: #5E5E5E;"># Title of the app</span></span>
-<span id="cb9-13">  <span class="fu" style="color: #4758AB;">titlePanel</span>(<span class="st" style="color: #20794D;">"AirPassengers Forecast"</span>),</span>
-<span id="cb9-14">  </span>
-<span id="cb9-15">  <span class="co" style="color: #5E5E5E;"># Sidebar with input controls</span></span>
-<span id="cb9-16">  <span class="fu" style="color: #4758AB;">sidebarLayout</span>(</span>
-<span id="cb9-17">    <span class="fu" style="color: #4758AB;">sidebarPanel</span>(</span>
-<span id="cb9-18">      <span class="fu" style="color: #4758AB;">selectInput</span>(<span class="at" style="color: #657422;">inputId =</span> <span class="st" style="color: #20794D;">"model"</span>, <span class="at" style="color: #657422;">label =</span> <span class="st" style="color: #20794D;">"Choose a model:"</span>,</span>
-<span id="cb9-19">                  <span class="at" style="color: #657422;">choices =</span> <span class="fu" style="color: #4758AB;">c</span>(<span class="st" style="color: #20794D;">"auto.arima"</span>, <span class="st" style="color: #20794D;">"ets"</span>, <span class="st" style="color: #20794D;">"holtwinters"</span>))</span>
-<span id="cb9-20">    ),</span>
-<span id="cb9-21">    </span>
-<span id="cb9-22">    <span class="co" style="color: #5E5E5E;"># Output plot and table</span></span>
-<span id="cb9-23">    <span class="fu" style="color: #4758AB;">mainPanel</span>(</span>
-<span id="cb9-24">      <span class="fu" style="color: #4758AB;">plotOutput</span>(<span class="at" style="color: #657422;">outputId =</span> <span class="st" style="color: #20794D;">"forecast_plot"</span>),</span>
-<span id="cb9-25">      <span class="fu" style="color: #4758AB;">tableOutput</span>(<span class="at" style="color: #657422;">outputId =</span> <span class="st" style="color: #20794D;">"forecast_table"</span>)</span>
-<span id="cb9-26">    )</span>
-<span id="cb9-27">  )</span>
-<span id="cb9-28">)</span>
-<span id="cb9-29"></span>
-<span id="cb9-30"><span class="co" style="color: #5E5E5E;"># Define server</span></span>
-<span id="cb9-31">server <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="cf" style="color: #003B4F;">function</span>(input, output) {</span>
-<span id="cb9-32">  </span>
-<span id="cb9-33">  <span class="co" style="color: #5E5E5E;"># Reactive expression to create forecast based on selected model</span></span>
-<span id="cb9-34">  forecast_data <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">reactive</span>({</span>
-<span id="cb9-35">    <span class="cf" style="color: #003B4F;">if</span> (input<span class="sc" style="color: #5E5E5E;">$</span>model <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"auto.arima"</span>) {</span>
-<span id="cb9-36">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">auto.arima</span>(AirPassengers)</span>
-<span id="cb9-37">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb9-38">    } <span class="cf" style="color: #003B4F;">else</span> <span class="cf" style="color: #003B4F;">if</span> (input<span class="sc" style="color: #5E5E5E;">$</span>model <span class="sc" style="color: #5E5E5E;">==</span> <span class="st" style="color: #20794D;">"ets"</span>) {</span>
-<span id="cb9-39">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">ets</span>(AirPassengers)</span>
-<span id="cb9-40">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb9-41">    } <span class="cf" style="color: #003B4F;">else</span> {</span>
-<span id="cb9-42">      fit <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">hw</span>(AirPassengers)</span>
-<span id="cb9-43">      <span class="fu" style="color: #4758AB;">forecast</span>(fit)</span>
-<span id="cb9-44">    }</span>
-<span id="cb9-45">  })</span>
-<span id="cb9-46">  </span>
-<span id="cb9-47">  <span class="co" style="color: #5E5E5E;"># Output plot</span></span>
-<span id="cb9-48">  output<span class="sc" style="color: #5E5E5E;">$</span>forecast_plot <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderPlot</span>({</span>
-<span id="cb9-49">    <span class="fu" style="color: #4758AB;">plot</span>(<span class="fu" style="color: #4758AB;">forecast_data</span>())</span>
-<span id="cb9-50">    <span class="co" style="color: #5E5E5E;">#checkresiduals(forecast_data())</span></span>
-<span id="cb9-51">  })</span>
-<span id="cb9-52">  </span>
-<span id="cb9-53">  <span class="co" style="color: #5E5E5E;"># Output table</span></span>
-<span id="cb9-54">  output<span class="sc" style="color: #5E5E5E;">$</span>forecast_table <span class="ot" style="color: #003B4F;">&lt;-</span> <span class="fu" style="color: #4758AB;">renderTable</span>({</span>
-<span id="cb9-55">    <span class="fu" style="color: #4758AB;">forecast_data</span>()<span class="sc" style="color: #5E5E5E;">$</span>mean</span>
-<span id="cb9-56">  })</span>
-<span id="cb9-57">}</span>
-<span id="cb9-58"></span>
-<span id="cb9-59"><span class="co" style="color: #5E5E5E;"># Run the app</span></span>
-<span id="cb9-60"><span class="fu" style="color: #4758AB;">shinyApp</span>(<span class="at" style="color: #657422;">ui =</span> ui, <span class="at" style="color: #657422;">server =</span> server)</span></code></pre></div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-</section>
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>shiny</category>
-  <category>data</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/rtip-2023-04-04/index.html</guid>
-  <pubDate>Tue, 04 Apr 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
