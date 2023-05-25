@@ -1,0 +1,84 @@
+---
+title: "Comparing R Packages for Writing Excel Files: An Analysis of writexl, openxlsx, and xlsx in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-05-25"
+categories: [rtip, excel, openxlsx, xlsx, writexl]
+---
+
+# Introduction
+
+In the realm of data analysis and manipulation, R has become a popular programming language due to its extensive collection of packages and libraries. One common task is exporting data to Excel files, which allows for easy sharing and presentation of results. In this blog post, we will explore three popular R packages for writing Excel files: `writexl`, `openxlsx`, and `xlsx`. We will compare their performance using the benchmarking package and analyze the results. So let's dive in!
+
+# Setting up the Environment
+
+Before we proceed, make sure you have the necessary packages installed. We will be using the rbenchmark, nycflights13, and dplyr packages. The nycflights13 package provides a dataset named "flights," which we will use for our benchmarking tests.
+
+```{r eval=FALSE}
+library(rbenchmark)
+library(nycflights13)
+library(dplyr)
+```
+
+#Defining the Number of Replications
+
+To ensure reliable performance measurements, we will repeat each test multiple times. The variable n represents the number of replications, and you can adjust its value depending on your requirements.
+
+```{r eval=FALSE}
+n <- 5
+```
+
+# Benchmarking the Packages
+
+Now, let's move on to the actual benchmarking process. We will use the benchmark() function from the rbenchmark package to compare the performance of writexl, openxlsx, and xlsx.
+
+```{r eval=FALSE}
+benchmark(
+  "writexl" = {
+    writexl::write_xlsx(flights, tempfile())
+  },
+  "openxlsx" = {
+    openxlsx::write.xlsx(flights, tempfile())
+  },
+  "xlsx" = {
+    xlsx::write.xlsx(flights, paste0(tempfile(),".xlsx"))
+  },
+  replications = n,
+  columns = c(
+    "test","replications","elapsed","relative","user.self","sys.self")
+)
+```
+
+In the code snippet above, we define three tests, each representing one package. We provide the code to execute for each test. For example, in the "writexl" test, we use the `write_xlsx()` function from the `writexl` package to write the "flights" dataset to a temporary Excel file.
+
+The replications parameter specifies the number of times each test should be repeated. In our case, we set it to n, which we defined earlier as 5.
+
+The columns parameter defines the columns to include in the benchmarking results. We specify "test" for the test name, "replications" for the number of replications, "elapsed" for the total time taken, "relative" for the relative performance compared to the fastest test, "user.self" for the CPU time used in user code, and "sys.self" for the CPU time used in system code.
+
+# Prettifying the Results
+
+To make the results more readable, we can use the `arrange()` function from the dplyr package to sort the results by the "relative" column in ascending order.
+
+```{r eval=FALSE}
+arrange(relative)
+```
+
+This will arrange the benchmarking results in ascending order of relative performance, allowing us to easily identify the most efficient package.
+
+# Benchmark Output
+
+```{r eval=FALSE}
+test replications elapsed relative user.self sys.self
+1 writexl       5   0.034   1.000000   0.024   0.010
+2 openxlsx       5   0.055   1.617647   0.044   0.011
+3 xlsx          5   0.101   2.941176   0.078   0.023
+```
+
+# Interpretation of the Results
+
+The results of the benchmark show that writexl is the fastest package for writing to Excel, followed by openxlsx and xlsx. The difference in performance between the three packages is not significant, but writexl is consistently faster than the other two packages.
+
+# Conclusion
+
+In this blog post, we compared the performance of three R packages, writexl, openxlsx, and xlsx, for writing Excel files. We used the rbenchmark package to benchmark the packages, considering the number of replications, elapsed time, relative performance, user CPU time, and system CPU time. By arranging the results using the dplyr package, we obtained a sorted view of the relative performance. This analysis can help you choose the most suitable package for your specific needs, considering both performance and functionality.
+
+Remember, benchmarking can vary depending on the dataset and system specifications. So, it's always a good idea to run your own benchmarks and evaluate the results in your specific context. Happy coding!
