@@ -1,0 +1,100 @@
+---
+title: "Understanding the file.info() Function in R: Listing Files by Date"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-06-08"
+categories: [rtip]
+---
+
+# Introduction
+
+In R, the `file.info()` function is a useful tool for retrieving file information, such as file attributes and metadata. It allows programmers to gather details about files, including their size, permissions, and timestamps. In this post, we will explore the `file.info()` function and demonstrate how it can be used to list files by date.
+
+## Explaining the file.info() Function:
+The `file.info()` function returns a data frame with file information as its columns. Each row corresponds to a file, and the columns contain attributes such as the file size, permissions, and timestamps. This function accepts one or more file paths as its argument, providing flexibility in examining multiple files simultaneously. The following columns are returned in the data.frame that results from `file.info()`:
+
+*    `name`: The name of the file.
+*    `size`: The size of the file in bytes.
+*    `mode`: The mode of the file, which can be used to determine the file's permissions.
+*    `mtime`: The modification time of the file.
+*    `ctime`: The creation time of the file.
+*    `atime`: The last access time of the file.
+
+In order to get some data to work with, we will save the iris dataset as an excel file four times in a for loop, waiting 10 seconds between each save.
+
+```R
+library(writexl)
+
+# Generate file names
+file_prefix <- "iris"
+file_extension <- ".xlsx"
+num_files <- 4
+
+# Save iris dataset as Excel files
+for (i in 1:num_files) {
+  file_name <- paste0(file_prefix, "_", i, file_extension)
+  write_xlsx(iris, file_name)
+  cat("File", file_name, "saved successfully.\n")
+  Sys.sleep(10) # Sleep for 10 seconds then go again
+}
+```
+
+# Examples
+
+## Example 1: Retrieving File Information
+
+Let's begin by retrieving information about a single file. we have a file named "iris_1.xlsx" located in our working directory. We can use the `file.info()` function to obtain its attributes:
+
+```{r}
+file_info <- file.info("iris_1.xlsx")
+print(file_info)
+```
+
+The output will display a data frame with the attributes of the "iris_1.xlsx" file, including the file size, permissions, and timestamps. This information can be valuable for tasks such as file management and quality control.
+
+## Example 2: Listing Files by Date
+
+Now, let's dive into listing files based on their dates. To achieve this, we will combine the `file.info()` function with other functions to extract and manipulate the timestamp information.
+
+```{r}
+# Obtain file information for all files in a directory
+files <- list.files(full.names = TRUE, pattern = "*.xlsx$")
+file_info <- file.info(files)
+file_info$file_name <- rownames(file_info)
+
+# Sort files by modification date in ascending order
+sorted_files <- files[order(file_info$mtime)]
+
+# Display the sorted file list
+print(sorted_files)
+file_info[order(file_info$mtime), ]
+```
+
+In this example, we first specify the directory path where our target files are located. By using `list.files()`, we obtain a vector of file names within that directory. Setting `full.names = TRUE` ensures that the file paths include the directory path. We also used the `pattern` parameter to ensure that we only grab the Excel files.
+
+Next, we use `file.info()` on the vector of file names to retrieve the file information for all files in the directory. The resulting data frame, `file_info`, contains details about each file, including the modification timestamp (`mtime`).
+
+To list the files by date, we sort the file names vector based on the modification timestamp, using `order(file_info$mtime)`. The resulting `sorted_files` vector contains the file paths sorted in ascending order based on the modification date.
+
+Finally, we print the sorted file list to the console, providing an easy way to visualize the files listed by their modification date.
+
+Let's go over some more examples. How about you want to see the files that were created in the last 24 hours, well, you could then do the following:
+
+```{r}
+files <- file.info(list.files(), full.names = TRUE)
+files <- files[files$mtime >= Sys.time() - 24 * 60 * 60, ]
+print(files)
+```
+
+The `file.infor()` function can also be used to filter files by other criteria such as size. Lets say we want to find all files that are larger than 100MB, well we could do the following:
+
+```{r}
+files <- file.info(list.files(), full.name = TRUE)
+files <- files[files$size > 100 * 1024^2, ]
+print(files)
+```
+
+We can see that we had no files greater than 100MB in the current directory.
+
+# Conclusion
+
+The `file.info()` function in R is a valuable tool for retrieving file information. In this post, we explored its usage and learned how to list files by date. By combining `file.info()` with other functions, we can extract and manipulate file attributes, enabling us to perform various file management tasks effectively. Understanding `file.info()` expands our capabilities in R programming, empowering us to work with file systems efficiently.
