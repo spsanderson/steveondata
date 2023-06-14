@@ -1,0 +1,104 @@
+---
+title: "Pulling a formula from a recipe object"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-06-14"
+categories: [rtip, recipes, tidymodels]
+---
+
+# Introduction
+
+The `formula()` function in R is a generic function that is used to create and manipulate formulas. Formulas are used to specify the relationship between variables in statistical models. The basic syntax for a formula is:
+
+```R
+response ~ predictors
+```
+
+The response is the variable that you are trying to predict, and the predictors are the variables that you are using to predict the response. You can use multiple predictors by separating them with + signs. For example, the following formula predicts the mpg (miles per gallon) of a car based on the wt (weight) and hp (horsepower) of the car:
+
+```R
+mpg ~ wt + hp
+```
+
+The `formula()` function can be used to create formulas from scratch, or it can be used to extract formulas from existing objects. For example, the following code creates a formula object called `my_formula` that predicts the mpg of a car based on the wt and hp of the car:
+
+```{r}
+my_formula <- formula(mpg ~ wt + hp)
+my_formula
+```
+
+The `formula()` function can also be used to manipulate formulas. For example, the following code adds a new predictor called drat (drive ratio) to the my_formula formula:
+
+```{r}
+my_formula <- update(my_formula, mpg ~ wt + hp + drat)
+my_formula
+```
+
+The `formula()` function is a powerful tool that can be used to create, manipulate, and analyze formulas in R.
+
+Here are some additional things to know about the `formula()` function:
+
+*   Formulas are objects in R, and they have a number of methods that can be used to manipulate them. For example, you can use the summary() method to get a summary of a formula, or you can use the plot() method to plot a formula.
+*    Formulas can be used with a variety of statistical functions in R. For example, you can use the lm() function to fit a linear model to a formula, or you can use the glm() function to fit a generalized linear model to a formula.
+*    Formulas are a powerful tool for statistical analysis, and they can be used to solve a wide variety of problems. If you are working with data in R, it is important to understand how to use formulas.
+
+Now that we have a decent understanding of the function, I want to shift focus a little bit and show how we can use the generics function `formula()` in order to extract a formula from a recipe object.
+
+Here is the full code that we are going to look at:
+
+```{r message=FALSE, warning=FALSE}
+library(recipes)
+
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+
+summary(rec_obj)
+
+# Get formula
+rec_obj |> prep() |> formula()
+```
+
+Let's break down each line and understand what it does:
+
+```R
+library(recipes)
+```
+
+The first line imports the `recipes` package, which is a powerful tool for preparing and preprocessing data in a structured and reproducible manner.
+
+```R
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+```
+
+Here, we create a `recipe` object named `rec_obj`. This object represents a set of instructions for data transformation. In this case, we specify the formula `mpg ~ .`, which means we want to predict the miles per gallon (`mpg`) using all other variables in the `mtcars` dataset.
+
+```R
+rec_obj |> prep() |> formula()
+```
+
+The next line leverages the magrittr pipe operator (`|>`) to chain multiple operations. Let's break it down:
+
+- `rec_obj` is passed to the `prep()` function. This function performs data preparation steps specified in the recipe object, such as handling missing values, feature scaling, or encoding categorical variables.
+- The output of `prep()` is then piped to the `formula()` function, which extracts the formula representation from the preprocessed recipe object. The resulting formula can be used in subsequent modeling steps.
+
+That's it! With just a few lines of code, we have defined a recipe, prepared the data accordingly, and obtained the formula representation for further modeling.
+
+Now, let's dive into a couple more examples to showcase the versatility of the `recipes` package:
+
+```{r message=FALSE, warning=FALSE}
+rec_obj <- recipe(Species ~ ., data = iris) |>
+  step_normalize(all_predictors())
+
+rec_obj |> prep() |> formula()
+```
+
+In this example, we create a recipe to predict the species (`Species`) using all other variables in the `iris` dataset. We then use the `step_normalize()` function to standardize all predictor variables in the recipe. This step ensures that variables are on a similar scale, which can be beneficial for certain machine learning algorithms.
+
+```R
+rec_obj <- recipe(SalePrice ~ ., data = train_data) |>
+  step_dummy(all_nominal(), -all_outcomes())
+```
+
+Here, we define a recipe to predict the sale price (`SalePrice`) using all other variables in the `train_data` dataset. The `step_dummy()` function is used to convert all nominal variables in the recipe into dummy variables. The `all_nominal()` argument specifies that all variables should be considered, while the `-all_outcomes()` argument ensures that the outcome variable (`SalePrice`) is not transformed.
+
+These examples provide a glimpse into the power and flexibility of the `recipes` package for data preprocessing in R. It enables you to define a clear and reproducible data transformation pipeline that can greatly simplify your machine learning workflows.
+
+Happy coding! 🚀
