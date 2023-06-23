@@ -1,0 +1,85 @@
+---
+title: "Bootstrap Function in R: Resampling with the lapply and sample Functions"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-06-23"
+categories: [rtip, bootstrap, lapply, sample]
+---
+
+# Introduction
+
+Bootstrap resampling is a powerful technique used in statistics and data analysis to estimate the uncertainty of a statistic by repeatedly sampling from the original data. In R, we can easily implement a bootstrap function using the lapply, rep, and sample functions. In this blog post, we will explore how to write a bootstrap function in R and provide an example using the "mpg" column from the popular "mtcars" dataset.
+
+# Bootstrap Function Implementation
+
+To create a bootstrap function in R, we can follow these steps:
+
+## Step 1: Load the required dataset
+
+Let's begin by loading the "mtcars" dataset, which is included in the base R package:
+
+```{r}
+data(mtcars)
+```
+
+## Step 2: Define the bootstrap function
+
+We'll define a function called `bootstrap()` that takes two arguments: `data` (the input data vector) and `n` (the number of bootstrap iterations).
+
+```{r}
+bootstrap <- function(data, n) {
+  resampled_data <- lapply(1:n, function(i) {
+    resample <- sample(data, replace = TRUE)
+    # Perform desired operations on the resampled data, e.g., compute a statistic
+    # and return the result
+  })
+  return(resampled_data)
+}
+
+bootstrapped_samples <- bootstrap(mtcars$mpg, 5)
+bootstrapped_samples
+```
+
+In the above code, we use `lapply` to generate a list of `n` resampled datasets. Inside the `lapply` function, we use the `sample` function to randomly sample from the original data with replacement (`replace = TRUE`). This ensures that each resampled dataset has the same length as the original dataset.
+
+## Step 3: Perform desired operations on resampled data
+
+Within the `lapply` function, you can perform any desired operations on the resampled data. This could involve calculating statistics, fitting models, or conducting hypothesis tests. Customize the code within the `lapply` function to suit your specific needs.
+
+Example: Bootstrapping the "mpg" column in mtcars:
+Let's illustrate the usage of our bootstrap function by resampling the "mpg" column from the "mtcars" dataset. We will calculate the mean of the resampled datasets.
+
+```{r}
+# Step 1: Load the dataset
+data(mtcars)
+
+# Step 2: Define the bootstrap function
+bootstrap <- function(data, n) {
+  resampled_data <- lapply(1:n, function(i) {
+    resample <- sample(data, replace = TRUE)
+    mean(resample)  # Calculate the mean of each resampled dataset
+  })
+  return(resampled_data)
+}
+
+# Step 3: Perform the bootstrap resampling
+bootstrapped_means <- bootstrap(mtcars$mpg, n = 1000)
+
+# Display the first few resampled means
+head(bootstrapped_means)
+```
+
+In the above example, we resample the "mpg" column of the "mtcars" dataset 1000 times. The `bootstrap()` function calculates the mean of each resampled dataset and returns a list of resampled means. The `head()` function is then used to display the first few resampled means.
+
+Of course we do not have to specify a statistic function in the bootstrap, we can choose to just return bootstrap samples and then perform some sort of statistic on it. Look at the following example using the above `bootstrapped_samples` data.
+
+```{r}
+quantile(unlist(bootstrapped_samples), 
+         probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
+
+mean(unlist(bootstrapped_samples))
+sd(unlist(bootstrapped_samples))
+```
+
+# Conclusion
+
+In this blog post, we have learned how to write a bootstrap function in R using the `lapply` and `sample` functions. By employing these functions, we can easily generate resampled datasets to estimate the uncertainty of statistics or perform other desired operations. The example using the "mpg" column of the "mtcars" dataset demonstrated the usage of the bootstrap function to calculate resampled means. Feel free to customize the function to suit your specific needs and explore the power of bootstrap resampling in R.
