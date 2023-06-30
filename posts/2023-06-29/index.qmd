@@ -2,7 +2,7 @@
 title: "How to Use a Windows .bat File to Execute an R Script"
 author: "Steven P. Sanderson II, MPH"
 date: "2023-06-29"
-categories: [rtip, timeseries]
+categories: [rtip, batchfile]
 ---
 
 # Introduction
@@ -11,7 +11,7 @@ Using a Windows .bat file to execute an R script can be a convenient way to auto
 
 ### The .bat File:
 
-```bash
+``` bash
 @echo off
 
 rem Set the path to the Rscript executable
@@ -29,27 +29,27 @@ exit
 
 Now, let's break down each line:
 
-1. `@echo off`: This line turns off the echoing of commands in the command prompt window, making the output cleaner.
+1.  `@echo off`: This line turns off the echoing of commands in the command prompt window, making the output cleaner.
 
-2. `rem Set the path to the Rscript executable`: The `rem` keyword denotes a comment in a batch file. This line sets the path to the Rscript executable, which is the command-line interface for executing R scripts.
+2.  `rem Set the path to the Rscript executable`: The `rem` keyword denotes a comment in a batch file. This line sets the path to the Rscript executable, which is the command-line interface for executing R scripts.
 
-3. `set RSCRIPT="C:\Users\user\AppData\Local\Programs\R\R-4.2.3\bin\Rscript.exe"`: This line assigns the path to the Rscript executable to the environment variable `RSCRIPT`.
+3.  `set RSCRIPT="C:\Users\user\AppData\Local\Programs\R\R-4.2.3\bin\Rscript.exe"`: This line assigns the path to the Rscript executable to the environment variable `RSCRIPT`.
 
-4. `rem Set the path to the R script to execute`: This line is another comment, specifying that the next line sets the path to the R script that will be executed.
+4.  `rem Set the path to the R script to execute`: This line is another comment, specifying that the next line sets the path to the R script that will be executed.
 
-5. `set RSCRIPT_FILE="C:\Users\user\my_r_script.R"`: Here, the path to the R script file is assigned to the environment variable `RSCRIPT_FILE`.
+5.  `set RSCRIPT_FILE="C:\Users\user\my_r_script.R"`: Here, the path to the R script file is assigned to the environment variable `RSCRIPT_FILE`.
 
-6. `%RSCRIPT% %RSCRIPT_FILE%`: This line executes the R script using the Rscript executable and passes the path to the R script file as an argument.
+6.  `%RSCRIPT% %RSCRIPT_FILE%`: This line executes the R script using the Rscript executable and passes the path to the R script file as an argument.
 
-7. `rem Pause so the user can see the output`: This comment suggests that the script should pause after execution so that the user can view the output before the command prompt window closes.
+7.  `rem Pause so the user can see the output`: This comment suggests that the script should pause after execution so that the user can view the output before the command prompt window closes.
 
-8. `exit`: This command exits the batch file and closes the command prompt window.
+8.  `exit`: This command exits the batch file and closes the command prompt window.
 
 ### The R Script:
 
 The R script contains several sections. Here is the full script and then I will give an explanation of each section:
 
-```R
+``` r
 # Library Load
 library(DBI)
 library(odbc)
@@ -72,20 +72,20 @@ query <- DBI::dbGetQuery(
   statement = paste0(
     "
     select encounter,
-    	pt_no 
+        pt_no 
     from dbo.c_xfer_fac_tbl 
     where encounter in 
-    	(
-    	select distinct encounter
-    	from DBO.c_xfer_fac_tbl 
-    	group by encounter, file_name 
-    	having Count(Distinct pt_no) > 1
-    	) 
-    	and INSERT_DATETIME = 
-    	(
-    	select Max(INSERT_DATETIME) 
-    	from dbo.c_xfer_fac_tbl
-    	) 
+        (
+        select distinct encounter
+        from DBO.c_xfer_fac_tbl 
+        group by encounter, file_name 
+        having Count(Distinct pt_no) > 1
+        ) 
+        and INSERT_DATETIME = 
+        (
+        select Max(INSERT_DATETIME) 
+        from dbo.c_xfer_fac_tbl
+        ) 
     group by encounter, pt_no 
     order by encounter
     "
@@ -153,25 +153,25 @@ file.rename(
 rm(list = ls())
 ```
 
-1. **Library Load**: This section loads various R libraries needed for the script's functionality, such as database connections, data manipulation, and email composition.
+1.  **Library Load**: This section loads various R libraries needed for the script's functionality, such as database connections, data manipulation, and email composition.
 
-2. **Source SSMS Connection Functions**: Here, a separate R script file (`SQL_Connection_Functions.r`) is sourced. This file likely contains custom functions related to connecting to and querying a SQL Server Management System (SSMS) database.
+2.  **Source SSMS Connection Functions**: Here, a separate R script file (`SQL_Connection_Functions.r`) is sourced. This file likely contains custom functions related to connecting to and querying a SQL Server Management System (SSMS) database.
 
-3. **Connect to SSMS**: This line establishes a connection to the SSMS database using the `db_connect()` function.
+3.  **Connect to SSMS**: This line establishes a connection to the SSMS database using the `db_connect()` function.
 
-4. **Query SSMS**: The script executes a SQL query against the SSMS database using the `dbGetQuery()` function. The result of the query is assigned to the `query` variable.
+4.  **Query SSMS**: The script executes a SQL query against the SSMS database using the `dbGetQuery()` function. The result of the query is assigned to the `query` variable.
 
-5. **Save file to disk**: The script saves the query result (`query`) to an Excel file on the local disk using the `write_xlsx()` function.
+5.  **Save file to disk**: The script saves the query result (`query`) to an Excel file on the local disk using the `write_xlsx()` function.
 
-6. **Compose Email**: This section composes an email using the `blastula` package, preparing the email body and setting the recipients, subject, and
+6.  **Compose Email**: This section composes an email using the `blastula` package, preparing the email body and setting the recipients, subject, and
 
- attachments.
+attachments.
 
-7. **Create Email**: The composed email is created using the `create_email()` function from the `Microsoft365R` package. The body, recipients, subject, and attachment are set.
+7.  **Create Email**: The composed email is created using the `create_email()` function from the `Microsoft365R` package. The body, recipients, subject, and attachment are set.
 
-8. **Send Email**: The email is sent using the `send()` function, which relies on a connection to Microsoft Outlook. The email body, recipients, subject, and attachment are all included in the email.
+8.  **Send Email**: The email is sent using the `send()` function, which relies on a connection to Microsoft Outlook. The email body, recipients, subject, and attachment are all included in the email.
 
-9. **Archive File after it has been sent**: The script moves the Excel file to an archive folder after sending the email, using the `file.rename()` function.
+9.  **Archive File after it has been sent**: The script moves the Excel file to an archive folder after sending the email, using the `file.rename()` function.
 
 10. **Clear the Session**: The `rm()` function is used to clear the current R session, removing any remaining objects from memory.
 
