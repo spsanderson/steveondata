@@ -10,7 +10,229 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.353</generator>
-<lastBuildDate>Mon, 17 Jul 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 18 Jul 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Efficiently Finding Duplicate Rows in R: A Comparative Analysis</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-07-18/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In data analysis and manipulation tasks, it’s common to encounter situations where we need to identify and handle duplicate rows in a dataset. In this blog post, we will explore three different approaches to finding duplicate rows in R: the base R method, the dplyr package, and the data.table package. We’ll compare their performance using the <code>benchmark</code> function and provide insights on when to use each approach. So, grab your coding gear, and let’s dive in!</p>
+</section>
+<section id="setting-the-stage" class="level1">
+<h1>Setting the Stage</h1>
+<p>To demonstrate the approaches, we’ll create a sample dataset using the <code>data.frame</code> function. Our dataset will contain information about individuals, including their names and ages. We’ll generate a dataset with 300,000 rows, with three individuals repeated 100,000 times each.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rbenchmark)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a data.frame</span></span>
+<span id="cb1-6">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">name =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"John"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Jane"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Mary"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">each =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100000</span>),</span>
+<span id="cb1-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">18</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">65</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">300000</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb1-9">)</span></code></pre></div>
+</div>
+<section id="approach-1-base-rs-duplicated-function" class="level2">
+<h2 class="anchored" data-anchor-id="approach-1-base-rs-duplicated-function">Approach 1: Base R’s <code>duplicated</code> Function</h2>
+<p>The simplest approach to finding duplicate rows is to use the <code>duplicated</code> function from base R. This function returns a logical vector indicating which rows are duplicates. We can apply it directly to our data frame <code>df</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">duplicated_rows_base <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">duplicated</span>(df)</span></code></pre></div>
+</div>
+</section>
+<section id="approach-2-dplyrs-concise-data-manipulation" class="level2">
+<h2 class="anchored" data-anchor-id="approach-2-dplyrs-concise-data-manipulation">Approach 2: dplyr’s Concise Data Manipulation</h2>
+<p>The <code>dplyr</code> package provides an intuitive and concise way to manipulate data frames. We can leverage its chaining syntax to filter the duplicated rows. The <code>group_by_all</code> function groups the data frame by all columns, and <code>filter(n() &gt; 1)</code> keeps only those rows with more than one occurrence within each group. Finally, <code>ungroup</code> removes the grouping information.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">duplicated_rows_dplyr <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by_all</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>()</span></code></pre></div>
+</div>
+</section>
+<section id="approach-3-efficient-duplicate-detection-with-data.table" class="level2">
+<h2 class="anchored" data-anchor-id="approach-3-efficient-duplicate-detection-with-data.table">Approach 3: Efficient Duplicate Detection with data.table</h2>
+<p>If performance is a crucial factor, the <code>data.table</code> package offers highly optimized operations on large datasets. Converting our data frame to a <code>data.table</code> object allows us to utilize the efficient <code>duplicated</code> function from <code>data.table</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">dtdf <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.table</span>(df)</span>
+<span id="cb4-2">duplicated_rows_datatable <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">duplicated</span>(dtdf)</span></code></pre></div>
+</div>
+<p>Benchmarking and Performance Comparison: To evaluate the performance of the three approaches, we will use the <code>benchmark</code> function from the <code>rbenchmark</code> package. We’ll execute each approach ten times and collect information such as execution time (<code>elapsed</code>), relative performance, and CPU times (<code>user.self</code> and <code>sys.self</code>).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">benchmark</span>(</span>
+<span id="cb5-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">duplicated_rows_base =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">duplicated</span>(df),</span>
+<span id="cb5-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">duplicated_rows_dplyr =</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb5-4">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by_all</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb5-5">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-6">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>(),</span>
+<span id="cb5-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">duplicated_rows_datatable =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">duplicated</span>(dtdf),</span>
+<span id="cb5-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replications =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>,</span>
+<span id="cb5-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">columns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"test"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"replications"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>,</span>
+<span id="cb5-10">              <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"relative"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"user.self"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"sys.self"</span>)</span>
+<span id="cb5-11">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arrange</span>(relative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                       test replications elapsed relative user.self sys.self
+1 duplicated_rows_datatable           10    0.05      1.0      0.01     0.01
+2     duplicated_rows_dplyr           10    0.29      5.8      0.27     0.02
+3      duplicated_rows_base           10    3.53     70.6      3.45     0.08</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion-and-encouragement" class="level1">
+<h1>Conclusion and Encouragement</h1>
+<p>Finding duplicate rows in large datasets is a common task, and having efficient approaches at hand can significantly impact data analysis workflows. In this blog post, we explored three different approaches: base R’s <code>duplicated</code> function, dplyr’s concise data manipulation, and data.table’s optimized duplicate detection.</p>
+<p>We encourage you to try these approaches on your own datasets and explore their performance characteristics. Depending on your specific requirements, dataset size, and desired coding style, you can choose the approach that suits you best.</p>
+<p>Remember, the world of R programming offers various tools and techniques to handle data efficiently, and experimenting with different approaches will broaden your understanding and improve your coding skills.</p>
+<p>Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>benchmark</category>
+  <category>dplyr</category>
+  <category>datatable</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-07-18/index.html</guid>
+  <pubDate>Tue, 18 Jul 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -274,6 +496,7 @@ font-style: inherit;">distinct</span>()</span></code></pre></div>
 
  ]]></description>
   <category>rtip</category>
+  <category>benchmark</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-07-17/index.html</guid>
   <pubDate>Mon, 17 Jul 2023 04:00:00 GMT</pubDate>
 </item>
@@ -4228,348 +4451,6 @@ NA   NA    NA &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;</code></
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-06-08/index.html</guid>
   <pubDate>Thu, 08 Jun 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Simplifying Data Transformation with pivot_longer() in R’s tidyr Library</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-06-06/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In the world of data analysis and manipulation, tidying and reshaping data is often an essential step. R’s <code>tidyr</code> library provides powerful tools to efficiently transform and reshape data. One such function is <code>pivot_longer()</code>. In this blog post, we’ll explore how <code>pivot_longer()</code> works and demonstrate its usage through several examples. By the end, you’ll have a solid understanding of how to use this function to make your data more manageable and insightful.</p>
-<p>The <code>tidyr</code> library holds the function, so we are going to have to load it first.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyr)</span></code></pre></div>
-</div>
-</section>
-<section id="understanding-pivot_longer" class="level1">
-<h1>Understanding pivot_longer()</h1>
-<p>The <a href="https://tidyr.tidyverse.org/reference/pivot_longer.html"><code>pivot_longer()</code></a> function is designed to reshape data from a wider format to a longer format. It takes columns that represent different variables and consolidates them into key-value pairs, making it easier to analyze and visualize the data.</p>
-<p>Syntax: The basic syntax of <code>pivot_longer()</code> is as follows:</p>
-<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(data, cols, names_to, values_to)</span></code></pre></div>
-<ul>
-<li><code>data</code>: The data frame or tibble to be reshaped.</li>
-<li><code>cols</code>: The columns to be transformed.</li>
-<li><code>names_to</code>: The name of the new column that will hold the variable names.</li>
-<li><code>values_to</code>: The name of the new column that will hold the corresponding values.</li>
-</ul>
-</section>
-<section id="example-1-reshaping-wide-data-to-long-data" class="level1">
-<h1>Example 1: Reshaping Wide Data to Long Data</h1>
-<p>Let’s start with a simple example to demonstrate the usage of <code>pivot_longer()</code>. Suppose we have a data frame called <code>students</code> with columns representing subjects and their respective scores:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">students <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb3-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">name =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Alice"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Bob"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Charlie"</span>),</span>
-<span id="cb3-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">math =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">92</span>),</span>
-<span id="cb3-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">science =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">95</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">88</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">91</span>),</span>
-<span id="cb3-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">history =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">87</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">92</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">78</span>)</span>
-<span id="cb3-6">)</span></code></pre></div>
-</div>
-<p>To reshape this data from a wider format to a longer format, we can use <code>pivot_longer()</code> as follows:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">students_long <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(</span>
-<span id="cb4-2">  students, </span>
-<span id="cb4-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>name, </span>
-<span id="cb4-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">names_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"subject"</span>, </span>
-<span id="cb4-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">values_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"score"</span></span>
-<span id="cb4-6">  )</span>
-<span id="cb4-7"></span>
-<span id="cb4-8">students_long</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 9 × 3
-  name    subject score
-  &lt;chr&gt;   &lt;chr&gt;   &lt;dbl&gt;
-1 Alice   math       90
-2 Alice   science    95
-3 Alice   history    87
-4 Bob     math       85
-5 Bob     science    88
-6 Bob     history    92
-7 Charlie math       92
-8 Charlie science    91
-9 Charlie history    78</code></pre>
-</div>
-</div>
-<p>The resulting <code>students_long</code> data frame will have three columns: <code>name</code>, <code>subject</code>, and <code>score</code>, where each row represents a student’s score in a specific subject.</p>
-<p>Example 2: Handling Multiple Variables In many cases, data frames contain multiple variables that need to be pivoted simultaneously. Consider a data frame called <code>sales</code> with columns representing sales figures for different products in different regions:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">sales <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb6-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">region =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"North"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"South"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"East"</span>),</span>
-<span id="cb6-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">product_A =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">120</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">150</span>),</span>
-<span id="cb6-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">product_B =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">80</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">110</span>),</span>
-<span id="cb6-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">product_C =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">60</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">80</span>)</span>
-<span id="cb6-6">)</span></code></pre></div>
-</div>
-<p>To reshape this data, we can specify multiple columns to pivot using <code>pivot_longer()</code>:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">sales_long <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(</span>
-<span id="cb7-2">  sales, </span>
-<span id="cb7-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">starts_with</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"product"</span>), </span>
-<span id="cb7-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">names_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"product"</span>, </span>
-<span id="cb7-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">values_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"sales"</span></span>
-<span id="cb7-6">  )</span>
-<span id="cb7-7"></span>
-<span id="cb7-8">sales_long</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 9 × 3
-  region product   sales
-  &lt;chr&gt;  &lt;chr&gt;     &lt;dbl&gt;
-1 North  product_A   100
-2 North  product_B    80
-3 North  product_C    60
-4 South  product_A   120
-5 South  product_B    90
-6 South  product_C    70
-7 East   product_A   150
-8 East   product_B   110
-9 East   product_C    80</code></pre>
-</div>
-</div>
-<p>The resulting <code>sales_long</code> data frame will have three columns: <code>region</code>, <code>product</code>, and <code>sales</code>, where each row represents the sales figure of a specific product in a particular region.</p>
-</section>
-<section id="example-3-handling-irregular-data" class="level1">
-<h1>Example 3: Handling Irregular Data</h1>
-<p>Sometimes, data frames contain irregular structures, such as missing values or uneven numbers of columns. <code>pivot_longer()</code> can handle such scenarios gracefully. Consider a data frame called <code>measurements</code> with columns representing different measurement types and their respective values:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">measurements <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb9-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">timestamp =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2022-01-01"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2022-01-02"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2022-01-03"</span>),</span>
-<span id="cb9-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">temperature =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25.3</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">27.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">24.8</span>),</span>
-<span id="cb9-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">humidity =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">65.2</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">68.5</span>),</span>
-<span id="cb9-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pressure =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1013</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1012</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>)</span>
-<span id="cb9-6">)</span></code></pre></div>
-</div>
-<p>To reshape this data, we can use <code>pivot_longer()</code> and handle the missing values:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">measurements_long <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(</span>
-<span id="cb10-2">  measurements, </span>
-<span id="cb10-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>timestamp, </span>
-<span id="cb10-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">names_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"measurement"</span>, </span>
-<span id="cb10-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">values_to =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"value"</span>, </span>
-<span id="cb10-6">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">values_drop_na =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span></span>
-<span id="cb10-7">  )</span>
-<span id="cb10-8"></span>
-<span id="cb10-9">measurements_long</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 7 × 3
-  timestamp  measurement  value
-  &lt;chr&gt;      &lt;chr&gt;        &lt;dbl&gt;
-1 2022-01-01 temperature   25.3
-2 2022-01-01 humidity      65.2
-3 2022-01-01 pressure    1013  
-4 2022-01-02 temperature   27.1
-5 2022-01-02 pressure    1012  
-6 2022-01-03 temperature   24.8
-7 2022-01-03 humidity      68.5</code></pre>
-</div>
-</div>
-<p>The resulting <code>measurements_long</code> data frame will have three columns: <code>timestamp</code>, <code>measurement</code>, and <code>value</code>, where each row represents a specific measurement at a particular timestamp. The <code>values_drop_na</code> argument ensures that rows with missing values are dropped.</p>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>In this blog post, we explored the <code>pivot_longer()</code> function from the tidyr library, which allows us to reshape data from a wider format to a longer format. We covered the syntax and provided several examples to illustrate its usage. By mastering <code>pivot_longer()</code>, you’ll be equipped to tidy your data and unleash its true potential for analysis and visualization.</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>tidyr</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-06-06/index.html</guid>
-  <pubDate>Tue, 06 Jun 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

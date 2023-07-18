@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Steven P. Sanderson II, MPH">
-<meta name="dcterms.date" content="2023-07-17">
+<meta name="dcterms.date" content="2023-07-18">
 
-<title>Steve’s Data Tips and Tricks - Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr</title>
+<title>Steve’s Data Tips and Tricks - Efficiently Finding Duplicate Rows in R: A Comparative Analysis</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -108,10 +108,10 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Steve’s Data Tips and Tricks - Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - Efficiently Finding Duplicate Rows in R: A Comparative Analysis">
 <meta property="og:description" content="">
 <meta property="og:site-name" content="Steve's Data Tips and Tricks">
-<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Efficiently Finding Duplicate Rows in R: A Comparative Analysis">
 <meta name="twitter:description" content="">
 <meta name="twitter:creator" content="@steveondata">
 <meta name="twitter:site" content="@steveondata">
@@ -186,10 +186,12 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr</h1>
+      <h1 class="title">Efficiently Finding Duplicate Rows in R: A Comparative Analysis</h1>
                                 <div class="quarto-categories">
                 <div class="quarto-category">rtip</div>
                 <div class="quarto-category">benchmark</div>
+                <div class="quarto-category">dplyr</div>
+                <div class="quarto-category">datatable</div>
               </div>
                   </div>
   </div>
@@ -207,7 +209,7 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">July 17, 2023</p>
+        <p class="date">July 18, 2023</p>
       </div>
     </div>
     
@@ -227,104 +229,75 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>In data analysis and programming, it’s common to encounter situations where you need to identify duplicate values within a dataset. Whether you’re a beginner or an experienced programmer, knowing how to find duplicate values is a fundamental skill. In this blog post, we will explore two different approaches to accomplish this task using base R functions and the dplyr package in R. By the end, you’ll have a clear understanding of how to detect and manage duplicate values in your own datasets.</p>
+<p>In data analysis and manipulation tasks, it’s common to encounter situations where we need to identify and handle duplicate rows in a dataset. In this blog post, we will explore three different approaches to finding duplicate rows in R: the base R method, the dplyr package, and the data.table package. We’ll compare their performance using the <code>benchmark</code> function and provide insights on when to use each approach. So, grab your coding gear, and let’s dive in!</p>
 </section>
-<section id="using-base-r-functions" class="level1">
-<h1>Using Base R Functions</h1>
-<p>R provides a variety of functions for data manipulation and analysis, including those specifically designed for identifying duplicate values. Let’s consider a simple data frame to demonstrate this approach:</p>
+<section id="setting-the-stage" class="level1">
+<h1>Setting the Stage</h1>
+<p>To demonstrate the approaches, we’ll create a sample dataset using the <code>data.frame</code> function. Our dataset will contain information about individuals, including their names and ages. We’ll generate a dataset with 300,000 rows, with three individuals repeated 100,000 times each.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating a sample data frame</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ID =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Name =</span> <span class="fu">c</span>(<span class="st">"John"</span>, <span class="st">"Jane"</span>, <span class="st">"Mark"</span>, <span class="st">"Mark"</span>, <span class="st">"Luke"</span>, <span class="st">"Kate"</span>),</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Age =</span> <span class="fu">c</span>(<span class="dv">25</span>, <span class="dv">30</span>, <span class="dv">35</span>, <span class="dv">35</span>, <span class="dv">40</span>, <span class="dv">45</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rbenchmark)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a data.frame</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">name =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"John"</span>, <span class="st">"Jane"</span>, <span class="st">"Mary"</span>), <span class="at">each =</span> <span class="dv">100000</span>),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">sample</span>(<span class="dv">18</span><span class="sc">:</span><span class="dv">65</span>, <span class="dv">300000</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>To find duplicate values in this data frame using base R functions, we can utilize the <code>duplicated()</code> and <code>table()</code> functions:</p>
+<section id="approach-1-base-rs-duplicated-function" class="level2">
+<h2 class="anchored" data-anchor-id="approach-1-base-rs-duplicated-function">Approach 1: Base R’s <code>duplicated</code> Function</h2>
+<p>The simplest approach to finding duplicate rows is to use the <code>duplicated</code> function from base R. This function returns a logical vector indicating which rows are duplicates. We can apply it directly to our data frame <code>df</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Using base R functions to find duplicate values</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>duplicates <span class="ot">&lt;-</span> df[<span class="fu">duplicated</span>(df), ]</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>duplicate_counts <span class="ot">&lt;-</span> <span class="fu">table</span>(df[<span class="fu">duplicated</span>(df), ])</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>duplicates</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ID Name Age
-4  3 Mark  35</code></pre>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>duplicated_rows_base <span class="ot">&lt;-</span> <span class="fu">duplicated</span>(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>duplicate_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>, , Age = 35
-
-   Name
-ID  Mark
-  3    1</code></pre>
-</div>
-</div>
-<p>The <code>duplicated()</code> function identifies the duplicate rows in the data frame, while the <code>table()</code> function creates a frequency table of the duplicate values. By combining these two functions, we can detect and examine the duplicate entries in the data frame.</p>
 </section>
-<section id="using-dplyr" class="level1">
-<h1>Using dplyr</h1>
-<p>The dplyr package provides a powerful set of tools for data manipulation and analysis. Let’s see how we can accomplish the same task of finding duplicate values using dplyr functions:</p>
+<section id="approach-2-dplyrs-concise-data-manipulation" class="level2">
+<h2 class="anchored" data-anchor-id="approach-2-dplyrs-concise-data-manipulation">Approach 2: dplyr’s Concise Data Manipulation</h2>
+<p>The <code>dplyr</code> package provides an intuitive and concise way to manipulate data frames. We can leverage its chaining syntax to filter the duplicated rows. The <code>group_by_all</code> function groups the data frame by all columns, and <code>filter(n() &gt; 1)</code> keeps only those rows with more than one occurrence within each group. Finally, <code>ungroup</code> removes the grouping information.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># loading the dplyr package</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Using dplyr to find duplicate values</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>duplicates <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by_all</span>() <span class="sc">|&gt;</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>duplicate_counts <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_count</span>(ID, Name, Age) <span class="sc">|&gt;</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>duplicates</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 3
-     ID Name    Age
-  &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;
-1     3 Mark     35
-2     3 Mark     35</code></pre>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>duplicated_rows_dplyr <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by_all</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>duplicate_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  ID Name Age n
-1  3 Mark  35 2</code></pre>
-</div>
-</div>
-<p>Let’s break the first one down step by step:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>duplicates <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by_all</span>() <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<ol type="1">
-<li><code>df</code> refers to a data frame in R.</li>
-<li><code>group_by_all()</code> groups the data frame by all columns. This means that the subsequent operations will consider duplicate values across all columns.</li>
-<li><code>filter(n() &gt; 1)</code> filters the grouped data frame to only keep rows where the count (<code>n()</code>) of observations is greater than 1. In other words, it keeps only the rows that have duplicates.</li>
-<li><code>ungroup()</code> removes the grouping, ensuring that the resulting data frame is not grouped anymore.</li>
-<li>The resulting data frame with duplicate rows is assigned to the variable <code>duplicates</code>.</li>
-</ol>
-<p>Now, let’s move on to the second part:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>duplicate_counts <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_count</span>(ID, Name, Age) <span class="sc">|&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<ol type="1">
-<li><code>add_count(ID, Name, Age)</code> adds a new column called “n” to the data frame, which represents the count of observations for each combination of ID, Name, and Age.</li>
-<li><code>filter(n &gt; 1)</code> keeps only the rows where the count (“n”) is greater than 1. This retains only the rows that have duplicates based on the specified columns.</li>
-<li><code>distinct()</code> removes any duplicate rows that may still exist after the previous steps, keeping only unique rows.</li>
-<li>The resulting data frame with duplicate counts and unique rows is assigned to the variable <code>duplicate_counts</code>.</li>
-</ol>
-<p>In simple terms, the code first identifies and extracts the duplicate rows from the original data frame (<code>df</code>) and assigns them to <code>duplicates</code>. Then, it calculates the counts of duplicates based on specific columns (ID, Name, and Age) and stores the results, along with unique rows, in <code>duplicate_counts</code>.</p>
-<p>These operations allow you to conveniently find duplicate rows and examine their counts within a data frame using both base R functions and some simple <code>dplyr</code> code.</p>
 </section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Detecting and managing duplicate values is an essential task in data analysis and programming. In this blog post, we explored two different approaches to find duplicate values in a data frame using base R functions and the dplyr package. By leveraging these techniques, you can efficiently identify and handle duplicate entries in your own datasets.</p>
-<p>I encourage you to practice using these methods on your own datasets. Familiarize yourself with the functions, experiment with different data frames, and explore various scenarios. This hands-on experience will deepen your understanding and improve your data analysis skills.</p>
-<p>Remember, the ability to identify and manage duplicate values is crucial for ensuring data integrity and obtaining accurate results in your data analysis projects. So go ahead, give it a try, and unlock the power of duplicate value detection in R!</p>
+<section id="approach-3-efficient-duplicate-detection-with-data.table" class="level2">
+<h2 class="anchored" data-anchor-id="approach-3-efficient-duplicate-detection-with-data.table">Approach 3: Efficient Duplicate Detection with data.table</h2>
+<p>If performance is a crucial factor, the <code>data.table</code> package offers highly optimized operations on large datasets. Converting our data frame to a <code>data.table</code> object allows us to utilize the efficient <code>duplicated</code> function from <code>data.table</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>dtdf <span class="ot">&lt;-</span> <span class="fu">data.table</span>(df)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>duplicated_rows_datatable <span class="ot">&lt;-</span> <span class="fu">duplicated</span>(dtdf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Benchmarking and Performance Comparison: To evaluate the performance of the three approaches, we will use the <code>benchmark</code> function from the <code>rbenchmark</code> package. We’ll execute each approach ten times and collect information such as execution time (<code>elapsed</code>), relative performance, and CPU times (<code>user.self</code> and <code>sys.self</code>).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">benchmark</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">duplicated_rows_base =</span> <span class="fu">duplicated</span>(df),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duplicated_rows_dplyr =</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by_all</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>(),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">duplicated_rows_datatable =</span> <span class="fu">duplicated</span>(dtdf),</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">replications =</span> <span class="dv">10</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">columns =</span> <span class="fu">c</span>(<span class="st">"test"</span>,<span class="st">"replications"</span>,<span class="st">"elapsed"</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>              <span class="st">"relative"</span>,<span class="st">"user.self"</span>,<span class="st">"sys.self"</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(relative)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                       test replications elapsed relative user.self sys.self
+1 duplicated_rows_datatable           10    0.05      1.0      0.01     0.01
+2     duplicated_rows_dplyr           10    0.29      5.8      0.27     0.02
+3      duplicated_rows_base           10    3.53     70.6      3.45     0.08</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion-and-encouragement" class="level1">
+<h1>Conclusion and Encouragement</h1>
+<p>Finding duplicate rows in large datasets is a common task, and having efficient approaches at hand can significantly impact data analysis workflows. In this blog post, we explored three different approaches: base R’s <code>duplicated</code> function, dplyr’s concise data manipulation, and data.table’s optimized duplicate detection.</p>
+<p>We encourage you to try these approaches on your own datasets and explore their performance characteristics. Depending on your specific requirements, dataset size, and desired coding style, you can choose the approach that suits you best.</p>
+<p>Remember, the world of R programming offers various tools and techniques to handle data efficiently, and experimenting with different approaches will broaden your understanding and improve your coding skills.</p>
+<p>Happy coding!</p>
 
 
 </section>

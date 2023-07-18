@@ -1,19 +1,19 @@
 ---
-title: "Finding Duplicate Values in a Data Frame in R: A Guide Using Base R and dplyr"
+title: "Efficiently Finding Duplicate Rows in R: A Comparative Analysis"
 author: "Steven P. Sanderson II, MPH"
-date: "2023-07-17"
-categories: [rtip, benchmark]
+date: "2023-07-18"
+categories: [rtip, benchmark, dplyr, datatable]
 ---
 
-Title: Efficiently Finding Duplicate Rows in R: A Comparative Analysis
+# Introduction
 
-Introduction:
 In data analysis and manipulation tasks, it's common to encounter situations where we need to identify and handle duplicate rows in a dataset. In this blog post, we will explore three different approaches to finding duplicate rows in R: the base R method, the dplyr package, and the data.table package. We'll compare their performance using the `benchmark` function and provide insights on when to use each approach. So, grab your coding gear, and let's dive in!
 
-Setting the Stage:
+# Setting the Stage
+
 To demonstrate the approaches, we'll create a sample dataset using the `data.frame` function. Our dataset will contain information about individuals, including their names and ages. We'll generate a dataset with 300,000 rows, with three individuals repeated 100,000 times each.
 
-```R
+```{r, warning=FALSE, message=FALSE}
 library(rbenchmark)
 library(dplyr)
 library(data.table)
@@ -25,27 +25,30 @@ df <- data.frame(
 )
 ```
 
-Approach 1: Base R's `duplicated` Function:
+## Approach 1: Base R's `duplicated` Function
+
 The simplest approach to finding duplicate rows is to use the `duplicated` function from base R. This function returns a logical vector indicating which rows are duplicates. We can apply it directly to our data frame `df`.
 
-```R
+```{r}
 duplicated_rows_base <- duplicated(df)
 ```
 
-Approach 2: dplyr's Concise Data Manipulation:
+## Approach 2: dplyr's Concise Data Manipulation
+
 The `dplyr` package provides an intuitive and concise way to manipulate data frames. We can leverage its chaining syntax to filter the duplicated rows. The `group_by_all` function groups the data frame by all columns, and `filter(n() > 1)` keeps only those rows with more than one occurrence within each group. Finally, `ungroup` removes the grouping information.
 
-```R
+```{r}
 duplicated_rows_dplyr <- df |>
   group_by_all() |>
   filter(n() > 1) |>
   ungroup()
 ```
 
-Approach 3: Efficient Duplicate Detection with data.table:
+## Approach 3: Efficient Duplicate Detection with data.table
+
 If performance is a crucial factor, the `data.table` package offers highly optimized operations on large datasets. Converting our data frame to a `data.table` object allows us to utilize the efficient `duplicated` function from `data.table`.
 
-```R
+```{r}
 dtdf <- data.table(df)
 duplicated_rows_datatable <- duplicated(dtdf)
 ```
@@ -53,7 +56,7 @@ duplicated_rows_datatable <- duplicated(dtdf)
 Benchmarking and Performance Comparison:
 To evaluate the performance of the three approaches, we will use the `benchmark` function from the `rbenchmark` package. We'll execute each approach ten times and collect information such as execution time (`elapsed`), relative performance, and CPU times (`user.self` and `sys.self`).
 
-```R
+```{r}
 benchmark(
   duplicated_rows_base = duplicated(df),
   duplicated_rows_dplyr = df |> 
@@ -62,12 +65,14 @@ benchmark(
     ungroup(),
   duplicated_rows_datatable = duplicated(dtdf),
   replications = 10,
-  columns = c("test","replications","elapsed","relative","user.self","sys.self")
+  columns = c("test","replications","elapsed",
+              "relative","user.self","sys.self")
 ) |>
   arrange(relative)
 ```
 
-Conclusion and Encouragement:
+# Conclusion and Encouragement
+
 Finding duplicate rows in large datasets is a common task, and having efficient approaches at hand can significantly impact data analysis workflows. In this blog post, we explored three different approaches: base R's `duplicated` function, dplyr's concise data manipulation, and data.table's optimized duplicate detection.
 
 We encourage you to try these approaches on your own datasets and explore their performance characteristics. Depending on your specific requirements, dataset size, and desired coding style, you can choose the approach that suits you best.
