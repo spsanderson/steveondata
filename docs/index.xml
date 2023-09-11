@@ -10,7 +10,300 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.353</generator>
-<lastBuildDate>Fri, 08 Sep 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 11 Sep 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Plotting SVM Decision Boundaries with e1071 in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-09-11/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Support Vector Machines (SVM) are a powerful tool in the world of machine learning and classification. They excel in finding the optimal decision boundary between different classes of data. However, understanding and visualizing these decision boundaries can be a bit tricky. In this blog post, we’ll explore how to plot an SVM object using the <code>e1071</code> library in R, making it easier to grasp the magic happening under the hood.</p>
+</section>
+<section id="what-is-e1071" class="level1">
+<h1>What is e1071?</h1>
+<p><code>e1071</code> is an R package that provides tools for performing support vector machine (SVM) classification and regression. It’s widely used in the R community for its simplicity and efficiency. In this post, we’ll focus on SVM classification.</p>
+</section>
+<section id="setting-up" class="level1">
+<h1>Setting Up</h1>
+<p>Before we dive into plotting, you’ll need to install and load the <code>e1071</code> package if you haven’t already (I already have it so I won’t re-install it). You can do this using the following commands:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install e1071 (if not already installed)</span></span>
+<span id="cb1-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># install.packages("e1071")</span></span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load the library</span></span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(e1071)</span></code></pre></div>
+</div>
+</section>
+<section id="creating-an-example-svm" class="level1">
+<h1>Creating an Example SVM</h1>
+<p>Let’s start with a simple example to illustrate how to plot the decision boundary of an SVM. We’ll use a toy dataset with two classes: red dots and blue squares. Our goal is to create an SVM that separates these two classes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a toy dataset</span></span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb2-3">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb2-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x1 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb2-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x2 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb2-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">label =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Red"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Blue"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.factor</span>()</span>
+<span id="cb2-7">)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Train an SVM</span></span>
+<span id="cb2-10">svm_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">svm</span>(label <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">kernel =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"linear"</span>)</span></code></pre></div>
+</div>
+<p>In this example, we generated 50 data points with two features (<code>x1</code> and <code>x2</code>) and two classes (<code>Red</code> and <code>Blue</code>). We then trained a linear SVM using the <code>svm</code> function from the <code>e1071</code> package.</p>
+</section>
+<section id="plotting-the-decision-boundary" class="level1">
+<h1>Plotting the Decision Boundary</h1>
+<p>Now comes the exciting part – plotting the decision boundary! We’ll use a combination of functions to achieve this. First, we’ll create a grid of points that cover the entire range of our data. Then, we’ll use the SVM model to predict the class labels for these points, effectively creating a decision boundary.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a grid of points for prediction</span></span>
+<span id="cb3-2">x1_grid <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x1), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x1), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb3-3">x2_grid <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb3-4">grid <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">expand.grid</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x1 =</span> x1_grid, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x2 =</span> x2_grid)</span>
+<span id="cb3-5"></span>
+<span id="cb3-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Predict class labels for the grid</span></span>
+<span id="cb3-7">predicted_labels <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(svm_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> grid)</span>
+<span id="cb3-8"></span>
+<span id="cb3-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the decision boundary</span></span>
+<span id="cb3-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x1, data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>label), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">19</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SVM Decision Boundary"</span>)</span>
+<span id="cb3-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">points</span>(grid<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x1, grid<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(predicted_labels), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"."</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span>)</span>
+<span id="cb3-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"topright"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>label), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">19</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-11/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>In this code, we first create a grid of points covering the range of our data using <code>expand.grid</code>. Then, we predict the class labels for these points using our trained SVM model and store them in <code>predicted_labels</code>. Finally, we plot the original data points with colors representing their true labels and overlay the decision boundary using the predicted labels.</p>
+<section id="interpreting-the-plot" class="level2">
+<h2 class="anchored" data-anchor-id="interpreting-the-plot">Interpreting the Plot</h2>
+<p>The resulting plot will display your data points with red dots and blue squares, representing the true class labels. The decision boundary will be shown as a mix of red and blue points, indicating where the SVM has classified the data. The legend on the top-right helps you distinguish between the two classes.</p>
+<p>We can also more simply plot out the model, see below:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(svm_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-11/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Change the colors</span></span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(svm_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color.palette =</span> heat.colors)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-11/index_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="try-it-yourself" class="level2">
+<h2 class="anchored" data-anchor-id="try-it-yourself">Try It Yourself!</h2>
+<p>Now that you’ve seen how to plot an SVM decision boundary using the <code>e1071</code> package, I encourage you to try it with your own datasets and experiment with different kernels (e.g., radial or polynomial) to see how the decision boundary changes.</p>
+<p>SVMs are a versatile tool for classification tasks, and visualizing their decision boundaries can provide valuable insights into your data and model. Happy plotting!</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>viz</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-09-11/index.html</guid>
+  <pubDate>Mon, 11 Sep 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Creating Population Pyramid Plots in R with ggplot2</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5812,181 +6105,6 @@ font-style: inherit;">"universe"</span></span>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-08-14/index.html</guid>
   <pubDate>Mon, 14 Aug 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>pmax() and pmin(): Finding the Parallel Maximum and Minimum in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-08-11/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Title: Unleashing the Power of pmax() and pmin() Functions in R</p>
-<p>Introduction: In the realm of data manipulation and analysis, R stands tall as a versatile programming language. Among its plethora of functions, pmax() and pmin() shine as unsung heroes that can greatly simplify your coding experience. These functions allow you to effortlessly find the element-wise maximum and minimum values across vectors in R, providing an elegant solution to a common programming challenge. In this blog post, we’ll dive into the syntax and explore real-world examples that showcase the true potential of pmax() and pmin().</p>
-</section>
-<section id="syntax-demystified" class="level1">
-<h1>Syntax Demystified:</h1>
-<section id="pmax-function" class="level2">
-<h2 class="anchored" data-anchor-id="pmax-function">pmax() Function:</h2>
-<p><code>pmax(..., na.rm = FALSE)</code></p>
-<ul>
-<li>The ellipsis (<code>...</code>) signifies the input vectors. You can pass two or more vectors to compare element-wise.</li>
-<li>The <code>na.rm</code> parameter (defaulting to <code>FALSE</code>) determines whether to remove NAs before computation.</li>
-</ul>
-</section>
-<section id="pmin-function" class="level2">
-<h2 class="anchored" data-anchor-id="pmin-function">pmin() Function:</h2>
-<p><code>pmin(..., na.rm = FALSE)</code></p>
-<ul>
-<li>Similar to <code>pmax()</code>, the ellipsis (<code>...</code>) denotes the input vectors for element-wise comparison.</li>
-<li>The <code>na.rm</code> parameter (defaulting to <code>FALSE</code>) decides whether to exclude NAs before calculation.</li>
-</ul>
-</section>
-</section>
-<section id="exploring-examples" class="level1">
-<h1>Exploring Examples:</h1>
-<section id="example-1-using-pmax-to-find-element-wise-maximum" class="level2">
-<h2 class="anchored" data-anchor-id="example-1-using-pmax-to-find-element-wise-maximum">Example 1: Using pmax() to Find Element-wise Maximum</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">vec1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>)</span>
-<span id="cb1-2">vec2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span>
-<span id="cb1-3">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pmax</span>(vec1, vec2)</span>
-<span id="cb1-4">result</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 7 9 8 6</code></pre>
-</div>
-</div>
-</section>
-<section id="example-2-using-pmin-to-find-element-wise-minimum" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-using-pmin-to-find-element-wise-minimum">Example 2: Using pmin() to Find Element-wise Minimum</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">data1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">16</span>)</span>
-<span id="cb3-2">data2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">11</span>)</span>
-<span id="cb3-3">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pmin</span>(data1, data2)</span>
-<span id="cb3-4">result</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  6  5  8 11</code></pre>
-</div>
-</div>
-</section>
-<section id="example-3-handling-na-values" class="level2">
-<h2 class="anchored" data-anchor-id="example-3-handling-na-values">Example 3: Handling NA Values</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">data1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>)</span>
-<span id="cb5-2">data2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>)</span>
-<span id="cb5-3">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pmax</span>(data1, data2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span>
-<span id="cb5-4">result</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  9  3  5 12</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="try-it-yourself" class="level1">
-<h1>Try It Yourself:</h1>
-<p>The best way to truly grasp the power of pmax() and pmin() is to experiment on your own. Create vectors of your own data and challenge yourself with different scenarios. These functions not only save time but also make your code more concise and readable.</p>
-<p>In conclusion, pmax() and pmin() are the secret weapons in your R arsenal. Their ability to find element-wise maximum and minimum values with ease can transform your coding experience. So go ahead, dive into your data, and harness the efficiency and elegance these functions bring to your projects!</p>
-<p>Remember, the journey of coding mastery begins with experimentation. Happy coding with pmax() and pmin()!</p>
-<p>Happy coding! Steve</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-08-11/index.html</guid>
-  <pubDate>Fri, 11 Aug 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
