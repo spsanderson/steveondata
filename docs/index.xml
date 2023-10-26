@@ -10,7 +10,316 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Wed, 25 Oct 2023 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 26 Oct 2023 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Plotting a Logistic Regression In Base R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-10-26/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Logistic regression is a statistical method used for predicting the probability of a binary outcome. It’s a fundamental tool in machine learning and statistics, often employed in various fields such as healthcare, finance, and marketing. We use logistic regression when we want to understand the relationship between one or more independent variables and a binary outcome, which can be “yes/no,” “1/0,” or any two-class distinction.</p>
+</section>
+<section id="getting-started" class="level1">
+<h1>Getting Started</h1>
+<p>Before we dive into plotting the logistic regression curve, let’s start with the basics. First, you’ll need some data. For this blog post, I’ll assume you have your dataset ready. If you don’t, you can easily find sample datasets online to practice with.</p>
+</section>
+<section id="load-the-data" class="level1">
+<h1>Load the Data</h1>
+<p>In R, we use the <code>read.csv</code> function to load a CSV file into a data frame. For example, if you have a dataset called “mydata.csv,” you can load it like this:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load the data into a data frame</span></span>
+<span id="cb1-2">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">read.csv</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mydata.csv"</span>)</span></code></pre></div>
+<p>We will instead use the following data set:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb2-4">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(</span>
+<span id="cb2-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>),</span>
+<span id="cb2-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rbinom</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> (<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2.5</span>))))</span>
+<span id="cb2-7">)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+      x     y
+  &lt;dbl&gt; &lt;int&gt;
+1 2.88      0
+2 7.88      1
+3 4.09      0
+4 8.83      0
+5 9.40      1
+6 0.456     0</code></pre>
+</div>
+</div>
+</section>
+<section id="fit-a-logistic-regression-model" class="level1">
+<h1>Fit a Logistic Regression Model</h1>
+<p>Next, we need to fit a logistic regression model to our data. We’ll use the <code>glm</code> (Generalized Linear Model) function to do this. Suppose we want to predict the probability of a “success” (1) based on a single predictor variable “x.”</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit a logistic regression model</span></span>
+<span id="cb4-2">model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm</span>(y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> binomial)</span>
+<span id="cb4-3"></span>
+<span id="cb4-4">broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glance</span>(model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 8
+  null.deviance df.null logLik   AIC   BIC deviance df.residual  nobs
+          &lt;dbl&gt;   &lt;int&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;       &lt;int&gt; &lt;int&gt;
+1          138.      99  -51.5  107.  112.     103.          98   100</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy</span>(model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 5
+  term        estimate std.error statistic     p.value
+  &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+1 (Intercept)   -2.63      0.571     -4.60 0.00000422 
+2 x              0.505     0.102      4.96 0.000000699</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">augment</span>(model), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb8-2">  dplyr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 1
+Columns: 8
+$ y          &lt;int&gt; 0
+$ x          &lt;dbl&gt; 2.875775
+$ .fitted    &lt;dbl&gt; -1.175925
+$ .resid     &lt;dbl&gt; -0.7333581
+$ .hat       &lt;dbl&gt; 0.01969748
+$ .sigma     &lt;dbl&gt; 1.028093
+$ .cooksd    &lt;dbl&gt; 0.003162007
+$ .std.resid &lt;dbl&gt; -0.7406892</code></pre>
+</div>
+</div>
+</section>
+<section id="predict-probabilities" class="level1">
+<h1>Predict Probabilities</h1>
+<p>Now that we have our model, we can use it to predict probabilities. We’ll create a sequence of values for our predictor variable, and for each value, we’ll predict the probability of success, in this case <code>y</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a sequence of predictor values</span></span>
+<span id="cb10-2">x_seq <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.01</span>)</span>
+<span id="cb10-3"></span>
+<span id="cb10-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Predict probabilities</span></span>
+<span id="cb10-5">probabilities <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(</span>
+<span id="cb10-6">  model, </span>
+<span id="cb10-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x_seq), </span>
+<span id="cb10-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span></span>
+<span id="cb10-9">  )</span>
+<span id="cb10-10"></span>
+<span id="cb10-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(x_seq)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.00 0.01 0.02 0.03 0.04 0.05</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(probabilities)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         1          2          3          4          5          6 
+0.06732923 0.06764710 0.06796636 0.06828702 0.06860908 0.06893255 </code></pre>
+</div>
+</div>
+<p>The <code>predict</code> function here calculates the probabilities using our logistic regression model.</p>
+</section>
+<section id="plot-the-logistic-regression-curve" class="level1">
+<h1>Plot the Logistic Regression Curve</h1>
+<p>Finally, let’s plot the logistic regression curve. We’ll use the <code>plot</code> function to create a scatter plot of the data points, and then we’ll overlay the logistic curve using the <code>lines</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the data points</span></span>
+<span id="cb14-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(</span>
+<span id="cb14-3">  df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y, </span>
+<span id="cb14-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>, </span>
+<span id="cb14-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, </span>
+<span id="cb14-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Predictor Variable"</span>, </span>
+<span id="cb14-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Probability of Success"</span></span>
+<span id="cb14-8">  )</span>
+<span id="cb14-9"></span>
+<span id="cb14-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add the logistic regression curve</span></span>
+<span id="cb14-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(x_seq, probabilities, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-10-26/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>And there you have it! You’ve successfully plotted a logistic regression curve in base R. The blue dots represent your data points, and the red curve is the logistic regression curve, showing how the probability of success changes with the predictor variable.</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>I encourage you to try this out with your own dataset. Logistic regression is a powerful tool for modeling binary outcomes, and visualizing the curve helps you understand the relationship between your predictor variable and the probability of success. Experiment with different datasets and predictor variables to gain a deeper understanding of this essential statistical technique.</p>
+<p>Remember, practice makes perfect, and the more you work with logistic regression in R, the more proficient you’ll become. Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>viz</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-10-26/index.html</guid>
+  <pubDate>Thu, 26 Oct 2023 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>What’s a Bland-Altman Plot? In Base R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4813,291 +5122,6 @@ font-style: inherit;">"black"</span>)</span></code></pre></div>
   <category>viz</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-09-28/index.html</guid>
   <pubDate>Thu, 28 Sep 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Enhancing Your Data Visualizations with Base R: Overlaying Points and Lines</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-09-27/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Data visualization is a crucial aspect of data analysis and exploration. It allows us to gain insights, spot trends, and communicate our findings effectively. In R, there are numerous packages and libraries available for creating sophisticated plots, but understanding the basics of base R plotting is essential for any data analyst or scientist.</p>
-<p>In this blog post, we’ll explore how to overlay points or lines on a plot using Base R. We’ll use the <code>plot()</code> function to create the initial plot and then show how to overlay points with <code>points()</code> and lines with <code>lines()</code>. We’ll provide several examples, explaining each code block in simple terms, and encourage you to try them out on your own datasets.</p>
-</section>
-<section id="setting-up-the-environment" class="level1">
-<h1>Setting Up the Environment</h1>
-<p>Before we start, make sure you have R installed on your system. You can download and install R from the official website (https://www.r-project.org/). Additionally, we’ll assume you have a basic understanding of R syntax and data structures.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="example-1-overlaying-points-on-a-scatter-plot" class="level2">
-<h2 class="anchored" data-anchor-id="example-1-overlaying-points-on-a-scatter-plot">Example 1: Overlaying Points on a Scatter Plot</h2>
-<p>Let’s begin with a simple scatter plot. Suppose we have two vectors, <code>x</code> and <code>y</code>, representing data points.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data</span></span>
-<span id="cb1-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb1-3">y <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)</span>
-<span id="cb1-4"></span>
-<span id="cb1-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create the initial scatter plot</span></span>
-<span id="cb1-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Scatter Plot with Overlay Points"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"X-axis"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y-axis"</span>)</span>
-<span id="cb1-7"></span>
-<span id="cb1-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Overlay additional points (red circles) on the plot</span></span>
-<span id="cb1-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">points</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">16</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-27/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>In this example, we use the <code>plot()</code> function to create a scatter plot of <code>x</code> and <code>y</code>. Then, we overlay red circles on the existing plot using <code>points()</code>. The <code>col</code> argument specifies the color, and <code>pch</code> determines the point shape (16 represents circles).</p>
-</section>
-<section id="example-2-overlaying-lines-on-a-line-plot" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-overlaying-lines-on-a-line-plot">Example 2: Overlaying Lines on a Line Plot</h2>
-<p>Now, let’s work with line plots. Suppose we have two vectors, <code>x</code> and <code>y</code>, representing data points for a line graph.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data</span></span>
-<span id="cb2-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb2-3">y <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)</span>
-<span id="cb2-4"></span>
-<span id="cb2-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create the initial line plot</span></span>
-<span id="cb2-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Line Plot with Overlay Lines"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"X-axis"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y-axis"</span>)</span>
-<span id="cb2-7"></span>
-<span id="cb2-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Overlay a new line (dashed, blue) on the plot</span></span>
-<span id="cb2-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-27/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>In this example, we use the <code>plot()</code> function with <code>type = "l"</code> to create a line plot. Then, we overlay a dashed blue line on the plot using <code>lines()</code>. The <code>col</code> argument sets the line color, and <code>lty</code> specifies the line type (2 stands for dashed).</p>
-</section>
-<section id="example-3-combining-points-and-lines" class="level2">
-<h2 class="anchored" data-anchor-id="example-3-combining-points-and-lines">Example 3: Combining Points and Lines</h2>
-<p>In some cases, you might want to overlay both points and lines on the same plot to illustrate relationships more clearly. Let’s see how to do that:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data</span></span>
-<span id="cb3-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb3-3">y <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)</span>
-<span id="cb3-4"></span>
-<span id="cb3-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create the initial scatter plot</span></span>
-<span id="cb3-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Scatter Plot with Overlay Points and Lines"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"X-axis"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y-axis"</span>)</span>
-<span id="cb3-7"></span>
-<span id="cb3-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Overlay points (green triangles)</span></span>
-<span id="cb3-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">points</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">17</span>)</span>
-<span id="cb3-10"></span>
-<span id="cb3-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Overlay a line (purple) connecting the points</span></span>
-<span id="cb3-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"purple"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-09-27/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>In this example, we start with a scatter plot and overlay green triangles using <code>points()</code> and a purple line using <code>lines()</code>. The combination of points and lines can help emphasize patterns and relationships in your data.</p>
-</section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>In this blog post, we’ve explored how to overlay points and lines on a plot in Base R. We’ve covered scatter plots, line plots, and combinations of both. Overlaying points and lines can be a powerful way to enhance your data visualizations and convey insights effectively.</p>
-<p>Now it’s your turn! Experiment with different datasets and customize your plots by adjusting colors, shapes, and line styles. Base R provides a solid foundation for data visualization, and mastering it will enable you to create informative plots for your data analysis projects.</p>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>viz</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-09-27/index.html</guid>
-  <pubDate>Wed, 27 Sep 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
