@@ -10,7 +10,308 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Thu, 16 Nov 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 17 Nov 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Quadratic Regression in R: Unveiling Non-Linear Relationships</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-11-17/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In the realm of data analysis, quadratic regression emerges as a powerful tool for uncovering the hidden patterns within datasets that exhibit non-linear relationships. Unlike its linear counterpart, quadratic regression ventures beyond straight lines, gracefully capturing curved relationships between variables. This makes it an essential technique for understanding a wide range of phenomena, from predicting stock prices to modeling population growth.</p>
+<p>Embark on a journey into the world of quadratic regression using the versatile R programming language. We’ll explore the steps involved in fitting a quadratic model, interpreting its parameters, and visualizing the results. Along the way, you’ll gain hands-on experience with this valuable technique, enabling you to tackle your own data analysis challenges with confidence.</p>
+</section>
+<section id="setting-the-stage-data-preparation" class="level1">
+<h1>Setting the Stage: Data Preparation</h1>
+<p>Before embarking on our quadratic regression adventure, let’s assemble our data. Suppose we’re investigating the relationship between study hours and exam scores. We’ve gathered data from a group of students, recording their study hours and corresponding exam scores.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a data frame to store the data</span></span>
+<span id="cb1-2">study_hours <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">40</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">47</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">51</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">55</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">60</span>)</span>
+<span id="cb1-3">exam_scores <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">89</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">94</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">75</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">59</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">27</span>)</span>
+<span id="cb1-4">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(study_hours, exam_scores)</span>
+<span id="cb1-5">data</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   study_hours exam_scores
+1            6          14
+2            9          28
+3           12          50
+4           14          70
+5           30          89
+6           35          94
+7           40          90
+8           47          75
+9           51          59
+10          55          44
+11          60          27</code></pre>
+</div>
+</div>
+</section>
+<section id="visualizing-the-relationship-a-scatterplots-revelation" class="level1">
+<h1>Visualizing the Relationship: A Scatterplot’s Revelation</h1>
+<p>To gain an initial impression of the relationship between study hours and exam scores, let’s create a scatterplot. This simple yet powerful visualization will reveal the underlying pattern in our data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a scatterplot of exam scores versus study hours</span></span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(</span>
+<span id="cb3-3">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>study_hours, </span>
+<span id="cb3-4">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>exam_scores, </span>
+<span id="cb3-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exam Scores vs. Study Hours"</span>, </span>
+<span id="cb3-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Study Hours"</span>, </span>
+<span id="cb3-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exam Scores"</span></span>
+<span id="cb3-8">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-17/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Upon examining the scatterplot, a hint of a non-linear relationship emerges. The data points don’t fall along a straight line, suggesting a more complex association between study hours and exam scores. This is where quadratic regression steps in.</p>
+</section>
+<section id="fitting-the-quadratic-model-capturing-the-curve" class="level1">
+<h1>Fitting the Quadratic Model: Capturing the Curve</h1>
+<p>To capture the curvature evident in our data, we’ll employ the <code>lm()</code> function in R to fit a quadratic regression model. This model incorporates a second-degree term, allowing it to represent curved relationships between variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit a quadratic regression model to the data</span></span>
+<span id="cb4-2">quadratic_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(exam_scores <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> study_hours <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">I</span>(study_hours<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data)</span></code></pre></div>
+</div>
+<p>The <code>I()</code> function in the model formula ensures that the square of study hours is treated as a separate variable, enabling the model to capture the non-linearity.</p>
+</section>
+<section id="interpreting-the-model-unraveling-the-parameters" class="level1">
+<h1>Interpreting the Model: Unraveling the Parameters</h1>
+<p>Now that we’ve fitted the quadratic model, let’s delve into its parameters and understand their significance.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Summarize the quadratic regression model</span></span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(quadratic_model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = exam_scores ~ study_hours + I(study_hours^2), data = data)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-6.2484 -3.7429 -0.1812  1.1464 13.6678 
+
+Coefficients:
+                  Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)      -18.25364    6.18507  -2.951   0.0184 *  
+study_hours        6.74436    0.48551  13.891 6.98e-07 ***
+I(study_hours^2)  -0.10120    0.00746 -13.565 8.38e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 6.218 on 8 degrees of freedom
+Multiple R-squared:  0.9602,    Adjusted R-squared:  0.9502 
+F-statistic: 96.49 on 2 and 8 DF,  p-value: 2.51e-06</code></pre>
+</div>
+</div>
+<p>The output of the summary function provides valuable insights into the model’s performance and the significance of its parameters. It indicates the intercept, representing the predicted exam score when study hours are zero, and the coefficients for the linear and quadratic terms.</p>
+</section>
+<section id="visualizing-the-model-bringing-the-curve-to-life" class="level1">
+<h1>Visualizing the Model: Bringing the Curve to Life</h1>
+<p>To fully appreciate the quadratic model’s ability to capture the non-linear relationship between study hours and exam scores, let’s visualize the model alongside the data points.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate the predicted exam scores for a range of study hours</span></span>
+<span id="cb7-2">predicted_scores <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(</span>
+<span id="cb7-3">  quadratic_model, </span>
+<span id="cb7-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb7-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">study_hours =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(study_hours), </span>
+<span id="cb7-6">                      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(study_hours), </span>
+<span id="cb7-7">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span></span>
+<span id="cb7-8">                      )</span>
+<span id="cb7-9">    )</span>
+<span id="cb7-10">  )</span>
+<span id="cb7-11"></span>
+<span id="cb7-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the data points and the predicted scores</span></span>
+<span id="cb7-13"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(</span>
+<span id="cb7-14">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>study_hours, </span>
+<span id="cb7-15">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>exam_scores, </span>
+<span id="cb7-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exam Scores vs. Study Hours"</span>, </span>
+<span id="cb7-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Study Hours"</span>, </span>
+<span id="cb7-18">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exam Scores"</span></span>
+<span id="cb7-19">  )</span>
+<span id="cb7-20"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(study_hours), </span>
+<span id="cb7-21">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(study_hours), </span>
+<span id="cb7-22">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>), </span>
+<span id="cb7-23">      predicted_scores, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span></span>
+<span id="cb7-24">      )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-17/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The resulting plot reveals the graceful curve of the quadratic model, fitting the data points closely. This visualization reinforces the model’s ability to capture the non-linear relationship between study hours and exam scores.</p>
+</section>
+<section id="your-turn-embarking-on-your-own-quadratic-regression-adventure" class="level1">
+<h1>Your Turn: Embarking on Your Own Quadratic Regression Adventure</h1>
+<p>Armed with the knowledge and skills gained from this tutorial, you’re now ready to embark on your own quadratic regression adventures. Gather your data, fit the model, interpret the parameters, and visualize the results.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-17/index.html</guid>
+  <pubDate>Fri, 17 Nov 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>{healthyR.ts} New Features: Unlocking More Power</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -572,6 +873,7 @@ font-style: inherit;">"Residuals"</span></span>
 
  ]]></description>
   <category>rtip</category>
+  <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-15/index.html</guid>
   <pubDate>Wed, 15 Nov 2023 05:00:00 GMT</pubDate>
 </item>
@@ -705,6 +1007,7 @@ font-style: inherit;">print</span>(prediction)</span></code></pre></div>
 
  ]]></description>
   <category>rtip</category>
+  <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-14/index.html</guid>
   <pubDate>Tue, 14 Nov 2023 05:00:00 GMT</pubDate>
 </item>
@@ -4155,166 +4458,6 @@ font-style: inherit;">$</span>stationary_ts)</span></code></pre></div>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-10-18/index.html</guid>
   <pubDate>Wed, 18 Oct 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Testing stationarity with the ts_adf_test() function in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-10-17/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Hey there, R enthusiasts! Today, we’re going to dive into the fascinating world of time series analysis using the <code>ts_adf_test()</code> function from the <code>healthyR.ts</code> R library. If you’re into data, statistics, and R coding, this is a must-know tool for your arsenal.</p>
-</section>
-<section id="whats-the-deal-with-augmented-dickey-fuller" class="level1">
-<h1>What’s the Deal with Augmented Dickey-Fuller?</h1>
-<p>Before we delve into the <code>ts_adf_test()</code> function, let’s understand the concept behind it. The Augmented Dickey-Fuller (ADF) test is a crucial tool in time series analysis. It’s like the Sherlock Holmes of time series data, helping us detect whether a series is stationary or not. Stationarity is a fundamental assumption in time series modeling because many models work best when applied to stationary data.</p>
-<p>So, why “Augmented”? Well, it’s an extension of the original Dickey-Fuller test that accounts for more complex relationships within the time series data.</p>
-</section>
-<section id="the-ts_adf_test-function" class="level1">
-<h1>The <code>ts_adf_test()</code> Function</h1>
-<p>Now, let’s get to the star of the show, the <code>ts_adf_test()</code> function. This function is part of the <code>healthyR.ts</code> library, and its primary job is to perform the ADF test on a given time series. In R, a time series can be represented as a numeric vector. Here’s the basic syntax:</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_adf_test</span>(.x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.k =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>)</span></code></pre></div>
-<ul>
-<li><code>.x</code> is your time series data, the numeric vector you want to analyze.</li>
-<li><code>.k</code> is an optional parameter that allows you to specify the lag order. If you leave it empty (like <code>.k = NULL</code>), don’t worry; the function will calculate it for you based on the number of observations using a clever formula.</li>
-</ul>
-</section>
-<section id="show-me-the-stats" class="level1">
-<h1>Show Me the Stats!</h1>
-<p>So, what does <code>ts_adf_test()</code> return? It gives you a list object containing two vital pieces of information:</p>
-<ol type="1">
-<li><p><strong>Test Statistic</strong>: This is the heart of the ADF test. It tells us how strongly our data deviates from being stationary. A more negative value indicates stronger evidence for stationarity.</p></li>
-<li><p><strong>P-Value</strong>: This is another critical number. It represents the probability that you’d observe a test statistic as extreme as the one you obtained if the data were not stationary. In simpler terms, a low p-value suggests that your data is likely stationary, while a high p-value implies non-stationarity.</p></li>
-</ol>
-</section>
-<section id="lets-get-practical" class="level1">
-<h1>Let’s Get Practical</h1>
-<p>Enough theory! Let’s see some action with a couple of examples. Say we have the <code>AirPassengers</code> and <code>BJsales</code> datasets, and we want to check their stationarity:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(healthyR.ts)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ADF test for AirPassengers</span></span>
-<span id="cb2-4">result_air <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_adf_test</span>(AirPassengers)</span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"AirPassengers ADF Test Result:</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>AirPassengers ADF Test Result:</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result_air)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$test_stat
-[1] -7.318571
-
-$p_value
-[1] 0.01</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ADF test for BJsales</span></span>
-<span id="cb6-2">result_bj <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_adf_test</span>(BJsales)</span>
-<span id="cb6-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">BJsales ADF Test Result:</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-BJsales ADF Test Result:</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result_bj)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$test_stat
-[1] -2.110919
-
-$p_value
-[1] 0.5301832</code></pre>
-</div>
-</div>
-<p>In the <code>AirPassengers</code> example, we get a test statistic of -7.318571 and a p-value of 0.01. This suggests strong evidence for stationarity in this dataset.</p>
-<p>However, for <code>BJsales</code>, we get a test statistic of -2.110919 and a p-value of 0.5301832. The higher p-value here indicates that the data is less likely to be stationary.</p>
-<p>Now let’s see what happens when we change the lags of the series by one period.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_adf_test</span>(AirPassengers, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$test_stat
-[1] -7.652287
-
-$p_value
-[1] 0.01</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_adf_test</span>(BJsales, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$test_stat
-[1] -1.316414
-
-$p_value
-[1] 0.8611925</code></pre>
-</div>
-</div>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>The <code>ts_adf_test()</code> function in the <code>healthyR.ts</code> library is a valuable tool for any data scientist or R coder working with time series data. It helps you determine whether your data is stationary, a crucial step in building reliable time series models.</p>
-<p>So, the next time you’re faced with a time series dataset, remember to call on your trusty companion, <code>ts_adf_test()</code>, to solve the mystery of stationarity. Happy coding, R enthusiasts!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>healthyrts</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-10-17/index.html</guid>
-  <pubDate>Tue, 17 Oct 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
