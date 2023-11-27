@@ -10,7 +10,272 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Wed, 22 Nov 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 27 Nov 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title></title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-11-27/index.html</link>
+  <description><![CDATA[ 
+
+
+
+<section id="unveiling-power-regression-a-step-by-step-guide-in-r" class="level1">
+<h1>Unveiling Power Regression: A Step-by-Step Guide in R</h1>
+<p>In the realm of statistics, power regression stands out as a versatile tool for exploring the relationship between two variables, where one variable is the power of the other. This type of regression is particularly useful when there’s an inherent nonlinear relationship between the variables, often characterized by an exponential or inverse relationship.</p>
+<p>Power regression takes the form of y = ax^b, where:</p>
+<ul>
+<li><p><code>y</code>: The response variable, the quantity we’re trying to predict</p></li>
+<li><p><code>x</code>: The predictor variable, the quantity we’re using to make predictions</p></li>
+<li><p><code>a</code>: The intercept, the value of y when x = 1</p></li>
+<li><p><code>b</code>: The power coefficient, which determines the rate at which y changes as x increases or decreases</p></li>
+</ul>
+</section>
+<section id="steps" class="level1">
+<h1>Steps</h1>
+<section id="step-1-gathering-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-gathering-the-data">Step 1: Gathering the Data</h2>
+<p>To embark on our power regression journey, we’ll need some data to work with. Let’s simulate a dataset that exhibits an exponential relationship between two variables:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Simulate data</span></span>
+<span id="cb1-2">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb1-3">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span></code></pre></div>
+</div>
+</section>
+<section id="step-2-visualizing-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-visualizing-the-data">Step 2: Visualizing the Data</h2>
+<p>Before diving into the regression analysis, it’s crucial to visualize the data to gain a deeper understanding of the underlying relationship between the variables. A scatterplot can effectively reveal any patterns or trends in the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create scatterplot</span></span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-27/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-3-transforming-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-transforming-the-data">Step 3: Transforming the Data</h2>
+<p>Since power regression assumes a nonlinear relationship between the variables, we need to transform the data to fit the model’s structure. This involves taking the logarithm of both sides of the power regression equation:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Transform data</span></span>
+<span id="cb3-2">log_y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">log</span>(y)</span>
+<span id="cb3-3">log_x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">log</span>(x)</span></code></pre></div>
+</div>
+</section>
+<section id="step-4-fitting-the-power-regression-model" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-fitting-the-power-regression-model">Step 4: Fitting the Power Regression Model</h2>
+<p>Now that the data is suitably transformed, we can proceed with fitting the power regression model using the <code>lm()</code> function in R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit power regression model</span></span>
+<span id="cb4-2">model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(log_y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> log_x)</span></code></pre></div>
+</div>
+</section>
+<section id="step-5-examining-the-model-results" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-examining-the-model-results">Step 5: Examining the Model Results</h2>
+<p>The <code>summary()</code> function provides valuable insights into the model’s performance, including the estimated regression coefficients, their standard errors, and the p-values associated with each coefficient.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Summarize model results</span></span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = log_y ~ log_x)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.026290 -0.005431  0.000691  0.004400  0.123635 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 0.730501   0.006123   119.3   &lt;2e-16 ***
+log_x       2.990395   0.001632  1832.7   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.01507 on 98 degrees of freedom
+Multiple R-squared:      1, Adjusted R-squared:      1 
+F-statistic: 3.359e+06 on 1 and 98 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+</section>
+<section id="step-6-visualizing-the-fitted-model" class="level2">
+<h2 class="anchored" data-anchor-id="step-6-visualizing-the-fitted-model">Step 6: Visualizing the Fitted Model</h2>
+<p>Visualizing the fitted model allows us to evaluate how well the model captures the underlying relationship between the variables. We can add the fitted model to the scatterplot using the <code>predict()</code> function (don’t forget to exponentiate!):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Predict fitted values</span></span>
+<span id="cb7-2">fitted_values <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x),</span>
+<span id="cb7-3">                        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">interval =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"prediction"</span>,</span>
+<span id="cb7-4">                        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">level =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span>)</span>
+<span id="cb7-5"></span>
+<span id="cb7-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add fitted model to scatterplot</span></span>
+<span id="cb7-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y)</span>
+<span id="cb7-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span>(fitted_values[, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-27/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-7-calculating-prediction-intervals" class="level2">
+<h2 class="anchored" data-anchor-id="step-7-calculating-prediction-intervals">Step 7: Calculating Prediction Intervals</h2>
+<p>Prediction intervals provide a range of plausible values for the response variable at a given level of confidence. We calculated the prediction intervals using the <code>predict()</code> function above:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add fitted model to scatterplot</span></span>
+<span id="cb8-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y)</span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span>(fitted_values[, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>)</span>
+<span id="cb8-4"></span>
+<span id="cb8-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add prediction intervals to scatterplot</span></span>
+<span id="cb8-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span>(fitted_values[, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb8-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span>(fitted_values[, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>]), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-27/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Power regression serves as a powerful tool for modeling nonlinear relationships between variables. By transforming the data, fitting the model, and visualizing the results, we can gain valuable insights into the underlying patterns and make informed predictions about the response variable.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-27/index.html</guid>
+  <pubDate>Mon, 27 Nov 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Unveiling the Magic of LOESS Regression in R: A Step-by-Step Guide with mtcars</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4734,280 +4999,6 @@ font-style: inherit;">sum</span>(eigenvalues)</span></code></pre></div>
   <category>viz</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-10-24/index.html</guid>
   <pubDate>Tue, 24 Oct 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Create a Bubble Chart in R using ggplot2</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-10-23/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Bubble charts are a great way to visualize data with three dimensions. The size of the bubbles represents a third variable, which can be used to show the importance of that variable or to identify relationships between the three variables.</p>
-<p>To create a bubble chart in R using <code>ggplot2</code>, you will need to use the <code>geom_point()</code> function. This function will plot points on your chart, and you can use the size aesthetic to control the size of the points.</p>
-</section>
-<section id="getting-started" class="level1">
-<h1>Getting Started</h1>
-<p>Before we begin, ensure you have R and <code>ggplot2</code> installed. If you don’t have <code>ggplot2</code>, you can install it with the command:</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"ggplot2"</span>)</span></code></pre></div>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="example-1-basic-bubble-chart" class="level2">
-<h2 class="anchored" data-anchor-id="example-1-basic-bubble-chart">Example 1: Basic Bubble Chart</h2>
-<p>Let’s start with a simple example using randomly generated data. We’ll create a bubble chart that shows the relationship between two variables and represents a third variable using bubble sizes.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load ggplot2 library</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggplot2)</span>
-<span id="cb2-3"></span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate random data</span></span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb2-6">data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb2-7">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>),</span>
-<span id="cb2-8">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>),</span>
-<span id="cb2-9">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)</span>
-<span id="cb2-10">)</span>
-<span id="cb2-11"></span>
-<span id="cb2-12"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a bubble chart</span></span>
-<span id="cb2-13"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb2-14">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb2-15">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_size_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb2-16">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(</span>
-<span id="cb2-17">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Basic Bubble Chart"</span>, </span>
-<span id="cb2-18">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"X-Axis"</span>, </span>
-<span id="cb2-19">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y-Axis"</span>,</span>
-<span id="cb2-20">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb2-21">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-10-23/index_files/figure-html/ggplot2_bubble_chart-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>In this example, we create a bubble chart with random data points, where <code>x</code> and <code>y</code> are the coordinates, and <code>size</code> represents the bubble size. The <code>geom_point()</code> function is used to add the points, and we adjust the size range using <code>scale_size_continuous()</code>.</p>
-</section>
-<section id="example-2-customizing-bubble-chart" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-customizing-bubble-chart">Example 2: Customizing Bubble Chart</h2>
-<p>Now, let’s customize our bubble chart further. We’ll use a sample dataset to visualize car data, with car names on the bubbles.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data</span></span>
-<span id="cb3-2">cars <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> mtcars</span>
-<span id="cb3-3">cars<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>name <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rownames</span>(cars)</span>
-<span id="cb3-4"></span>
-<span id="cb3-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a bubble chart</span></span>
-<span id="cb3-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(cars, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> mpg, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> disp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> hp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">label =</span> name)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb3-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb3-8">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_text</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">vjust =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">hjust =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb3-9">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_size_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb3-10">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(</span>
-<span id="cb3-11">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Customized Bubble Chart"</span>, </span>
-<span id="cb3-12">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Miles per Gallon"</span>, </span>
-<span id="cb3-13">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Displacement"</span>,</span>
-<span id="cb3-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"HP"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb3-15">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-10-23/index_files/figure-html/ggplot2_bubble_chart2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>In this example, we’re using the mtcars dataset to create a bubble chart that displays car names using <code>geom_text()</code>. The <code>vjust</code> and <code>hjust</code> parameters control the text placement.</p>
-</section>
-</section>
-<section id="other-ways-to-use-bubble-charts" class="level1">
-<h1>Other Ways to Use Bubble Charts</h1>
-<p>Here are a few examples of bubble charts that you can create using ggplot2:</p>
-<ul>
-<li>A bubble chart showing the relationship between the population, GDP, and land area of different countries.</li>
-<li>A bubble chart showing the relationship between the sales, marketing budget, and customer satisfaction of different companies.</li>
-<li>A bubble chart showing the relationship between the temperature, humidity, and wind speed at different locations on a map.</li>
-</ul>
-</section>
-<section id="you-try" class="level1">
-<h1>You Try!</h1>
-<p>Creating bubble charts in R is not only informative but also fun! Encourage your readers to experiment with their own datasets and customize these examples. The ggplot2 library offers a wealth of possibilities for creating beautiful and insightful visualizations. So, don’t hesitate to dive into R and start charting your data with bubbles!</p>
-<p>I hope this guide helps you and your readers in creating engaging bubble charts in R using ggplot2. If you have any questions or need further clarification, feel free to ask. Happy coding, Steve!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>viz</category>
-  <category>ggplot2</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-10-23/index.html</guid>
-  <pubDate>Mon, 23 Oct 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
