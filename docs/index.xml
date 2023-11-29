@@ -10,7 +10,374 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Tue, 28 Nov 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 29 Nov 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Navigating Quantile Regression with R: A Comprehensive Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-11-29/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Quantile regression is a robust statistical method that goes beyond traditional linear regression by allowing us to model the relationship between variables at different quantiles of the response distribution. In this blog post, we’ll explore how to perform quantile regression in R using the quantreg library.</p>
+</section>
+<section id="setting-the-stage" class="level1">
+<h1>Setting the Stage</h1>
+<p>First things first, let’s create some data to work with. We’ll generate a data frame <code>df</code> with two variables: ‘hours’ and ‘score’. The relationship between ‘hours’ and ‘score’ will have a bit of noise to make things interesting.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create data frame</span></span>
+<span id="cb1-2">hours <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb1-3">score <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">60</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> hours <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.45</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> hours)</span>
+<span id="cb1-4">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(hours, score)</span></code></pre></div>
+</div>
+</section>
+<section id="visualizing-the-data" class="level1">
+<h1>Visualizing the Data</h1>
+<p>Before we jump into regression, it’s always a good idea to visualize our data. Let’s start with a scatter plot to get a sense of the relationship between hours and scores.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Scatter plot</span></span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>score, </span>
+<span id="cb2-3">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Scatter Plot of Hours vs. Score"</span>, </span>
+<span id="cb2-4">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Hours"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Score"</span></span>
+<span id="cb2-5">     )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-29/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now that we’ve got a clear picture of our data, it’s time to perform quantile regression.</p>
+</section>
+<section id="quantile-regression-with-quantreg" class="level1">
+<h1>Quantile Regression with quantreg</h1>
+<p>We’ll use the <code>quantreg</code> library to perform quantile regression. The key function here is <code>rq()</code> (Quantile Regression). We’ll run quantile regression for a few quantiles, say 0.25, 0.5, and 0.75.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install and load quantreg if not already installed</span></span>
+<span id="cb3-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># install.packages("quantreg")</span></span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(quantreg)</span>
+<span id="cb3-4"></span>
+<span id="cb3-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Quantile regression</span></span>
+<span id="cb3-6">quant_reg_25 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rq</span>(score <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> hours, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tau =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.25</span>)</span>
+<span id="cb3-7">quant_reg_50 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rq</span>(score <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> hours, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tau =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>)</span>
+<span id="cb3-8">quant_reg_75 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rq</span>(score <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> hours, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tau =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.75</span>)</span>
+<span id="cb3-9"></span>
+<span id="cb3-10">purrr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(quant_reg_25, quant_reg_50, quant_reg_75), broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>tidy)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 2 × 5
+  term        estimate conf.low conf.high   tau
+  &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+1 (Intercept)    60.3     59.0      61.1   0.25
+2 hours           1.56     1.33      1.82  0.25
+
+[[2]]
+# A tibble: 2 × 5
+  term        estimate conf.low conf.high   tau
+  &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+1 (Intercept)    60.2     59.6      60.5    0.5
+2 hours           1.96     1.86      2.20   0.5
+
+[[3]]
+# A tibble: 2 × 5
+  term        estimate conf.low conf.high   tau
+  &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+1 (Intercept)    59.9     59.5      60.7   0.75
+2 hours           2.36     2.16      2.53  0.75</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">purrr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(quant_reg_25, quant_reg_50, quant_reg_75), broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>glance)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 1 × 5
+    tau logLik      AIC   BIC df.residual
+  &lt;dbl&gt; &lt;logLik&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;int&gt;
+1  0.25 -259.6364  523.  528.          98
+
+[[2]]
+# A tibble: 1 × 5
+    tau logLik      AIC   BIC df.residual
+  &lt;dbl&gt; &lt;logLik&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;int&gt;
+1   0.5 -249.6752  503.  509.          98
+
+[[3]]
+# A tibble: 1 × 5
+    tau logLik      AIC   BIC df.residual
+  &lt;dbl&gt; &lt;logLik&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;int&gt;
+1  0.75 -252.0106  508.  513.          98</code></pre>
+</div>
+</div>
+</section>
+<section id="visualizing-model-performance" class="level1">
+<h1>Visualizing Model Performance</h1>
+<p>Now, let’s visualize how well our quantile regression models perform. We’ll overlay the regression lines on our scatter plot.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Scatter plot with regression lines</span></span>
+<span id="cb7-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Scatter plot with regression lines</span></span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>score, </span>
+<span id="cb7-4">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Quantile Regression: Hours vs. Score"</span>, </span>
+<span id="cb7-5">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Hours"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Score"</span>)</span>
+<span id="cb7-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">a =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_25), </span>
+<span id="cb7-7">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">b =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_25)[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hours"</span>], </span>
+<span id="cb7-8">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb7-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">a =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_50), </span>
+<span id="cb7-10">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">b =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_50)[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hours"</span>], </span>
+<span id="cb7-11">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb7-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">a =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_75), </span>
+<span id="cb7-13">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">b =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(quant_reg_75)[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hours"</span>], </span>
+<span id="cb7-14">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb7-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"topleft"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Quantile 0.25"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Quantile 0.5"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Quantile 0.75"</span>),</span>
+<span id="cb7-16">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-29/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>In this blog post, we delved into the fascinating world of quantile regression using R and the quantreg library. We generated some synthetic data, visualized it, and then performed quantile regression at different quantiles. The final touch was overlaying the regression lines on our scatter plot to visualize how well our models fit the data.</p>
+<p>Quantile regression provides a more nuanced view of the relationship between variables, especially when dealing with skewed or non-normally distributed data. It’s a valuable tool in your statistical toolkit. Happy coding, and may your regressions be ever quantile-wise accurate!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-29/index.html</guid>
+  <pubDate>Wed, 29 Nov 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Understanding and Implementing Robust Regression in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4958,265 +5325,6 @@ font-style: inherit;">2</span>)</span></code></pre></div>
   <category>viz</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-10-26/index.html</guid>
   <pubDate>Thu, 26 Oct 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>What’s a Bland-Altman Plot? In Base R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-10-25/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Before we dive into the code, let’s briefly understand what a Bland-Altman plot is. It’s a graphical method to visualize the agreement between two measurement techniques, often used in fields like medicine or any domain with comparative measurements. The plot displays the differences between two measurements (Y-axis) against their means (X-axis).</p>
-</section>
-<section id="step-1-data-preparation" class="level1">
-<h1>Step 1: Data Preparation</h1>
-<p>Start by loading your data into R. In our example, we’ll create some synthetic data for illustration purposes. You’d replace this with your real data.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Creating example data</span></span>
-<span id="cb1-2">method_A <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">18</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">22</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)</span>
-<span id="cb1-3">method_B <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9.5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">11</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">18</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">22</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">24.5</span>)</span>
-<span id="cb1-4"></span>
-<span id="cb1-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate the differences and means</span></span>
-<span id="cb1-6">diff_values <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> method_A <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> method_B</span>
-<span id="cb1-7">mean_values <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> (method_A <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> method_B) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span></span>
-<span id="cb1-8"></span>
-<span id="cb1-9">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(method_A, method_B, mean_values, diff_values)</span></code></pre></div>
-</div>
-</section>
-<section id="step-2-calculate-average-difference-and-ci" class="level1">
-<h1>Step 2: Calculate Average Difference and CI</h1>
-<p>Now that we have our data prepared, let’s create the Bland-Altman plot.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">mean_diff <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>diff_values)</span>
-<span id="cb2-2">mean_diff</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">lower <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> mean_diff <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.96</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sd</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>diff_values)</span>
-<span id="cb4-2">upper <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> mean_diff <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.96</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sd</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>diff_values)</span>
-<span id="cb4-3"></span>
-<span id="cb4-4">lower</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -0.3765386</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">upper</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1.376539</code></pre>
-</div>
-</div>
-</section>
-<section id="step-3-creating-the-bland-altman-plot" class="level1">
-<h1>Step 3: Creating the Bland-Altman Plot</h1>
-<p>We are going to do this in base R.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a scatter plot</span></span>
-<span id="cb8-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>mean_values, df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>diff_values, </span>
-<span id="cb8-3">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Mean of Methods A and B"</span>,</span>
-<span id="cb8-4">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Difference (Method A - Method B)"</span>,</span>
-<span id="cb8-5">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Bland-Altman Plot"</span>,</span>
-<span id="cb8-6">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylim =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(lower <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> (lower <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), upper <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.1</span>))</span>
-<span id="cb8-7"></span>
-<span id="cb8-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add a horizontal line at the mean difference</span></span>
-<span id="cb8-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(diff_values), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb8-10"></span>
-<span id="cb8-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add Confidence Intervals</span></span>
-<span id="cb8-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> upper, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb8-13"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> lower, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-10-25/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>This code will generate a simple Bland-Altman plot, and here’s what each part does:</p>
-<ul>
-<li><code>plot()</code>: Creates the scatter plot with means on the X-axis and differences on the Y-axis.</li>
-<li><code>abline(h = mean(diff_values), col = "red", lty = 2)</code>: Adds a red dashed line at the mean difference.</li>
-<li><code>abline(h = upper, col = "green", lty = 2)</code>: Adds blue dashed lines representing the 95% limits of agreement.</li>
-</ul>
-</section>
-<section id="step-4-interpretation" class="level1">
-<h1>Step 4: Interpretation</h1>
-<p>Now that you’ve generated your Bland-Altman plot, let’s interpret it:</p>
-<ul>
-<li>The red line represents the mean difference between the two methods.</li>
-<li>The blue dashed lines show the 95% limits of agreement, which help you assess the spread of the differences.</li>
-</ul>
-<p>If most data points fall within the blue lines, it indicates good agreement between the two methods. If data points are scattered widely outside the lines, there may be a systematic bias or inconsistency between the methods.</p>
-</section>
-<section id="step-5-exploration" class="level1">
-<h1>Step 5: Exploration</h1>
-<p>I encourage you to try this out with your own data. Replace the example data with your measurements and see what insights your Bland-Altman plot reveals.</p>
-<p>In conclusion, creating a Bland-Altman plot in R is a valuable technique to visualize agreement or bias between two measurement methods. It’s an essential tool for quality control and validation in various fields. I hope this step-by-step guide helps you get started. Happy plotting!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>viz</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-10-25/index.html</guid>
-  <pubDate>Wed, 25 Oct 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
