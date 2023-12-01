@@ -1,0 +1,90 @@
+---
+title: "tidyAML: Now supporting gee models"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-12-01"
+categories: [rtip, tidyaml, regression, classification]
+---
+
+# Introduction
+
+I am happy to announce that a new version of `tidyAML` is now available on CRAN. This version includes support for `gee` models. This is a big step forward for `tidyAML` as it now supports a wide variety of regression and classification models.
+
+# What is `tidyAML`?
+
+The package is meant to be a way to quickly create many models of different algorithms, and this release is a small step forward in supporting that mission. The package is built upon the `tidymodels` packages.
+
+# What is `gee`?
+
+`gee` stands for Generalized Estimating Equations. It is a way to model correlated data. For example, if you have a dataset where you have multiple observations per person, you may want to use `gee` to account for the correlation between observations within a person. This is a very common situation in longitudinal studies. Here is [a link](https://parsnip.tidymodels.org/reference/details_linear_reg_gee.html?q=gee#null) to the `gee` parsnip model.
+
+# Example
+
+Let's see how it works, we will examine how it is setup to faily gracefully and how it works when the `multilevelmod` package is installed and loaded into your environment.
+
+## Load Library
+
+```{r message=FALSE, warning=FALSE}
+library(tidyAML)
+```
+
+Now, let's build a model that will fail, it's important I think to see the failure message so you can understand what is happening. It's likely because the library is not loaded, let's face it, it has happened to all of us.
+
+```{r message=FALSE, warning=FALSE}
+library(recipes)
+library(dplyr)
+
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+frt_tbl <- fast_regression(
+  mtcars, 
+  rec_obj, 
+  .parsnip_eng = c("lm","glm","gee"),
+  .parsnip_fns = "linear_reg"
+)
+
+glimpse(frt_tbl)
+
+frt_tbl |> pull(pred_wflw) 
+
+frt_tbl |> pull(fitted_wflw) |> purrr::map(broom::tidy)
+```
+
+We see that the `gee` model failed. This is because we did not load the `multilevelmod` package. Let's load it and try again.
+
+```{r message=FALSE, warning=FALSE}
+library(multilevelmod)
+
+frt_tbl <- fast_regression(
+  mtcars, 
+  rec_obj, 
+  .parsnip_eng = c("lm","glm","gee"),
+  .parsnip_fns = "linear_reg"
+)
+
+glimpse(frt_tbl)
+
+frt_tbl |> pull(pred_wflw) 
+
+frt_tbl |> pull(fitted_wflw) |> purrr::map(broom::tidy)
+```
+
+# The recipe object
+
+Let's take a look at the model spec, the workflow and the fitted workflow to see what has happened behind the scenes. First let's look at the formula in the recipe object.
+
+```{r message=FALSE, warning=FALSE}
+formula(prep(rec_obj))
+```
+
+So we see what the formula is, but we also see that there is no `id_var` listed which means it would fail for the `gee` specification, but, our model worked! That is because behind the scenes in the fast sense at this point in development the first variable is taken to be the id variable. Let's see what the workflow looks like.
+
+```{r message=FALSE, warning=FALSE}
+gee_wflw <- frt_tbl |> slice(2) |> pull(wflw)
+
+gee_wflw[[1]]$fit$actions$model$formula
+```
+
+As we can see the first predictor variable has been chosen as the id variable. This will change in the future, where you will be able to choose the `id_var`.
+
+# Conclusion
+
+Thank you for reading and I hope you enjoy the new version of `tidyAML`. Please let me know if you have any questions or comments. We will continue our development of `tidyAML` and hope to have more updates soon.
