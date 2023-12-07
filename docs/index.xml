@@ -10,7 +10,315 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Wed, 06 Dec 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 07 Dec 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Unraveling Patterns: A Step-by-Step Guide to Piecewise Regression in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-12-07/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Hey there, fellow R enthusiasts! Today, let’s embark on a fascinating journey into the realm of piecewise regression using R. If you’ve ever wondered how to uncover hidden trends and breakpoints in your data, you’re in for a treat. Buckle up, and let’s dive into the world of piecewise regression!</p>
+</section>
+<section id="piecewise-regression" class="level1">
+<h1>Piecewise Regression</h1>
+<p>Piecewise regression is a powerful technique that allows us to model distinct segments of a dataset with different linear relationships. It’s like fitting multiple straight lines to capture the nuances of different regions in your data. So, grab your virtual lab coat, and let’s get started.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="step-1-load-your-data-and-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-load-your-data-and-libraries">Step 1: Load Your Data and Libraries</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install and load necessary packages</span></span>
+<span id="cb1-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># install.packages("segmented")</span></span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(segmented)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sample data</span></span>
+<span id="cb1-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb1-7">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span></span>
+<span id="cb1-8">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb1-9"></span>
+<span id="cb1-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Combine data</span></span>
+<span id="cb1-11">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(x, y)</span></code></pre></div>
+</div>
+</section>
+<section id="step-2-explore-your-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-explore-your-data">Step 2: Explore Your Data</h2>
+<p>Before diving into the regression, let’s take a peek at our data. Visualizing the data often provides insights into potential breakpoints.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Scatter plot to visualize the data</span></span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(</span>
+<span id="cb2-3">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x, data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y, </span>
+<span id="cb2-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Scatter Plot of Your Data"</span>,</span>
+<span id="cb2-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Independent Variable (x)"</span>, </span>
+<span id="cb2-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dependent Variable (y)"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-07/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-3-perform-piecewise-regression" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-perform-piecewise-regression">Step 3: Perform Piecewise Regression</h2>
+<p>Now, the exciting part! Let’s fit our piecewise regression model using the <code>segmented</code> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit the piecewise regression model</span></span>
+<span id="cb3-2">model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data)</span>
+<span id="cb3-3">segmented_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">segmented</span>(model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seg.Z =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>x)</span></code></pre></div>
+</div>
+</section>
+<section id="step-4-visualize-the-results" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-visualize-the-results">Step 4: Visualize the Results:</h2>
+<p>To truly understand the magic happening, let’s visualize the fitted model and residuals.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">seg_preds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(segmented_model)</span>
+<span id="cb4-2">seg_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> seg_preds</span>
+<span id="cb4-3"></span>
+<span id="cb4-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the original data with the fitted model</span></span>
+<span id="cb4-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(</span>
+<span id="cb4-6">  data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x, data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y,</span>
+<span id="cb4-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Piecewise Regression Fit"</span>,</span>
+<span id="cb4-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Independent Variable (x)"</span>,</span>
+<span id="cb4-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dependent Variable (y)"</span>,</span>
+<span id="cb4-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span></span>
+<span id="cb4-11">)</span>
+<span id="cb4-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x, seg_preds,<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-07/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot residuals</span></span>
+<span id="cb5-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the residuals for each segment</span></span>
+<span id="cb5-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, seg_res, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals"</span>)</span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">h =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-07/index_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-5-interpret-the-breakpoints" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-interpret-the-breakpoints">Step 5: Interpret the Breakpoints:</h2>
+<p>Inspecting the segmented model will reveal the breakpoints and the corresponding regression lines. It’s like deciphering the story your data is trying to tell.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># View breakpoints and coefficients</span></span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(segmented_model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    ***Regression Model with Segmented Relationship(s)***
+
+Call: 
+segmented.lm(obj = model, seg.Z = ~x)
+
+Estimated Break-Point(s):
+          Est. St.Err
+psi1.x 24.757  3.074
+
+Coefficients of the linear terms:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)  2.49825    2.55867   0.976    0.331
+x           -0.04055    0.17907  -0.226    0.821
+U1.x         0.93569    0.18186   5.145       NA
+
+Residual standard error: 6.073 on 96 degrees of freedom
+Multiple R-Squared: 0.9333,  Adjusted R-squared: 0.9312 
+
+Boot restarting based on 6 samples. Last fit:
+Convergence attained in 2 iterations (rel. change 2.9855e-12)</code></pre>
+</div>
+</div>
+</section>
+<section id="step-6-encourage-exploration" class="level2">
+<h2 class="anchored" data-anchor-id="step-6-encourage-exploration">Step 6: Encourage Exploration:</h2>
+<p>Now that you’ve conquered piecewise regression, encourage your fellow data explorers to try it themselves. Challenge them to apply this technique to their datasets and share their insights.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Congratulations, you’ve just unlocked the power of piecewise regression in R! By visualizing data, fitting models, and exploring breakpoints, you’ve gained a valuable tool for understanding complex relationships. Keep coding, keep exploring, and stay curious!</p>
+<p>Happy coding, and may your data always reveal its secrets!</p>
+<p>Steven P. Sanderson II, MPH</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-07/index.html</guid>
+  <pubDate>Thu, 07 Dec 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>A Complete Guide to Stepwise Regression in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5494,207 +5802,6 @@ font-style: inherit;">"shape_ratio"</span>)]</span></code></pre></div>
   <category>distribution</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-02/index.html</guid>
   <pubDate>Thu, 02 Nov 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Understanding the Triangular Distribution and Its Application in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-01/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>As an R programmer and enthusiast, I’m excited to delve into the fascinating world of probability distributions. One of the lesser-known but incredibly useful distributions is the Triangular Distribution, and today we’ll explore what it is and how to leverage it in R using the EnvStats library.</p>
-</section>
-<section id="what-is-the-triangular-distribution" class="level1">
-<h1>What is the Triangular Distribution?</h1>
-<p>The Triangular Distribution is a continuous probability distribution with a triangular shape, hence the name. It is defined by three parameters: <code>min</code>, <code>max</code>, and <code>mode</code>. These parameters determine the range of values the distribution can take and the most likely value within that range. In mathematical terms, the probability density function (PDF) of the Triangular Distribution is given by:</p>
-<pre><code>f(x) = (2 / (b - a)) * (x - a) / (c - a)      for a ≤ x &lt; c
-f(x) = (2 / (b - a)) * (b - x) / (b - c)      for c ≤ x ≤ b</code></pre>
-<p>Where: - <code>a</code> is the minimum value (<code>min</code> parameter). - <code>b</code> is the maximum value (<code>max</code> parameter). - <code>c</code> is the mode, which is the peak or most likely value (<code>mode</code> parameter).</p>
-</section>
-<section id="using-the-envstats-r-library" class="level1">
-<h1>Using the EnvStats R Library</h1>
-<p>To work with the Triangular Distribution in R, we can use the functions provided by the EnvStats library. Here are the key functions you need to know:</p>
-<ul>
-<li><p><code>dtri(x, min = 0, max = 1, mode = 1/2)</code>: This function calculates the probability density at a given <code>x</code>. You can specify the <code>min</code>, <code>max</code>, and <code>mode</code> parameters to define the distribution.</p></li>
-<li><p><code>ptri(q, min = 0, max = 1, mode = 1/2)</code>: Use this function to find the cumulative probability up to a given <code>q</code>. Again, you can customize the <code>min</code>, <code>max</code>, and <code>mode</code> parameters.</p></li>
-<li><p><code>qtri(p, min = 0, max = 1, mode = 1/2)</code>: The quantile function, which helps you find the value of <code>x</code> for a given cumulative probability <code>p</code>. As always, you can set <code>min</code>, <code>max</code>, and <code>mode</code> to match your specific distribution.</p></li>
-<li><p><code>rtri(n, min = 0, max = 1, mode = 1/2)</code>: This function generates a random set of <code>n</code> numbers following the Triangular Distribution with the specified parameters.</p></li>
-</ul>
-</section>
-<section id="practical-example-in-r" class="level1">
-<h1>Practical Example in R</h1>
-<p>Let’s see how to use these functions in a practical example. Suppose we want to model the distribution of daily temperatures in a specific region. We have historical data indicating that the minimum temperature is -5°C, the maximum temperature is 30°C, and the most likely temperature (mode) is around 20°C.</p>
-<p>Here’s how you can work with this scenario in R using the EnvStats library:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the EnvStats library</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(EnvStats)</span>
-<span id="cb2-3"></span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Define the parameters</span></span>
-<span id="cb2-5">min_temp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span></span>
-<span id="cb2-6">max_temp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span></span>
-<span id="cb2-7">mode_temp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span></span>
-<span id="cb2-8"></span>
-<span id="cb2-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate the density at x = 15°C</span></span>
-<span id="cb2-10">density_at_15 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dtri</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> min_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> max_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mode =</span> mode_temp)</span>
-<span id="cb2-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Density at 15°C:"</span>, density_at_15, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Density at 15°C: 0.04571429 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate the cumulative probability up to 25°C</span></span>
-<span id="cb4-2">cumulative_prob_up_to_25 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ptri</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> min_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> max_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mode =</span> mode_temp)</span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Cumulative Probability up to 25°C:"</span>, cumulative_prob_up_to_25, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Cumulative Probability up to 25°C: 0.9285714 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Find the temperature value for a cumulative probability of 0.75</span></span>
-<span id="cb6-2">temperature_for_prob_0<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">.75</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">qtri</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.75</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> min_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> max_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mode =</span> mode_temp)</span>
-<span id="cb6-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Temperature for Cumulative Probability 0.75:"</span>, temperature_for_prob_0<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">.75</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Temperature for Cumulative Probability 0.75: 20.64586 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate a random set of 10 temperatures</span></span>
-<span id="cb8-2">random_temperatures <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rtri</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> min_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> max_temp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mode =</span> mode_temp)</span>
-<span id="cb8-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Random Temperatures:"</span>, random_temperatures, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Random Temperatures: 26.21123 6.59049 13.64297 19.18005 9.697022 10.96856 6.626135 18.84034 -3.711269 25.5044 </code></pre>
-</div>
-</div>
-<p>In this example, we’ve used the Triangular Distribution to model daily temperatures, calculate probabilities, find quantiles, and generate random temperature values.</p>
-<p>The Triangular Distribution is a versatile tool for modeling scenarios where you have some knowledge about the range and likelihood of an event or outcome. Whether you’re simulating real-world scenarios or conducting risk assessments, the EnvStats library in R makes it easy to work with this distribution.</p>
-<p>So, the next time you need to model uncertain events with known bounds and modes, remember the Triangular Distribution and its helpful functions in R!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>distribution</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-01/index.html</guid>
-  <pubDate>Wed, 01 Nov 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
