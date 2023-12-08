@@ -10,7 +10,287 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Thu, 07 Dec 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 08 Dec 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Exploring TidyAML: Simplifying Regression Analysis in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-12-08/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>If you’re a data enthusiast diving into the world of regression analysis in R, you’ve likely encountered the challenges of managing code complexity and juggling different modeling engines. The good news is that there’s a powerful tool to streamline your regression workflow – the tidyAML R package.</p>
+</section>
+<section id="getting-started-with-tidyaml" class="level1">
+<h1>Getting Started with TidyAML</h1>
+<p>Before we dive into the script, let’s make sure you have the necessary libraries installed. Fire up your R console and install the tidyAML package along with its dependencies:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"tidyAML"</span>)</span></code></pre></div>
+<p>Now, let’s explore a script that leverages tidyAML for quick and efficient regression analysis. Here’s a breakdown of the key components:</p>
+</section>
+<section id="intial-setup" class="level1">
+<h1>Intial Setup</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyAML)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidymodels)</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidymodels_prefer</span>()</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(multilevelmod)</span>
+<span id="cb2-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(earth)</span>
+<span id="cb2-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(randomForest)</span>
+<span id="cb2-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rpart)</span>
+<span id="cb2-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(lightgbm)</span>
+<span id="cb2-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(baguette)</span></code></pre></div>
+</div>
+<section id="setting-up-the-recipe" class="level2">
+<h2 class="anchored" data-anchor-id="setting-up-the-recipe">Setting Up the Recipe</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> mtcars</span>
+<span id="cb3-2">recipe <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df)</span></code></pre></div>
+</div>
+<p>In this snippet, we’re creating a recipe for our regression analysis. The response variable (<code>mpg</code>) is modeled against all other variables in the <code>mtcars</code> dataset.</p>
+</section>
+<section id="fast-regression-with-tidyaml" class="level2">
+<h2 class="anchored" data-anchor-id="fast-regression-with-tidyaml">Fast Regression with TidyAML</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">fr_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fast_regression</span>(</span>
+<span id="cb4-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.data =</span> df,</span>
+<span id="cb4-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.rec_obj =</span> recipe,</span>
+<span id="cb4-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"linear_reg"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mars"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bag_mars"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"rand_forest"</span>,</span>
+<span id="cb4-5">                   <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"boost_tree"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bag_tree"</span>),</span>
+<span id="cb4-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lm"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gee"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"glm"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gls"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"earth"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"rpart"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lightgbm"</span>)</span>
+<span id="cb4-7">)</span></code></pre></div>
+</div>
+<p>This is where the magic happens. The <code>fast_regression</code> function performs regression using various modeling functions (<code>linear_reg</code>, <code>mars</code>, etc.) and engines (<code>lm</code>, <code>gee</code>, etc.) specified. It’s a versatile approach to quickly explore different models.</p>
+</section>
+<section id="visualizing-residuals" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-residuals">Visualizing Residuals</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">fr_tbl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">res =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span>(fitted_wflw, \(x) x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb5-3">                     broom<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">augment</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">new_data =</span> df))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unnest</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cols =</span> res) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pfe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste0</span>(.parsnip_engine, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" - "</span>, .parsnip_fns)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.res =</span> mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> .pred) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> pfe, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> .res, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> pfe)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-8">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_boxplot</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-9">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-10">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals by Fitted Model"</span>,</span>
+<span id="cb5-11">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">subtitle =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals are mpg - .pred"</span>,</span>
+<span id="cb5-12">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model"</span>,</span>
+<span id="cb5-13">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals"</span>,</span>
+<span id="cb5-14">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Engine + Function"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.text.x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">angle =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">45</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">hjust =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-08/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This block of code generates a boxplot visualizing residuals by model. Residuals are the differences between observed and predicted values. The plot helps you assess how well your models are performing.</p>
+</section>
+</section>
+<section id="try-it-yourself" class="level1">
+<h1>Try It Yourself!</h1>
+<p>Now that you’ve seen the power of tidyAML in action, it’s time to try it yourself. Install the package, load your data, and adapt the script to your specific use case. TidyAML provides a clean and efficient way to explore different regression models, making your analysis more manageable and insightful.</p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"tidyAML"</span>)</span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyAML)</span>
+<span id="cb6-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your data loading and analysis code here</span></span></code></pre></div>
+<p>Happy coding, and may your regression analyses be tidy and insightful!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-08/index.html</guid>
+  <pubDate>Fri, 08 Dec 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Unraveling Patterns: A Step-by-Step Guide to Piecewise Regression in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5677,131 +5957,6 @@ font-style: inherit;">head</span>(result)</span></code></pre></div>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-03/index.html</guid>
   <pubDate>Fri, 03 Nov 2023 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Fitting a Distribution to Data in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-02/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>The gamma distribution is a continuous probability distribution that is often used to model waiting times or other positively skewed data. It is a two-parameter distribution, where the shape parameter controls the skewness of the distribution and the scale parameter controls the spread of the distribution.</p>
-</section>
-<section id="fitting-a-gamma-distribution-to-a-dataset-in-r" class="level1">
-<h1>Fitting a gamma distribution to a dataset in R</h1>
-<p>There are two main ways to fit a gamma distribution to a dataset in R:</p>
-<ol type="1">
-<li><strong>Maximum likelihood estimation (MLE)</strong>: This method estimates the parameters of the gamma distribution that are most likely to have produced the observed data.</li>
-<li><strong>Method of moments:</strong> This method estimates the parameters of the gamma distribution by equating the sample mean and variance to the theoretical mean and variance of the gamma distribution.</li>
-</ol>
-<p><strong>MLE</strong> is the more common and generally more reliable method of fitting a gamma distribution to a dataset. To fit a gamma distribution to a dataset using MLE, we can use the <code>fitdist()</code> function from the <code>fitdistrplus</code> package.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Install the fitdistrplus package if necessary</span></span>
-<span id="cb1-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#install.packages("fitdistrplus")</span></span>
-<span id="cb1-3"></span>
-<span id="cb1-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the fitdistrplus package</span></span>
-<span id="cb1-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(fitdistrplus)</span>
-<span id="cb1-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(TidyDensity)</span>
-<span id="cb1-7"></span>
-<span id="cb1-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb1-9">data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_gamma</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">500</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>y</span>
-<span id="cb1-10"></span>
-<span id="cb1-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit a gamma distribution to the data</span></span>
-<span id="cb1-12">fit <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">fitdist</span>(data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">distr =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gamma"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"mle"</span>)</span></code></pre></div>
-</div>
-<p>The <code>fit</code> object contains the estimated parameters of the gamma distribution, as well as other information about the fit. We can access the estimated parameters using the <code>coef()</code> function. Now the <code>tidy_gamma()</code> function from the TidyDensity package comes with a default setting of a <code>.scale = 0.3</code> and <code>shape = 1</code>. The rate is <code>1/.scale</code>, so by default it is 3.33333</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Get the estimated parameters of the gamma distribution</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coef</span>(fit)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>   shape     rate 
-1.031833 3.594773 </code></pre>
-</div>
-</div>
-<p>Now let’s see how that compares to the built in TidyDensity function:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_gamma_param_estimate</span>(data)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>parameter_tbl[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"shape"</span>,<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"scale"</span>,<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"shape_ratio"</span>)]</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 3
-  shape scale shape_ratio
-  &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;
-1 0.983 0.292        3.36</code></pre>
-</div>
-</div>
-<p>In the above, the <code>shape_ratio</code> is the <code>rate</code></p>
-</section>
-<section id="try-on-your-own" class="level1">
-<h1>Try on your own!</h1>
-<p>I encourage you to try fitting a gamma distribution to your own data. You can use the <code>fitdistrplus</code> package in R to fit a gamma distribution to any dataset. Once you have fitted a gamma distribution to your data, you can use the estimated parameters to generate random samples from the gamma distribution or to calculate the probability of observing a particular value.</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>distribution</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-02/index.html</guid>
-  <pubDate>Thu, 02 Nov 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
