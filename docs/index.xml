@@ -10,7 +10,230 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Fri, 08 Dec 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 12 Dec 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Conquering Unequal Variance with Weighted Least Squares in R: A Practical Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-12-12/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Tired of your least-squares regression model giving wonky results because some data points shout louder than others? Meet Weighted Least Squares (WLS), the superhero of regression, ready to tackle unequal variance (heteroscedasticity) and give your model the justice it deserves! Today, we’ll dive into the world of WLS in R, using base functions for maximum transparency. Buckle up, data warriors!</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<p><strong>The Scenario:</strong> Imagine studying the relationship between exam scores and study hours. But wait, some students took the test multiple times, inflating their data points! This unequal variance can skew your ordinary least squares (OLS) model, making it unreliable. WLS to the rescue!</p>
+<section id="steps" class="level2">
+<h2 class="anchored" data-anchor-id="steps">Steps</h2>
+<p><strong>Step 1: Gathering the Troops (Data):</strong></p>
+<p>Let’s create some simulated data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate exam scores and study hours</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb1-3">scores <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb1-4">hours <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>)</span>
+<span id="cb1-5">hours <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> hours <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add heteroscedasticity</span></span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a data frame</span></span>
+<span id="cb1-8">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(scores, hours)</span></code></pre></div>
+</div>
+<p><strong>Step 2: Visualizing the Battlefield:</strong></p>
+<p>A scatter plot is our trusty map:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>scores)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Do you see those clusters of high-scoring students with more study hours? They’re the loud ones skewing the OLS line.</p>
+<p><strong>Step 3: Building the WLS Wall:</strong></p>
+<p>It’s time to define our weights. We want to give less weight to observations with high variance (those loud students) and more weight to those with low variance. Here’s a simple approach:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate inverse of variance</span></span>
+<span id="cb3-2">weights <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span></span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit WLS model</span></span>
+<span id="cb3-5">wls_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(scores <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> hours, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">weights =</span> weights, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data)</span></code></pre></div>
+</div>
+<p><strong>Step 4: Inspecting the Model’s Performance:</strong></p>
+<p>Let’s see if WLS silenced the loud ones:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(wls_model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = scores ~ hours, data = data, weights = weights)
+
+Weighted Residuals:
+    Min      1Q  Median      3Q     Max 
+-75.854  -1.456   0.927   3.509  57.472 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   68.524      0.632 108.421   &lt;2e-16 ***
+hours         -1.085      1.480  -0.733    0.465    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 14.65 on 98 degrees of freedom
+Multiple R-squared:  0.00545,   Adjusted R-squared:  -0.004698 
+F-statistic: 0.537 on 1 and 98 DF,  p-value: 0.4654</code></pre>
+</div>
+</div>
+<p>Compare this summary to your OLS model’s. Do the coefficients and residuals look more sensible?</p>
+<p><strong>Step 5: Visualizing the Conquered Land:</strong></p>
+<p>Time to see if WLS straightened the line:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>scores)</span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, wls_model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>fitted, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Notice how the red WLS line now passes closer to the majority of data points, unlike the blue OLS line that chased the loud ones.</p>
+<p><strong>Step 6: Residuals: The Echoes of Battle:</strong></p>
+<p>Let’s see if the residuals (errors) are under control:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>hours, wls_model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>residuals)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>A random scatterplot of residuals is a good sign! No more funky patterns indicating heteroscedasticity.</p>
+<p><strong>The Victory Lap:</strong></p>
+<p>WLS has restored justice to your regression model! Remember, this is just a basic example. You can customize your weights based on your specific data and needs.</p>
+<p><strong>Now it’s your turn!</strong> Try WLS on your own data and see the magic unfold. Remember, data analysis is an adventure, and WLS is your trusty steed. Ride on, data warrior!</p>
+<p><strong>Bonus Tip:</strong> Check out the <code>lmtest</code> and <code>sandwich</code> packages for even more advanced WLS analysis.</p>
+<p>Happy coding!</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-12/index.html</guid>
+  <pubDate>Tue, 12 Dec 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Exploring TidyAML: Simplifying Regression Analysis in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5774,196 +5997,6 @@ font-style: inherit;">plot</span>(cdf_scores)</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-06/index.html</guid>
   <pubDate>Mon, 06 Nov 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Introducing TidyDensity’s New Powerhouse: The convert_to_ts() Function</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-03/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>If you’re an R enthusiast like me, you know that data manipulation is at the core of everything we do. The ability to transform your data swiftly and efficiently can make or break your data analysis projects. That’s why I’m thrilled to introduce a game-changing function in TidyDensity, my very own R library. Say hello to <code>convert_to_ts()</code>!</p>
-<p>In the world of data analysis, time series data is like a treasure chest of insights waiting to be unlocked. Whether you’re tracking stock prices, monitoring patient data, or analyzing the temperature over the years, having your data in a time series format is a crucial step in the process. With <code>convert_to_ts()</code>, that process just got a whole lot easier.</p>
-</section>
-<section id="the-basics" class="level1">
-<h1>The Basics</h1>
-<p>Let’s start with the basics. The syntax of <code>convert_to_ts()</code> is straightforward:</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">convert_to_ts</span>(.data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.return_ts =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.pivot_longer =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<ul>
-<li><p><code>.data</code>: This is your data, the data frame or tibble you want to convert into a time series format. It’s the heart of your analysis.</p></li>
-<li><p><code>.return_ts</code>: A logical value that lets you decide whether you want to return the time series data. By default, it’s set to <code>TRUE</code>, which is usually what you’ll want.</p></li>
-<li><p><code>.pivot_longer</code>: Another logical value that determines whether you want to pivot the data into long format. By default, it’s set to <code>FALSE</code>, but you can change that if needed.</p></li>
-</ul>
-</section>
-<section id="the-magic-of-convert_to_ts" class="level1">
-<h1>The Magic of <code>convert_to_ts()</code></h1>
-<p>So, what exactly does <code>convert_to_ts()</code> do, and why is it a game-changer? Imagine you have a data frame with time-based data in a wide format. You’ve got columns representing different time points, and you want to transform it into a time series format for easier analysis. This is where <code>convert_to_ts()</code> steps in.</p>
-<p>By simply passing your data frame as the <code>.data</code> argument, <code>convert_to_ts()</code> does the heavy lifting for you. It reshapes your data into a tidy time series format, making it easier to work with and analyze. If you set <code>.return_ts</code> to <code>TRUE</code>, it will return the time series data, ready for your next analysis step.</p>
-<p>But that’s not all. Sometimes, you might want to pivot your data into long format for specific analyses or visualizations. That’s where the <code>.pivot_longer</code> argument comes into play. If you set it to <code>TRUE</code>, <code>convert_to_ts()</code> will pivot your data into long format, providing you with even more flexibility in your data manipulation.</p>
-</section>
-<section id="real-world-applications" class="level1">
-<h1>Real-World Applications</h1>
-<p>Let’s talk about the real-world applications of <code>convert_to_ts()</code>. Consider you are working with some time series data and it follows some distribution fairly well. You may want to run multiple simulations of that data, which can be done with one of the <code>tidy_</code> distribution functions, and you can take that output and pipe it right into <code>convert_to_ts()</code> and see different simulations of a time series generated from some distribution. I do this on a regular basis at my day job in healthcare.</p>
-<p>But it’s not just limited to healthcare. Stock analysts, meteorologists, and anyone dealing with time-based data can benefit from this versatile function. The possibilities are endless, and the power is in your hands.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-</section>
-<section id="example-1-convert-data-to-time-series-format-without-returning-time-series-data" class="level1">
-<h1>Example 1: Convert data to time series format without returning time series data</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(TidyDensity)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>()</span>
-<span id="cb2-4">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">convert_to_ts</span>(x, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 1
-        y
-    &lt;dbl&gt;
-1  1.23  
-2  0.715 
-3  0.738 
-4  1.08  
-5 -0.0613
-6  1.19  </code></pre>
-</div>
-</div>
-</section>
-<section id="example-2-convert-data-to-time-series-format-and-pivot-it-into-long-format" class="level1">
-<h1>Example 2: Convert data to time series format and pivot it into long format</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.num_sims =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span>
-<span id="cb4-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">convert_to_ts</span>(x, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 2
-  sim_number      y
-  &lt;chr&gt;       &lt;dbl&gt;
-1 1           0.881
-2 1          -0.105
-3 1          -0.655
-4 1          -0.564
-5 1           0.600
-6 1          -0.811</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unique</span>(result<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>sim_number)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "1" "2" "3" "4"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">convert_to_ts</span>(x, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>              1           2          3          4
-[1,]  0.8807494  0.04680495 -0.1993147 -1.5549585
-[2,] -0.1045016  0.14023102  0.5433512 -1.9247656
-[3,] -0.6549336 -0.20818900 -0.1689992 -0.2934131
-[4,] -0.5638595  0.87588361  0.4802693 -1.2052377
-[5,]  0.6002684  0.26137176  1.5993445 -0.5379518
-[6,] -0.8111576 -0.60834621 -0.4859808 -0.2178982</code></pre>
-</div>
-</div>
-</section>
-<section id="example-3-convert-data-to-time-series-format-and-return-the-time-series-data" class="level1">
-<h1>Example 3: Convert data to time series format and return the time series data</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>()</span>
-<span id="cb10-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">convert_to_ts</span>(x)</span>
-<span id="cb10-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>               y
-[1,] -0.21509987
-[2,] -0.88989659
-[3,]  0.69464989
-[4,] -0.03296698
-[5,] -0.82499955
-[6,] -0.71676037</code></pre>
-</div>
-</div>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>In the ever-evolving world of data analysis, having the right tools at your disposal is crucial. <code>convert_to_ts()</code> in TidyDensity is one such tool that can simplify your data transformation processes and elevate your data analysis game. It’s all about efficiency and flexibility, allowing you to focus on what matters most – deriving valuable insights from your data.</p>
-<p>So, whether you’re a data enthusiast, a coding wizard, or someone curious about the world of R, <code>convert_to_ts()</code> is here to make your life easier. Give it a try, explore its capabilities, and unlock the potential of your time series data. With TidyDensity, the possibilities are endless, and your data analysis journey just got a whole lot smoother. Happy coding!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>tidydensity</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-03/index.html</guid>
-  <pubDate>Fri, 03 Nov 2023 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
