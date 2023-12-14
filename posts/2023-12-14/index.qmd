@@ -1,0 +1,99 @@
+---
+title: "Decoding the Mystery: How to Interpret Regression Output in R Like a Champ"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-12-14"
+categories: [rtip, regression]
+---
+
+# Introduction
+
+Ever run an R regression and stared at the output, feeling like you're deciphering an ancient scroll? Fear not, fellow data enthusiasts! Today, we'll crack the code and turn those statistics into meaningful insights. 
+
+**Let's grab our trusty R arsenal and set up the scene:**
+
+* **Dataset:** `mtcars` (a classic car dataset in R)
+* **Regression:** Linear model with `mpg` as the dependent variable (miles per gallon) and all other variables as independent variables (predictors)
+
+# Step 1: Summon the Stats Gods with "summary()"
+
+First, cast your R spell with `summary(lm(mpg ~ ., data = mtcars))`. This incantation conjures a table of coefficients, p-values, and other stats. Don't panic if it looks like a cryptic riddle! We'll break it down:
+
+```{r}
+model <- lm(mpg ~ ., data = mtcars)
+
+summary(model)
+```
+
+## Coefficients
+
+These tell you how much, on average, the dependent variable changes for a one-unit increase in the corresponding independent variable (holding other variables constant). For example, a coefficient of 0.05 for `cyl` means for every one more cylinder, mpg is expected to increase by 0.05 miles per gallon, on average.
+
+```{r}
+model$coefficients
+```
+
+## P-values
+
+These whisper secrets about significance. A p-value less than 0.05 (like for `wt`!) means the observed relationship between the variable and mpg is unlikely to be due to chance. The following are the individual p-values for each variable:
+
+```{r}
+summary(model)$coefficients[, 4]
+```
+
+Now the overall p-value for the model:
+
+```{r}
+model_p <- function(.model) {
+  
+  # Get p-values
+  fstat <- summary(.model)$fstatistic
+  p <- pf(fstat[1], fstat[2], fstat[3], lower.tail = FALSE)
+  print(p)
+}
+
+model_p(.model = model)
+```
+
+# Step 2: Let's Talk Turkey - Interpreting the Numbers
+
+## Coefficients
+
+Think of them as slopes. A positive coefficient means the dependent variable increases with the independent variable. Negative? The opposite! For example, `disp` has a negative coefficient, so bigger engines (larger displacement) tend to have lower mpg.
+
+## P-values 
+
+Imagine a courtroom. A low p-value is like a strong witness, convincing you the relationship between the variables is real. High p-values (like for `am`!) are like unreliable witnesses, leaving us unsure.
+
+# Step 3: Zoom Out - The Bigger Picture
+
+## R-squared
+
+This tells you how well the model explains the variation in mpg. A value close to 1 is fantastic, while closer to 0 means the model needs work. In our case, it's not bad, but there's room for improvement.
+
+```{r}
+summary(model)$r.squared
+```
+
+## Residuals
+
+These are the differences between the actual mpg values and the model's predictions. Analyzing them can reveal hidden patterns and model issues.
+
+```{r}
+data.frame(model$residuals)
+```
+
+**Bonus Tip:** Visualize the data! Scatter plots and other graphs can make relationships between variables pop.
+
+**Remember:** Interpreting regression output is an art, not a science. Use your domain knowledge, consider the context, and don't hesitate to explore further!
+
+**So next time you face regression output, channel your inner R wizard and remember:**
+
+* Coefficients whisper about slopes and changes.
+* P-values tell tales of significance, true or false.
+* R-squared unveils the model's explanatory magic.
+* Residuals hold hidden clues, waiting to be discovered.
+
+With these tools in your belt, you'll be interpreting regression output like a pro in no time! Now go forth and conquer the data, fellow R adventurers!
+
+**Note:** This is just a brief example. For a deeper dive, explore specific diagnostics, model selection techniques, and other advanced topics to truly master the art of regression interpretation.
+
