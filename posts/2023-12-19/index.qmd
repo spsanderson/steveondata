@@ -1,0 +1,129 @@
+---
+title: "A Gentle Introduction to Poisson Regression for Count Data: School's Out, Job Offers Incoming!"
+author: "Steven P. Sanderson II, MPH"
+date: "2023-12-19"
+categories: [rtip, regression]
+---
+
+# Introduction
+
+Hey data enthusiasts! Today, we're diving into the fascinating world of count data and its trusty sidekick, Poisson regression. Buckle up, because we're about to explore how this statistical powerhouse helps us understand the factors influencing, you guessed it, counts.
+
+_Scenario:_ Imagine you're an education researcher, eager to understand how a student's GPA might influence their job offer count after graduation. But hold on, job offers aren't continuous – they're discrete, ranging from 0 to a handful. That's where Poisson regression comes in!
+
+# Generating Data
+
+We'll keep the data generation part the same, just adjusting the variables in our data frame.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Creating data frame
+data <- data.frame(
+  School = sample(c("A", "B", "C"), 100, replace = TRUE),
+  GPA = c(
+    round(runif(50, 1, 3), 1),
+    round(runif(30, 2, 3.5), 1),
+    round(runif(20, 3, 4), 1)
+  ),
+  JobOffers = c(rep(0, 50), rep(1, 30), rep(2, 10), rep(3, 7), rep(4, 3))
+)
+
+summary(data)
+
+data |>
+  group_by(JobOffers) |>
+  summarise(mean_gpa = mean(GPA))
+```
+
+## Visualizing the Data
+
+Let's update the plots to reflect the change in the predictor and outcome.
+
+```{r}
+library(ggplot2)
+
+# Plotting GPA distribution by school
+ggplot(data, aes(JobOffers, fill = School)) +
+  geom_histogram(binwidth=.5, position="dodge") +
+  theme_minimal()
+```
+
+The density plot now showcases the distribution of GPA scores for each school.
+
+Next, let's visualize the relationship between GPA and job offers.
+
+```{r}
+# Plotting Job Offers vs. GPA
+ggplot(data, aes(x = GPA, y = JobOffers, color = School)) +
+  geom_point(aes(y = JobOffers), alpha = .628,
+             position = position_jitter(h = .2)) +
+  labs(title = "Scatter Plot of Job Offers vs. GPA",
+       x = "GPA", y = "Job Offers") +
+  theme_minimal()
+```
+
+This scatter plot gives us a visual cue that higher GPAs might correlate with more job offers.
+
+## Poisson Regression
+
+Now, let's adjust the Poisson Regression model to reflect the change in predictor and outcome.
+
+```{r}
+# Fitting Poisson Regression model
+poisson_model <- glm(JobOffers ~ GPA + School, data = data, family = "poisson")
+
+# Summary of the model
+summary(poisson_model)
+```
+
+The model summary will now provide insights into how GPA influences the number of job offers.
+
+## Visualizing Model Fits
+
+Let's update the plot to reflect the relationship between GPA and predicted job offers.
+
+```{r}
+# Adding predicted values to the data frame
+data$Predicted <- predict(poisson_model, type = "response")
+
+# Plotting observed vs. predicted values
+ggplot(data, aes(x = GPA, y = Predicted, color = School)) +
+  geom_point(aes(y = JobOffers), alpha = .628,
+             position = position_jitter(h = .2)) +
+  geom_line() +
+  labs(
+    title = "Observed vs. Predicted Job Offers",
+    x = "GPA", 
+    y = "Predicted Job Offers",
+    color = "School") +
+  theme_minimal()
+```
+
+This plot now illustrates how the Poisson Regression model predicts job offers based on GPA.
+
+
+# Predicted vs. actual values
+
+```{r}
+ggplot(data, aes(x = JobOffers, y = predict(poisson_model),
+                 color = School)) +
+  geom_point(aes(y = JobOffers), alpha = .628,
+             position = position_jitter(h = .2)) +
+  labs(
+    title = "Predicted vs. Actual Job Offers", 
+    x = "Actual Job Offers", 
+    y = "Predicted Job Offers",
+    color = "School") +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  theme_minimal()
+```
+
+# Residuals vs. predicted values
+
+```{r}
+plot(poisson_model, which = 1)
+```

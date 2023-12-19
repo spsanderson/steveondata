@@ -10,7 +10,563 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.433</generator>
-<lastBuildDate>Mon, 18 Dec 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 19 Dec 2023 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>A Gentle Introduction to Poisson Regression for Count Data: School’s Out, Job Offers Incoming!</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2023-12-19/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Hey data enthusiasts! Today, we’re diving into the fascinating world of count data and its trusty sidekick, Poisson regression. Buckle up, because we’re about to explore how this statistical powerhouse helps us understand the factors influencing, you guessed it, counts.</p>
+<p><em>Scenario:</em> Imagine you’re an education researcher, eager to understand how a student’s GPA might influence their job offer count after graduation. But hold on, job offers aren’t continuous – they’re discrete, ranging from 0 to a handful. That’s where Poisson regression comes in!</p>
+</section>
+<section id="generating-data" class="level1">
+<h1>Generating Data</h1>
+<p>We’ll keep the data generation part the same, just adjusting the variables in our data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set seed for reproducibility</span></span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb1-5"></span>
+<span id="cb1-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Creating data frame</span></span>
+<span id="cb1-7">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">School =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"B"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C"</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb1-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">GPA =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb1-10">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb1-11">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3.5</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb1-12">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb1-13">  ),</span>
+<span id="cb1-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">JobOffers =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>))</span>
+<span id="cb1-15">)</span>
+<span id="cb1-16"></span>
+<span id="cb1-17"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    School               GPA          JobOffers   
+ Length:100         Min.   :1.000   Min.   :0.00  
+ Class :character   1st Qu.:1.875   1st Qu.:0.00  
+ Mode  :character   Median :2.600   Median :0.50  
+                    Mean   :2.532   Mean   :0.83  
+                    3rd Qu.:3.200   3rd Qu.:1.00  
+                    Max.   :4.000   Max.   :4.00  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(JobOffers) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean_gpa =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(GPA))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 2
+  JobOffers mean_gpa
+      &lt;dbl&gt;    &lt;dbl&gt;
+1         0     1.94
+2         1     2.87
+3         2     3.41
+4         3     3.5 
+5         4     3.8 </code></pre>
+</div>
+</div>
+<section id="visualizing-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-the-data">Visualizing the Data</h2>
+<p>Let’s update the plots to reflect the change in the predictor and outcome.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb5-2"></span>
+<span id="cb5-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plotting GPA distribution by school</span></span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(JobOffers, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> School)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_histogram</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">binwidth=</span>.<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dodge"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb5-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-19/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The density plot now showcases the distribution of GPA scores for each school.</p>
+<p>Next, let’s visualize the relationship between GPA and job offers.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plotting Job Offers vs. GPA</span></span>
+<span id="cb6-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> GPA, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> JobOffers, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> School)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> JobOffers), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">628</span>,</span>
+<span id="cb6-4">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">position_jitter</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">h =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Scatter Plot of Job Offers vs. GPA"</span>,</span>
+<span id="cb6-6">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GPA"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Job Offers"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb6-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-19/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This scatter plot gives us a visual cue that higher GPAs might correlate with more job offers.</p>
+</section>
+<section id="poisson-regression" class="level2">
+<h2 class="anchored" data-anchor-id="poisson-regression">Poisson Regression</h2>
+<p>Now, let’s adjust the Poisson Regression model to reflect the change in predictor and outcome.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fitting Poisson Regression model</span></span>
+<span id="cb7-2">poisson_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm</span>(JobOffers <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> GPA <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> School, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"poisson"</span>)</span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Summary of the model</span></span>
+<span id="cb7-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(poisson_model)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = JobOffers ~ GPA + School, family = "poisson", data = data)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.2452  -0.5856  -0.3483   0.3221   1.6491  
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -5.25817    0.70621  -7.446 9.65e-14 ***
+GPA          1.73169    0.21241   8.153 3.56e-16 ***
+SchoolB      0.03135    0.27524   0.114    0.909    
+SchoolC     -0.19137    0.27637  -0.692    0.489    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 138.07  on 99  degrees of freedom
+Residual deviance:  43.18  on 96  degrees of freedom
+AIC: 168.06
+
+Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+</div>
+<p>The model summary will now provide insights into how GPA influences the number of job offers.</p>
+</section>
+<section id="visualizing-model-fits" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-model-fits">Visualizing Model Fits</h2>
+<p>Let’s update the plot to reflect the relationship between GPA and predicted job offers.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Adding predicted values to the data frame</span></span>
+<span id="cb9-2">data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Predicted <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(poisson_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>)</span>
+<span id="cb9-3"></span>
+<span id="cb9-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plotting observed vs. predicted values</span></span>
+<span id="cb9-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> GPA, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> Predicted, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> School)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> JobOffers), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">628</span>,</span>
+<span id="cb9-7">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">position_jitter</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">h =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb9-10">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Observed vs. Predicted Job Offers"</span>,</span>
+<span id="cb9-11">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GPA"</span>, </span>
+<span id="cb9-12">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Predicted Job Offers"</span>,</span>
+<span id="cb9-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"School"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb9-14">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-19/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This plot now illustrates how the Poisson Regression model predicts job offers based on GPA.</p>
+</section>
+</section>
+<section id="predicted-vs.-actual-values" class="level1">
+<h1>Predicted vs.&nbsp;actual values</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> JobOffers, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(poisson_model),</span>
+<span id="cb10-2">                 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> School)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb10-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> JobOffers), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">628</span>,</span>
+<span id="cb10-4">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">position =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">position_jitter</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">h =</span> .<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb10-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb10-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Predicted vs. Actual Job Offers"</span>, </span>
+<span id="cb10-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Actual Job Offers"</span>, </span>
+<span id="cb10-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Predicted Job Offers"</span>,</span>
+<span id="cb10-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"School"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb10-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">intercept =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">slope =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb10-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-19/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="residuals-vs.-predicted-values" class="level1">
+<h1>Residuals vs.&nbsp;predicted values</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(poisson_model, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">which =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-19/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>regression</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-19/index.html</guid>
+  <pubDate>Tue, 19 Dec 2023 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Exploring Variance Inflation Factor (VIF) in R: A Practical Guide</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5944,140 +6500,6 @@ font-style: inherit;">"Residuals"</span></span>
   <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-15/index.html</guid>
   <pubDate>Wed, 15 Nov 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Predict a Single Value Using a Regression Model in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-14/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Regression models are a powerful tool for predicting future values based on historical data. They are used in a wide range of industries, including finance, healthcare, and marketing. In this blog post, we will learn how to predict a single value using a regression model in R. We will use the <code>mtcars</code> dataset, which contains information about cars, including their weight, horsepower, and fuel efficiency.</p>
-</section>
-<section id="building-a-linear-regression-model" class="level1">
-<h1>Building a Linear Regression Model</h1>
-<p>The first step in predicting a single value is to build a regression model. We can do this using the <code>lm()</code> function in R. The <code>lm()</code> function takes two arguments: a formula and a data frame. The formula specifies the relationship between the dependent variable (the variable we want to predict) and the independent variables (the variables we use to predict the dependent variable). The data frame contains the values of the dependent and independent variables.</p>
-<p>To build a linear regression model to predict the fuel efficiency of a car based on its weight and horsepower, we would use the following code:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a linear regression model</span></span>
-<span id="cb1-2">model <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lm</span>(mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> wt <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> hp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> mtcars)</span></code></pre></div>
-</div>
-<p>The <code>model</code> object now contains the fitted regression model. We can inspect the model by using the <code>summary()</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summary</span>(model)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = mpg ~ wt + hp, data = mtcars)
-
-Residuals:
-   Min     1Q Median     3Q    Max 
--3.941 -1.600 -0.182  1.050  5.854 
-
-Coefficients:
-            Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept) 37.22727    1.59879  23.285  &lt; 2e-16 ***
-wt          -3.87783    0.63273  -6.129 1.12e-06 ***
-hp          -0.03177    0.00903  -3.519  0.00145 ** 
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 2.593 on 29 degrees of freedom
-Multiple R-squared:  0.8268,    Adjusted R-squared:  0.8148 
-F-statistic: 69.21 on 2 and 29 DF,  p-value: 9.109e-12</code></pre>
-</div>
-</div>
-<p>The output of the <code>summary()</code> function shows the estimated coefficients, standard errors, and p-values for the independent variables in the model. The coefficients represent the change in the dependent variable for a one-unit increase in the independent variable, holding all other variables constant.</p>
-</section>
-<section id="predicting-a-single-value" class="level1">
-<h1>Predicting a Single Value</h1>
-<p>Once we have fitted a regression model, we can use it to predict single values. We can do this using the <code>predict()</code> function. The <code>predict()</code> function takes two arguments: the fitted model and a new data frame containing the values of the independent variables for which we want to make predictions.</p>
-<p>To predict the fuel efficiency of a car with a weight of 3,000 pounds and a horsepower of 150, we would use the following code:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a new data frame containing the values of the independent </span></span>
-<span id="cb4-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># variables for which we want to make predictions</span></span>
-<span id="cb4-3">newdata <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">wt =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">hp =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">150</span>) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Wt is in 1000 lbs</span></span>
-<span id="cb4-4"></span>
-<span id="cb4-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Predict the fuel efficiency of the car</span></span>
-<span id="cb4-6">prediction <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(model, newdata)</span>
-<span id="cb4-7"></span>
-<span id="cb4-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Print the predicted fuel efficiency</span></span>
-<span id="cb4-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(prediction)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       1 
-20.82784 </code></pre>
-</div>
-</div>
-<p>The output of the <code>predict()</code> function is a vector containing the predicted values for the dependent variable. In this case, the predicted fuel efficiency is 20.8278358 miles per gallon.</p>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>In this blog post, we have learned how to predict a single value using a regression model in R. We used the <code>mtcars</code> dataset to build a linear regression model to predict the fuel efficiency of a car based on its weight and horsepower. We then used the <code>predict()</code> function to predict the fuel efficiency of a car with a specific weight and horsepower.</p>
-</section>
-<section id="try-it-yourself" class="level1">
-<h1>Try It Yourself</h1>
-<p>Now that you know how to predict a single value using a regression model in R, try it yourself! Here are some ideas:</p>
-<ul>
-<li>Build a linear regression model to predict the price of a house based on its size and number of bedrooms.</li>
-<li>Build a linear regression model to predict the salary of a person based on their education level and years of experience.</li>
-<li>Build a linear regression model to predict the number of customers that will visit a store on a given day based on the day of the week and the weather forecast.</li>
-</ul>
-<p>Once you have built a regression model, you can use it to predict single values for new data. This can be a valuable tool for making decisions about the future.</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>regression</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-14/index.html</guid>
-  <pubDate>Tue, 14 Nov 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
