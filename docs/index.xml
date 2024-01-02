@@ -10,7 +10,409 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Fri, 29 Dec 2023 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 02 Jan 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Mastering Lowess Smoothing in R: A Step-by-Step Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-01-02/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Hey fellow R enthusiasts! Today, let’s dive into the fascinating world of Lowess smoothing and learn how to harness its power for creating smooth visualizations of your data. Whether you’re new to R or a seasoned pro, this step-by-step guide will walk you through the process of performing Lowess smoothing, generating data, visualizing the model, and comparing different models with varying smoother spans.</p>
+</section>
+<section id="what-is-lowess-smoothing" class="level1">
+<h1>What is Lowess Smoothing?</h1>
+<p>Locally Weighted Scatterplot Smoothing, or Lowess, is a powerful technique for capturing trends in noisy data. It’s particularly useful when dealing with datasets that exhibit complex patterns that might be missed by other methods. So, let’s get our hands dirty and start coding!</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="step-1-generate-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-generate-data">Step 1: Generate Data</h2>
+<p>Before we can smooth anything, we need some data to work with. Let’s create a synthetic dataset using the <code>rnorm</code> function and introduce a non-linear trend:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set seed for reproducibility</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate data</span></span>
+<span id="cb1-5">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb1-6">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sin</span>(x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>)</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the raw data</span></span>
+<span id="cb1-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Raw Data with Non-linear Trend"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-02/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-2-perform-lowess-smoothing" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-perform-lowess-smoothing">Step 2: Perform Lowess Smoothing</h2>
+<p>Now that we have our data, let’s apply Lowess smoothing using the <code>lowess</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Apply Lowess smoothing</span></span>
+<span id="cb2-2">smoothed_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lowess</span>(x, y)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the smoothed data</span></span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Lowess Smoothed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>)</span>
+<span id="cb2-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(smoothed_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb2-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"topleft"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Raw Data"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Lowess Smoothed"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-02/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-3-visualize-the-model-and-residuals" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-visualize-the-model-and-residuals">Step 3: Visualize the Model and Residuals</h2>
+<p>To better understand our smoothed model, let’s visualize the fitted values along with the residuals:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Get fitted values and residuals</span></span>
+<span id="cb3-2">fitted_values <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> smoothed_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y</span>
+<span id="cb3-3">residuals <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> fitted_values</span>
+<span id="cb3-4"></span>
+<span id="cb3-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the model</span></span>
+<span id="cb3-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, fitted_values, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Lowess Smoothed Model with Residuals"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb3-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">points</span>(x, residuals, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>)</span>
+<span id="cb3-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"topleft"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Smoothed Model"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-02/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-4-compare-different-models" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-compare-different-models">Step 4: Compare Different Models</h2>
+<p>Now, let’s take our Lowess smoothing to the next level by experimenting with different smoother spans. We’ll create three models with varying spans and visualize the differences:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate three smoothed models with different spans</span></span>
+<span id="cb4-2">model_1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lowess</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">f =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>)</span>
+<span id="cb4-3">model_2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lowess</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">f =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>)</span>
+<span id="cb4-4">model_3 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lowess</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">f =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8</span>)</span>
+<span id="cb4-5"></span>
+<span id="cb4-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the original data</span></span>
+<span id="cb4-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Comparison of Lowess Models"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>)</span>
+<span id="cb4-8"></span>
+<span id="cb4-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the smoothed models</span></span>
+<span id="cb4-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(model_1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(model_2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(model_3, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"purple"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-13"></span>
+<span id="cb4-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add a legend</span></span>
+<span id="cb4-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bottomleft"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Raw Data"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model 3"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"purple"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-02/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>And there you have it – a quick on performing Lowess smoothing in R! Feel free to tweak the parameters and explore the nuances of different models. Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-02/index.html</guid>
+  <pubDate>Tue, 02 Jan 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Unlocking the Power of Time: Transforming Data Frames into Time Series in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -6072,379 +6474,6 @@ font-style: inherit;">2</span>)</span></code></pre></div>
   <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-21/index.html</guid>
   <pubDate>Tue, 21 Nov 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mastering Exponential Regression in R: A Step-by-Step Guide</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-20/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Hey folks, welcome back to another exciting R programming journey! Today, we’re diving into the fascinating world of exponential regression using base R. Exponential regression is a powerful tool, especially in the realm of data science, and we’ll walk through the process step by step. So, grab your coding hats, and let’s get started!</p>
-</section>
-<section id="understanding-exponential-regression" class="level1">
-<h1>Understanding Exponential Regression</h1>
-<p>Before we jump into the code, let’s quickly grasp the concept of exponential regression. In simple terms, it’s a statistical method used to model relationships where the rate of change of a variable is proportional to its current state. Think of scenarios like population growth, viral spread, or even financial investments.</p>
-<section id="step-1-your-data" class="level2">
-<h2 class="anchored" data-anchor-id="step-1-your-data">Step 1: Your Data</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">Year <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2001</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2002</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2003</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2004</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2005</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2006</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2007</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2008</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2009</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2010</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2011</span>, </span>
-<span id="cb1-2">          <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2012</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2013</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2014</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2015</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2016</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2017</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2018</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2019</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2020</span>)</span>
-<span id="cb1-3">Population <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">500</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">550</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">610</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">680</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">760</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">850</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">950</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1060</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1180</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1320</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1470</span>, </span>
-<span id="cb1-4">                <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1640</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1830</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2040</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2280</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2540</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2830</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3140</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3480</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3850</span>)</span>
-<span id="cb1-5"></span>
-<span id="cb1-6">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(Year, Population)</span></code></pre></div>
-</div>
-<p>Make sure to replace “your_data.csv” with the actual file name and path of your dataset. This is the foundation of our analysis, so choose a dataset that suits your exponential regression exploration.</p>
-</section>
-<section id="step-2-explore-your-data" class="level2">
-<h2 class="anchored" data-anchor-id="step-2-explore-your-data">Step 2: Explore Your Data</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Take a sneak peek at your data</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(df)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Year Population
-1 2001        500
-2 2002        550
-3 2003        610
-4 2004        680
-5 2005        760
-6 2006        850</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summary</span>(df)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      Year        Population    
- Min.   :2001   Min.   : 500.0  
- 1st Qu.:2006   1st Qu.: 827.5  
- Median :2010   Median :1395.0  
- Mean   :2010   Mean   :1678.0  
- 3rd Qu.:2015   3rd Qu.:2345.0  
- Max.   :2020   Max.   :3850.0  </code></pre>
-</div>
-</div>
-<p>Understanding your data is crucial. The ‘head()’ function displays the first few rows, and ‘summary()’ gives you a statistical summary. Look for patterns that might indicate exponential growth or decay.</p>
-</section>
-<section id="step-3-plot-your-data" class="level2">
-<h2 class="anchored" data-anchor-id="step-3-plot-your-data">Step 3: Plot Your Data</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a scatter plot</span></span>
-<span id="cb6-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(</span>
-<span id="cb6-3">  Year, </span>
-<span id="cb6-4">  Population, </span>
-<span id="cb6-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Exponential Regression"</span>, </span>
-<span id="cb6-6">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Independent Variable"</span>, </span>
-<span id="cb6-7">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Dependent Variable"</span></span>
-<span id="cb6-8">)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-20/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Visualizing your data helps in identifying trends. A scatter plot is an excellent choice to see if there’s a potential exponential relationship.</p>
-</section>
-<section id="step-4-fit-exponential-model" class="level2">
-<h2 class="anchored" data-anchor-id="step-4-fit-exponential-model">Step 4: Fit Exponential Model</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit exponential regression model</span></span>
-<span id="cb7-2">model <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lm</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">log</span>(Population) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> Year, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> df)</span>
-<span id="cb7-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summary</span>(model)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = log(Population) ~ Year, data = df)
-
-Residuals:
-       Min         1Q     Median         3Q        Max 
--0.0134745 -0.0032271  0.0008587  0.0037029  0.0108613 
-
-Coefficients:
-              Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept) -2.113e+02  4.637e-01  -455.7   &lt;2e-16 ***
-Year         1.087e-01  2.307e-04   471.3   &lt;2e-16 ***
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 0.005948 on 18 degrees of freedom
-Multiple R-squared:  0.9999,    Adjusted R-squared:  0.9999 
-F-statistic: 2.221e+05 on 1 and 18 DF,  p-value: &lt; 2.2e-16</code></pre>
-</div>
-</div>
-<p>Here, we take the logarithm of the dependent variable ‘y’ to linearize the relationship. This facilitates using linear regression to model the data.</p>
-</section>
-<section id="step-5-make-predictions" class="level2">
-<h2 class="anchored" data-anchor-id="step-5-make-predictions">Step 5: Make Predictions</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Make predictions</span></span>
-<span id="cb9-2">prediction_interval <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">exp</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(</span>
-<span id="cb9-3">  model, </span>
-<span id="cb9-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">newdata =</span> df,</span>
-<span id="cb9-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">interval=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"prediction"</span>,</span>
-<span id="cb9-6">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">level =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.95</span></span>
-<span id="cb9-7">  ))</span></code></pre></div>
-</div>
-<p>Replace ‘new_x’ with the values for which you want to predict ‘y’. The ‘exp()’ function is used to reverse the logarithmic transformation.</p>
-</section>
-<section id="step-6-visualize-results" class="level2">
-<h2 class="anchored" data-anchor-id="step-6-visualize-results">Step 6: Visualize Results</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot the original data and the regression line</span></span>
-<span id="cb10-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Year, df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Population, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Exponential Regression"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Year"</span>, </span>
-<span id="cb10-3">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Population"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>)</span>
-<span id="cb10-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Year, prediction_interval[,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>], <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb10-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Year, prediction_interval[,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>], <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb10-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Year, prediction_interval[,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>], <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb10-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"topright"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">legend=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Exponential Regression"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-20/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>This code adds the exponential regression line to your scatter plot. It’s a visual confirmation of how well your model fits the data.</p>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>There you have it, a step-by-step guide to performing exponential regression in R using base functions. Remember, the real fun begins when you apply this to your own datasets. Play around, tweak the parameters, and see how well you can predict those future values.</p>
-<p>Coding is all about exploration and experimentation, so don’t hesitate to get your hands dirty. Happy coding, and may your data always reveal its secrets in the most exponential way possible!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>regression</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-20/index.html</guid>
-  <pubDate>Mon, 20 Nov 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
