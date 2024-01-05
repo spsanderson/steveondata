@@ -10,7 +10,447 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Thu, 04 Jan 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 05 Jan 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Unveiling the Smooth Operator: Rolling Averages in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-01-05/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Ever felt those data points were a bit too jittery? Smoothing out trends and revealing underlying patterns is a breeze with rolling averages in R. Ready to roll? Let’s dive in!</p>
+</section>
+<section id="rolling-with-the-zoo" class="level1">
+<h1>Rolling with the ‘zoo’</h1>
+<p>Meet the ‘zoo’ package, your trusty companion for time series data wrangling. It’s got a handy function called ‘rollmean’ that handles those rolling averages with ease.</p>
+</section>
+<section id="installing-and-loading" class="level1">
+<h1>Installing and Loading</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># install.packages("zoo")  # Grab it if you haven't already</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(zoo)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Bring it into your workspace</span></span></code></pre></div>
+</div>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="creating-a-simple-time-series" class="level2">
+<h2 class="anchored" data-anchor-id="creating-a-simple-time-series">Creating a Simple Time Series</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set seed for reproducibility (optional</span></span>
+<span id="cb2-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Let's imagine some daily sales data</span></span>
+<span id="cb2-3">sales <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">trunc</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">112</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">min =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">max =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">500</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate some random sales</span></span>
+<span id="cb2-4">days <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.Date</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">112</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">origin =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2022-12-31"</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add some dates!</span></span>
+<span id="cb2-5">data_zoo <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zoo</span>(sales, days)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to a zoo object</span></span></code></pre></div>
+</div>
+</section>
+<section id="calculating-rolling-averages" class="level2">
+<h2 class="anchored" data-anchor-id="calculating-rolling-averages">Calculating Rolling Averages</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Say we want a 7-day rolling average:</span></span>
+<span id="cb3-2">rolling_avg7 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>)</span>
+<span id="cb3-3">rolling_avg7_left <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"left"</span>)</span>
+<span id="cb3-4">rolling_avg7_right <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"right"</span>)</span>
+<span id="cb3-5"></span>
+<span id="cb3-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># How about a 28-day one?</span></span>
+<span id="cb3-7">rolling_avg28 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>)</span>
+<span id="cb3-8">rolling_avg28_left <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"left"</span>)</span>
+<span id="cb3-9">rolling_avg28_right <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"right"</span>)</span></code></pre></div>
+</div>
+</section>
+<section id="visualizing-the-smoothness" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-the-smoothness">Visualizing the Smoothness</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sales"</span>)</span>
+<span id="cb4-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg7, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg7_left, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg7_right, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"orange"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(</span>
+<span id="cb4-6">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bottomleft"</span>, </span>
+<span id="cb4-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb4-8">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Original Data"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7-day Avg"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7-day Avg (left-aligned)"</span>, </span>
+<span id="cb4-9">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7-day Avg (right-aligned)"</span></span>
+<span id="cb4-10">    ),</span>
+<span id="cb4-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"orange"</span>), </span>
+<span id="cb4-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,</span>
+<span id="cb4-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.628</span></span>
+<span id="cb4-14">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-05/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(data_zoo, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sales"</span>)</span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg28, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg28_left, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(rolling_avg28_right, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"brown"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(</span>
+<span id="cb5-6">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bottomleft"</span>, </span>
+<span id="cb5-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb5-8">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Original Data"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"28-day Avg"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"28-day Avg (left-aligned)"</span>, </span>
+<span id="cb5-9">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"28-day Avg (right-aligned)"</span></span>
+<span id="cb5-10">    ),</span>
+<span id="cb5-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"green"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"brown"</span>), </span>
+<span id="cb5-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,</span>
+<span id="cb5-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.628</span></span>
+<span id="cb5-14">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-05/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="experimenting-and-interpreting" class="level1">
+<h1>Experimenting and Interpreting</h1>
+<p>Play with different ‘k’ values to see how they affect the smoothness. Remember, larger ‘k’ means more smoothing, but potential loss of detail.</p>
+</section>
+<section id="your-turn-to-roll" class="level1">
+<h1>Your Turn to Roll!</h1>
+<p>Grab your data and start exploring rolling averages! It’s a powerful tool to uncover hidden patterns and trends. Share your discoveries and join the rolling conversation!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-05/index.html</guid>
+  <pubDate>Fri, 05 Jan 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Reflecting on the Past Year: A LinkedIn Year in Review (2023)</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -7451,548 +7891,6 @@ font-style: inherit;">2</span>)</span></code></pre></div>
   <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-11-27/index.html</guid>
   <pubDate>Mon, 27 Nov 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Unveiling the Magic of LOESS Regression in R: A Step-by-Step Guide with mtcars</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-11-22/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>If you’ve ever found yourself grappling with noisy data and yearning for a smoother representation, LOESS regression might be the enchanting solution you’re seeking. In this blog post, we’ll unravel the mysteries of LOESS regression using the power of R, and walk through a practical example using the iconic <code>mtcars</code> dataset.</p>
-</section>
-<section id="what-is-loess-regression" class="level1">
-<h1>What is LOESS Regression?</h1>
-<p>LOESS, which stands for LOcal regrESSion, is a versatile and powerful technique for fitting a curve to a set of data points. Unlike traditional linear regression, LOESS adapts to the local behavior of the data, making it perfect for capturing intricate patterns in noisy datasets.</p>
-</section>
-<section id="getting-started-loading-the-mtcars-dataset" class="level1">
-<h1>Getting Started: Loading the mtcars Dataset</h1>
-<p>Let’s kick off our journey by loading the <code>mtcars</code> dataset. This dataset, featuring various car specifications, will serve as our canvas for the LOESS magic.</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the mtcars dataset</span></span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data</span>(mtcars)</span></code></pre></div>
-<section id="understanding-loess-the-basics" class="level2">
-<h2 class="anchored" data-anchor-id="understanding-loess-the-basics">Understanding LOESS: The Basics</h2>
-<p>Now, let’s delve into the heart of LOESS regression. In R, the magic happens with the <code>loess()</code> function. This function fits a smooth curve through your data, adjusting to the local characteristics.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit a LOESS model</span></span>
-<span id="cb2-2">loess_model <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> wt, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> mtcars)</span></code></pre></div>
-</div>
-<p>Congratulations, you’ve just cast the LOESS spell on the fuel efficiency and weight relationship of these iconic cars!</p>
-</section>
-<section id="visualizing-the-enchantment" class="level2">
-<h2 class="anchored" data-anchor-id="visualizing-the-enchantment">Visualizing the Enchantment</h2>
-<p>What good is magic if you can’t see it? Let’s visualize the results with a compelling plot.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate predictions from the LOESS model</span></span>
-<span id="cb3-2">predictions <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess_model, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">newdata =</span> mtcars)</span>
-<span id="cb3-3">predictions <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cbind</span>(mtcars, predictions)</span>
-<span id="cb3-4">predictions <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> predictions[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">order</span>(predictions<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>wt), ]</span>
-<span id="cb3-5"></span>
-<span id="cb3-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a scatter plot of the original data</span></span>
-<span id="cb3-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(</span>
-<span id="cb3-8">  predictions<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>wt,</span>
-<span id="cb3-9">  predictions<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>mpg, </span>
-<span id="cb3-10">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, </span>
-<span id="cb3-11">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"LOESS Regression: Unveiling the Magic with mtcars"</span>, </span>
-<span id="cb3-12">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Weight (1000 lbs)"</span>, </span>
-<span id="cb3-13">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Miles Per Gallon"</span></span>
-<span id="cb3-14">)</span>
-<span id="cb3-15"></span>
-<span id="cb3-16"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add the LOESS curve to the plot</span></span>
-<span id="cb3-17"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(predictions<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>predictions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-22/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Behold, as the red curve gracefully dances through the blue points, smoothing out the rough edges and revealing the underlying trends in the relationship between weight and fuel efficiency.</p>
-<p>Now, we did not specify any parameters for the <code>loess()</code> function, so it used the default values. Let’s take a look at the default parameters.</p>
-<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(formula, data, weights, subset, na.action, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">model =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb4-2">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.75</span>, enp.target, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">degree =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb4-3">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parametric =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">drop.square =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">normalize =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>,</span>
-<span id="cb4-4">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">family =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gaussian"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"symmetric"</span>),</span>
-<span id="cb4-5">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"loess"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"model.frame"</span>),</span>
-<span id="cb4-6">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">control =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess.control</span>(...), ...)</span></code></pre></div>
-<p>If you want to see the documentation in R you can use <code>?loess</code> or <code>help(loess)</code>. I have it here for you anyways but it is good to know how to check it on the fly:</p>
-<p><em>Arguments</em> <code>formula</code> - a formula specifying the numeric response and one to four numeric predictors (best specified via an interaction, but can also be specified additively). Will be coerced to a formula if necessary.</p>
-<p><code>data</code> - an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula), typically the environment from which loess is called.</p>
-<p><code>weights</code> - optional weights for each case.</p>
-<p><code>subset</code> - an optional specification of a subset of the data to be used.</p>
-<p><code>na.action</code> - the action to be taken with missing values in the response or predictors. The default is given by getOption(“na.action”).</p>
-<p><code>model</code> - should the model frame be returned?</p>
-<p><code>span</code> - the parameter α which controls the degree of smoothing.</p>
-<p><code>enp.target</code> - an alternative way to specify span, as the approximate equivalent number of parameters to be used.</p>
-<p><code>degree</code> - the degree of the polynomials to be used, normally 1 or 2. (Degree 0 is also allowed, but see the ‘Note’.)</p>
-<p><code>parametric</code> - should any terms be fitted globally rather than locally? Terms can be specified by name, number or as a logical vector of the same length as the number of predictors.</p>
-<p><code>drop.square</code> - for fits with more than one predictor and degree = 2, should the quadratic term be dropped for particular predictors? Terms are specified in the same way as for parametric.</p>
-<p><code>normalize</code> - should the predictors be normalized to a common scale if there is more than one? The normalization used is to set the 10% trimmed standard deviation to one. Set to false for spatial coordinate predictors and others known to be on a common scale.</p>
-<p><code>family</code> - if “gaussian” fitting is by least-squares, and if “symmetric” a re-descending M estimator is used with Tukey’s biweight function. Can be abbreviated.</p>
-<p><code>method</code> - fit the model or just extract the model frame. Can be abbreviated.</p>
-<p><code>control</code> - control parameters: see loess.control.</p>
-<p><code>...</code> - control parameters can also be supplied directly (if control is not specified).</p>
-<p>Now that we see we can set things like <code>span</code> and <code>degree</code> let’s try it out.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create the data frame</span></span>
-<span id="cb5-2">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">11</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">13</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>), </span>
-<span id="cb5-3">                 <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">13</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">24</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">13</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">11</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">18</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">22</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">27</span>))</span>
-<span id="cb5-4"></span>
-<span id="cb5-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit LOESS regression models</span></span>
-<span id="cb5-6">loess50 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data=</span>df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>)</span>
-<span id="cb5-7">smooth50 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess50)</span>
-<span id="cb5-8">loess75 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data=</span>df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.75</span>)</span>
-<span id="cb5-9">smooth75 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess75)</span>
-<span id="cb5-10">loess90 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data=</span>df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.9</span>)</span>
-<span id="cb5-11">smooth90 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess90)</span>
-<span id="cb5-12">loess50_degree1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data=</span>df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">degree=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb5-13">smooth50_degree1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess50_degree1)</span>
-<span id="cb5-14">loess50_degree2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data=</span>df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">span=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">degree=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb5-15">smooth50_degree2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(loess50_degree2)</span>
-<span id="cb5-16"></span>
-<span id="cb5-17"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create scatterplot with each regression line overlaid</span></span>
-<span id="cb5-18"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'Loess Regression Models'</span>)</span>
-<span id="cb5-19"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(smooth50, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span>df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'red'</span>)</span>
-<span id="cb5-20"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(smooth75, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span>df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'purple'</span>)</span>
-<span id="cb5-21"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(smooth90, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span>df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'blue'</span>)</span>
-<span id="cb5-22"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(smooth50_degree1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span>df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'green'</span>)</span>
-<span id="cb5-23"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(smooth50_degree2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x=</span>df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'orange'</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-11-22/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-<section id="empowering-you-try-it-yourself" class="level2">
-<h2 class="anchored" data-anchor-id="empowering-you-try-it-yourself">Empowering You: Try It Yourself!</h2>
-<p>Now comes the most exciting part – empowering you to wield the magic wand with the <code>mtcars</code> dataset or any other dataset of your choice. Encourage your readers to try the code on their own datasets, and witness the transformative power of LOESS regression.</p>
-<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Your readers can replace this with their own dataset</span></span>
-<span id="cb6-2">user_data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read.csv</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"user_dataset.csv"</span>)</span>
-<span id="cb6-3"></span>
-<span id="cb6-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit a LOESS model on their data</span></span>
-<span id="cb6-5">user_loess_model <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loess</span>(Y <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> X, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> user_data)</span>
-<span id="cb6-6"></span>
-<span id="cb6-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Visualize the results</span></span>
-<span id="cb6-8">user_predictions <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">predict</span>(user_loess_model, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">newdata =</span> user_data)</span>
-<span id="cb6-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(user_data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>X, user_data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Your Turn: Unleash LOESS Magic"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"X"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Y"</span>)</span>
-<span id="cb6-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(user_data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>X, user_predictions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"purple"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>In this journey, we’ve walked through the fundamentals of LOESS regression in R, witnessed its magic in action using the iconic <code>mtcars</code> dataset, and now it’s your turn to wield the wand. As you embark on your own adventures with LOESS, remember that this enchanting technique adapts to the nuances of your data, revealing hidden patterns and smoothing the way for clearer insights.</p>
-<p>Happy coding, and may the LOESS magic be with you! 🚗✨</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>regression</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-11-22/index.html</guid>
-  <pubDate>Wed, 22 Nov 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
