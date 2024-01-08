@@ -1,0 +1,115 @@
+---
+title: "Conquering Daily Data: How to Aggregate to Months and Years Like a Pro in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-01-08"
+categories: [code, rtip, timeseries]
+---
+
+# Introduction
+
+Taming the beast of daily data can be daunting. While it captures every detail, sometimes you need a bird's-eye view. Enter aggregation, your secret weapon for transforming daily data into monthly and yearly insights. In this post, we'll dive into the world of R, where you'll wield powerful tools like `dplyr` and `lubridate` to master this data wrangling art.
+
+# Packages: Gear Up with the Right Packages
+
+Think of R packages like your trusty toolbox. Today, we'll need two essentials:
+
+*   `dplyr`: This swiss army knife lets you manipulate and summarize data like a boss.
+* `lubridate`: Time is our domain, and `lubridate` helps us navigate it with precision, especially for dates.
+
+# Sample Data, Our Training Ground
+
+Imagine you have daily sales data for a year. Each row represents a day, with columns for date, product, and sales amount. Let's create a mini version:
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(lubridate)
+
+# Generate random dates and sales
+set.seed(123)
+dates <- seq(as.Date('2023-01-01'), as.Date('2023-12-31'), by = 'day')
+sales <- runif(365, min=5000, max=10000)
+
+# Create our data frame
+daily_data <- data.frame(date = dates, sales = sales)
+
+# Peek at our data
+head(daily_data)
+```
+
+This code generates 10 random dates and sales figures, and stores them in a data frame called `daily_data`.
+
+# Monthly Magic – From Days to Months
+
+Now, let's transform this daily data into monthly insights. Here's the incantation:
+
+```{r}
+# Group data by month
+monthly_data <- daily_data %>%
+   # Group by month extracted from date
+  group_by(month = month(date)) %>%
+  # Calculate total sales for each month
+  summarize(total_sales = sum(sales))
+
+head(monthly_data)
+```
+
+Let's break it down:
+
+* `group_by(month = month(date))`: We tell R to group our data by the month extracted from the `date` column.
+* `summarize(total_sales = sum(sales))`: Within each month group, we calculate the total sales by summing the `sales` values.
+
+# Yearly Triumph – Conquering the Calendar
+
+Yearning for yearly insights? Fear not! Modify the spell slightly:
+
+```{r}
+# Group data by year
+yearly_data <- daily_data %>%
+  # Group by year extracted from date
+  group_by(year = year(date)) %>%
+  # Calculate average sales for each year
+  summarize(average_sales = mean(sales))
+
+head(yearly_data)
+```
+
+Here, we group by the year extracted from `date` and then calculate the average sales for each year.
+
+# But what about base R?
+
+So far, we've used `dplyr` to group and summarize our data. But what if you don't have `dplyr`? No problem! You can use base R functions like `aggregate()` to achieve the same results:
+
+```{r}
+monthly_data <- aggregate(
+  daily_data$sales, 
+  by = list(month = format(daily_data$date, '%m')), 
+  FUN = sum
+  )
+head(monthly_data)
+
+yearly_data <- aggregate(
+  daily_data$sales, 
+  by = list(year = format(daily_data$date, '%Y')), 
+  FUN = mean
+  )
+head(yearly_data)
+```
+# Experiment!
+
+The magic doesn't stop there! You can customize your aggregations to your heart's content. Try these variations:
+
+* Calculate maximum sales per month.
+* Find the product with the highest average sales per year.
+* Group data by month and product to see which products perform best each month.
+
+# Remember
+
+* Play around with different `summarize()` functions like `min()`, `max()`, or `median()`.
+* Use `filter()` before `group_by()` to focus on specific subsets of data.
+* Explore other time units like weeks or quarters with lubridate's powerful tools.
+
+# The Takeaway
+
+Mastering daily data aggregation is a valuable skill for any data warrior. With the help of R and your newfound knowledge, you can transform mountains of daily data into insightful monthly and yearly summaries. So, go forth, conquer your data, and share your insights with the world!
+
+**Bonus Challenge:** Share your own R code and insights in the comments below! Let's learn from each other and become daily data aggregation masters together!
