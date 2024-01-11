@@ -1,0 +1,142 @@
+---
+title: "Benchmarking the Speed of Cumulative Functions in TidyDensity"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-01-11"
+categories: [code, tidydensity, benchmark]
+---
+
+# Introduction
+
+Statistical analysis often involves calculating various measures on large datasets. Speed and efficiency are crucial, especially when dealing with real-time analytics or massive data volumes. The [TidyDensity](https://cran.r-project.org/web/packages/TidyDensity/index.html) package in R provides a set of fast cumulative functions for common statistical measures like mean, standard deviation, skewness, and kurtosis. But just how fast are these cumulative functions compared to doing the computations directly? In this post, I benchmark the cumulative functions against the base R implementations using the [rbenchmark](https://cran.r-project.org/web/packages/rbenchmark/index.html) package.
+
+# Setting the bench
+
+To assess the performance of TidyDensity's cumulative functions, we'll employ the rbenchmark package for benchmarking and the ggplot2 package for visualization. I'll benchmark the following cumulative functions on random samples of increasing size:
+
+*   `cgmean()` - Cumulative geometric mean
+*   `chmean()` - Cumulative harmonic mean
+*   `ckurtosis()` - Cumulative kurtosis
+*   `cskewness()` - Cumulative skewness
+*   `cmean()` - Cumulative mean
+*   `csd()` - Cumulative standard deviation
+*   `cvar()` - Cumulative variance
+
+```{r message=FALSE}
+library(TidyDensity)
+library(rbenchmark)
+library(dplyr)
+library(ggplot2)
+
+set.seed(123)
+
+x1 <- sample(1e2) + 1e2
+x2 <- sample(1e3) + 1e3 
+x3 <- sample(1e4) + 1e4
+x4 <- sample(1e5) + 1e5
+x5 <- sample(1e6) + 1e6
+
+cg_bench <- benchmark(
+  "100" = cgmean(x1),
+  "1000" = cgmean(x2),
+  "10000" = cgmean(x3),
+  "100000" = cgmean(x4),
+  "1000000" = cgmean(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")
+)
+
+# Run benchmarks for other functions
+ch_bench <- benchmark(
+  "100" = chmean(x1),
+  "1000" = chmean(x2),
+  "10000" = chmean(x3),
+  "100000" = chmean(x4),
+  "1000000" = chmean(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")
+)
+
+ck_bench <- benchmark(
+  "100" = ckurtosis(x1),
+  "1000" = ckurtosis(x2),
+  "10000" = ckurtosis(x3),
+  "100000" = ckurtosis(x4),
+  "1000000" = ckurtosis(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")  
+)
+
+cs_bench <- benchmark(
+  "100" = cskewness(x1),
+  "1000" = cskewness(x2), 
+  "10000" = cskewness(x3),
+  "100000" = cskewness(x4),
+  "1000000" = cskewness(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")
+)
+
+cm_bench <- benchmark(
+  "100" = cmean(x1),
+  "1000" = cmean(x2),
+  "10000" = cmean(x3),
+  "100000" = cmean(x4),
+  "1000000" = cmean(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")
+)
+
+csd_bench <- benchmark(
+  "100" = csd(x1),
+  "1000" = csd(x2),
+  "10000" = csd(x3),
+  "100000" = csd(x4),
+  "1000000" = csd(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")  
+)
+
+cv_bench <- benchmark(
+  "100" = cvar(x1),
+  "1000" = cvar(x2),
+  "10000" = cvar(x3),
+  "100000" = cvar(x4), 
+  "1000000" = cvar(x5),
+  replications = 100L,
+  columns = c("test","replications","elapsed", "relative","user.self","sys.self")
+)
+
+benchmarks <- rbind(cg_bench, ch_bench, ck_bench, cs_bench, cm_bench, csd_bench, cv_bench)
+
+# Arrange benchmarks and plot
+bench_tbl <- benchmarks |> 
+  mutate(func = c(
+    rep("cgmean", 5), 
+    rep("chmean", 5),
+    rep("ckurtosis", 5),
+    rep("cskewness", 5),
+    rep("cmean", 5),
+    rep("csd", 5),
+    rep("cvar", 5)
+    )
+  ) |>
+  arrange(func, test) |>
+  select(func, test, everything())
+
+bench_tbl |>
+  ggplot(aes(x=test, y=elapsed, group = func, color = func)) +
+    geom_line() +
+    facet_wrap(~func, scales="free_y") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title="Cumulative Function Speed Comparison",
+       x="Sample Size",
+       y="Elapsed Time (sec)",
+       color = "Function")
+```
+
+The results show that the TidyDensity cumulative functions scale extremely well as the sample size increases. The elapsed time remains very low even at 1 million observations. The base R implementations like `var()` and `sd()` perform significantly worse when used inside of an `sapply` at large sample sizes. What was not tested however is `cmedian()` and this is because the performance is very slow once we reach 1e4 compared to the other functions as such that it would take too long to run the benchmark if it ran at all.
+
+So if you need fast statistical functions that can scale to big datasets, the TidyDensity cumulative functions are a great option! They provide massive speedups over base R while returning the same final result.
+
+Let me know in the comments if you have any other benchmark ideas for comparing R packages! I'm always looking for interesting performance comparisons to test out.
