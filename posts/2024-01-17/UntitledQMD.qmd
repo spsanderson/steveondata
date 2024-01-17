@@ -1,0 +1,81 @@
+---
+title: "Using .drop_na in Fast Classification and Regression"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-01-16"
+categories: [code, rtip, tidyaml]
+---
+
+# Introduction
+
+In the newest release of tidyAML there has been an addition of a new parameter to the functions `fast_classification()` and `fast_regression()`. The parameter is `.drop_na` and it is a logical value that defaults to `TRUE`. This parameter is used to determine if the function should drop rows with missing values from the output if a model cannot be built for some reason. Let's take a look at the function and it's arguments.
+
+```R
+fast_regression(
+  .data,
+  .rec_obj,
+  .parsnip_fns = "all",
+  .parsnip_eng = "all",
+  .split_type = "initial_split",
+  .split_args = NULL,
+  .drop_na = TRUE
+)
+```
+## Arguments
+
+`.data` - The data being passed to the function for the regression problem
+`.rec_obj` - The recipe object being passed.
+`.parsnip_fns` - The default is 'all' which will create all possible regression model specifications supported.
+`.parsnip_eng` - The default is 'all' which will create all possible regression model specifications supported.
+`.split_type` - The default is 'initial_split', you can pass any type of split supported by rsample
+`.split_args` - The default is NULL, when NULL then the default parameters of the split type will be executed for the rsample split type.
+`.drop_na` - The default is TRUE, which will drop all NA's from the data.
+
+Now let's see this in action.
+
+# Example
+
+We are going to use the `mtcars` dataset for this example. We will create a regression problem where we are trying to predict `mpg` using all other variables in the dataset. We will not load in all the libraries that are supported causing the function to return NULL for some models and we will set the parameter `.drop_na` to `FALSE`.
+
+```{r warning=FALSE, message=FALSE}
+library(tidyAML)
+library(tidymodels)
+library(tidyverse)
+
+tidymodels::tidymodels_prefer()
+
+# Create regression problem
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+frt_tbl <- fast_regression(
+  mtcars,
+  rec_obj,
+  .parsnip_eng = c("lm","glm","gee"),
+  .parsnip_fns = "linear_reg",
+  .drop_na = FALSE
+  )
+
+glimpse(frt_tbl)
+extract_wflw(frt_tbl, 1:nrow(frt_tbl))
+```
+
+Here we can see that the function returned NULL for the `gee` model because we did not load in the `multilevelmod` library. We can also see that the function did not drop that model from the output because `.drop_na` was set to `FALSE`. Now let's set it back to `TRUE`.
+
+```{r warning=FALSE, message=FALSE}
+frt_tbl <- fast_regression(
+  mtcars,
+  rec_obj,
+  .parsnip_eng = c("lm","glm","gee"),
+  .parsnip_fns = "linear_reg",
+  .drop_na = TRUE
+  )
+
+glimpse(frt_tbl)
+extract_wflw(frt_tbl, 1:nrow(frt_tbl))
+```
+
+Here we can see that the `gee` model was dropped from the output because the function could not build the model due to the `multilevelmod` library not being loaded. This is a great way to drop models that cannot be built due to missing libraries or other reasons.
+
+# Conclusion
+
+The `.drop_na` parameter is a great way to drop models that cannot be built due to missing libraries or other reasons. This is a great addition to the `fast_classification()` and `fast_regression()` functions.
+
+Happy coding!
