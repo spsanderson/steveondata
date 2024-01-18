@@ -1,0 +1,105 @@
+---
+title: "Exploring the Enhanced Features of tidyAML's internal_make_wflw_predictions()"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-01-18"
+categories: [code, rtip, tidyaml]
+---
+
+# Introduction
+
+Hey R enthusiasts! Steve here, and today I'm excited to share some fantastic updates about a key function in the tidyAML package – `internal_make_wflw_predictions()`. The latest version addresses issue #190, ensuring that all crucial data is now included in the predictions. Let's dive into the details!
+
+# What's New?
+
+In response to user feedback, we've enhanced the `internal_make_wflw_predictions()` function to provide a comprehensive set of predictions. Now, when you make a call to this function, it includes:
+
+1. **The Actual Data:** This is the real-world data that your model aims to predict. Having access to this information helps you assess how well your model is performing on unseen instances.
+
+2. **Training Predictions:** Predictions made on the training dataset. This is essential for understanding how well your model generalizes to the data it was trained on.
+
+3. **Testing Predictions:** Predictions made on the testing dataset. This is crucial for evaluating the model's performance on data it hasn't seen during the training phase.
+
+# How to Use It
+
+To take advantage of these new features, here's how you can use the updated `internal_make_wflw_predictions()` function:
+
+```R
+internal_make_wflw_predictions(.model_tbl, .splits_obj)
+```
+
+## Arguments:
+
+1. **.model_tbl:** The model table generated from a function like `fast_regression_parsnip_spec_tbl()`. Ensure that it has a class of "tidyaml_mod_spec_tbl." This is typically used after running the `internal_make_fitted_wflw()` function and saving the resulting tibble.
+
+2. **.splits_obj:** The splits object obtained from the `auto_ml` function. It is internal to the `auto_ml` function.
+
+# Example Usage
+
+Let's walk through an example using some popular R packages:
+
+```{r warning=FALSE, message=FALSE}
+library(tidymodels)
+library(tidyAML)
+library(tidyverse)
+tidymodels_prefer()
+
+# Create a model specification table
+mod_spec_tbl <- fast_regression_parsnip_spec_tbl(
+  .parsnip_eng = c("lm","glm"),
+  .parsnip_fns = "linear_reg"
+)
+
+# Create a recipe
+rec_obj <- recipe(mpg ~ ., data = mtcars)
+
+# Create splits
+splits_obj <- create_splits(mtcars, "initial_split")
+
+# Generate the model table
+mod_tbl <- mod_spec_tbl |>
+  mutate(wflw = full_internal_make_wflw(mod_spec_tbl, rec_obj))
+
+# Generate the fitted model table
+mod_fitted_tbl <- mod_tbl |>
+  mutate(fitted_wflw = internal_make_fitted_wflw(mod_tbl, splits_obj))
+
+# Make predictions with the enhanced function
+preds_list <- internal_make_wflw_predictions(mod_fitted_tbl, splits_obj)
+```
+
+This example demonstrates how to integrate the updated function into your workflow seamlessly. Typically though one would not use this function directly, but rather use the `fast_regression()` or `fast_classification()` function, which calls this function internally. Let's now take a look at the output of everything.
+
+```{r}
+rec_obj
+splits_obj
+mod_spec_tbl
+mod_tbl
+mod_fitted_tbl
+preds_list
+```
+
+You will notice the names of the preds_list output:
+
+```{r}
+names(preds_list[[1]])
+```
+
+So we have `.data_category`, `.data_type`, and `.value`. Let's take a look at the unique values of each column for `.data_category` and `.data_type`:
+
+```{r}
+unique(preds_list[[1]]$.data_category)
+```
+
+So we have our `actual` data the the `predicted` data. The predicted though has both the `training` and `testing` data in it. Let's take a look at the unique values of `.data_type`:
+
+```{r}
+unique(preds_list[[1]]$.data_type)
+```
+
+This will allow you to visualize the data how you please, something we will go over tomorrow!
+
+## Why It Matters
+
+By including actual data along with training and testing predictions, the `internal_make_wflw_predictions()` function empowers you to perform a more thorough evaluation of your models. This is a significant step towards ensuring the reliability and generalization capability of your machine learning models.
+
+So, R enthusiasts, update your tidyAML package, explore the enhanced features, and let us know how these improvements elevate your modeling experience. Happy coding!
