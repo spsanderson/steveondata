@@ -10,7 +10,814 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Thu, 18 Jan 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 19 Jan 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title></title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-01-19/index.html</link>
+  <description><![CDATA[ 
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Yesterday I discussed the use of the function <code>internal_make_wflw_predictions()</code> in the <code>tidyAML</code> R package. Today I will discuss the use of the function <code>extract_wflw_pred()</code> and the brand new function <code>extract_regression_residuals()</code> in the <code>tidyAML</code> R package. We breifly saw yesterday the output of the function <code>internal_make_wflw_predictions()</code> which is a list of tibbles that are typically inside of a list column in the final output of <code>fast_regression()</code> and <code>fast_classification()</code>. The function <code>extract_wflw_pred()</code> takes this list of tibbles and extracts them from that output. The function <code>extract_regression_residuals()</code> also extracts those tibbles and has the added feature of also returning the residuals. Let’s see how these functions work.</p>
+</section>
+<section id="the-new-function" class="level1">
+<h1>The new function</h1>
+<p>First, we will go over the syntax of the new function <code>extract_regression_residuals()</code>.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_regression_residuals</span>(.model_tbl, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.pivot_long =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div>
+<p>The function takes two arguments. The first argument is <code>.model_tbl</code> which is the output of <code>fast_regression()</code> or <code>fast_classification()</code>. The second argument is <code>.pivot_long</code> which is a logical argument that defaults to <code>FALSE</code>. If <code>TRUE</code> then the output will be in a long format. If <code>FALSE</code> then the output will be in a wide format. Let’s see how this works.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load packages</span></span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyAML)</span>
+<span id="cb2-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidymodels)</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(multilevelmod) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for the gee model</span></span>
+<span id="cb2-6"></span>
+<span id="cb2-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidymodels_prefer</span>() <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># good practice when using tidyAML</span></span>
+<span id="cb2-8"></span>
+<span id="cb2-9">rec_obj <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> mtcars)</span>
+<span id="cb2-10">frt_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fast_regression</span>(</span>
+<span id="cb2-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.data =</span> mtcars, </span>
+<span id="cb2-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.rec_obj =</span> rec_obj, </span>
+<span id="cb2-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lm"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"glm"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"stan"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gee"</span>),</span>
+<span id="cb2-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_fns =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"linear_reg"</span></span>
+<span id="cb2-15">  )</span></code></pre></div>
+</div>
+<p>Let’s break down the R code step by step:</p>
+<ol type="1">
+<li><strong>Loading Libraries:</strong></li>
+</ol>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyAML)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidymodels)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb3-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(multilevelmod) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for the gee model</span></span></code></pre></div>
+<p>Here, the code is loading several R packages. These packages provide functions and tools for data analysis, modeling, and visualization. <code>tidyAML</code> and <code>tidymodels</code> are particularly relevant for modeling, while <code>tidyverse</code> is a collection of packages for data manipulation and visualization. <code>multilevelmod</code> is included for the Generalized Estimating Equations (gee) model.</p>
+<ol start="2" type="1">
+<li><p><strong>Setting Preferences:</strong></p>
+<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidymodels_prefer</span>() <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># good practice when using tidyAML</span></span></code></pre></div></li>
+</ol>
+<p>This line of code is setting preferences for the tidy modeling workflow using <code>tidymodels_prefer()</code>. It ensures that when using <code>tidyAML</code>, the tidy modeling conventions are followed. Tidy modeling involves an organized and consistent approach to modeling in R.</p>
+<ol start="3" type="1">
+<li><p><strong>Creating a Recipe Object:</strong></p>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">rec_obj <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> mtcars)</span></code></pre></div></li>
+</ol>
+<p>Here, a recipe object (<code>rec_obj</code>) is created using the <code>recipe</code> function from the <code>tidymodels</code> package. The formula <code>mpg ~ .</code> specifies that we want to predict the <code>mpg</code> variable based on all other variables in the dataset (<code>mtcars</code>).</p>
+<ol start="4" type="1">
+<li><p><strong>Performing Fast Regression:</strong></p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">frt_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fast_regression</span>(</span>
+<span id="cb6-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.data =</span> mtcars, </span>
+<span id="cb6-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.rec_obj =</span> rec_obj, </span>
+<span id="cb6-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lm"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"glm"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"stan"</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gee"</span>),</span>
+<span id="cb6-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.parsnip_fns =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"linear_reg"</span></span>
+<span id="cb6-6">)</span></code></pre></div></li>
+</ol>
+<p>This part involves using the <code>fast_regression</code> function. It performs a fast regression analysis using various engines specified by <code>.parsnip_eng</code> and specific functions specified by <code>.parsnip_fns</code>. In this case, it includes linear models (<code>lm</code>), generalized linear models (<code>glm</code>), Stan models (<code>stan</code>), and the Generalized Estimating Equations model (<code>gee</code>). The results are stored in the <code>frt_tbl</code> table.</p>
+<p>In summary, the code is setting up a tidy modeling workflow, creating a recipe for predicting <code>mpg</code> based on other variables in the <code>mtcars</code> dataset, and then performing a fast regression using different engines and functions. The choice of engines and functions allows flexibility in exploring different modeling approaches.</p>
+<p>Now that we have the output of <code>fast_regression()</code> stored in <code>frt_tbl</code>, we can use the function <code>extract_wflw_pred()</code> to extract the predictions and from the output. Let’s see how this works. First, the syntax:</p>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_wflw_pred</span>(.data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.model_id =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>)</span></code></pre></div>
+<p>The function takes two arguments. The first argument is <code>.data</code> which is the output of <code>fast_regression()</code> or <code>fast_classification()</code>. The second argument is <code>.model_id</code> which is a numeric vector that defaults to <code>NULL</code>. If <code>NULL</code> then the function will extract none of the predictions from the output. If a numeric vector is provided then the function will extract the predictions for the models specified by the numeric vector. Let’s see how this works.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_wflw_pred</span>(frt_tbl, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 64 × 4
+   .model_type     .data_category .data_type .value
+   &lt;chr&gt;           &lt;chr&gt;          &lt;chr&gt;       &lt;dbl&gt;
+ 1 lm - linear_reg actual         actual       21  
+ 2 lm - linear_reg actual         actual       17.3
+ 3 lm - linear_reg actual         actual       22.8
+ 4 lm - linear_reg actual         actual       21  
+ 5 lm - linear_reg actual         actual       15.2
+ 6 lm - linear_reg actual         actual       24.4
+ 7 lm - linear_reg actual         actual       22.8
+ 8 lm - linear_reg actual         actual       15.5
+ 9 lm - linear_reg actual         actual       27.3
+10 lm - linear_reg actual         actual       19.2
+# ℹ 54 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_wflw_pred</span>(frt_tbl, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 128 × 4
+   .model_type     .data_category .data_type .value
+   &lt;chr&gt;           &lt;chr&gt;          &lt;chr&gt;       &lt;dbl&gt;
+ 1 lm - linear_reg actual         actual       21  
+ 2 lm - linear_reg actual         actual       17.3
+ 3 lm - linear_reg actual         actual       22.8
+ 4 lm - linear_reg actual         actual       21  
+ 5 lm - linear_reg actual         actual       15.2
+ 6 lm - linear_reg actual         actual       24.4
+ 7 lm - linear_reg actual         actual       22.8
+ 8 lm - linear_reg actual         actual       15.5
+ 9 lm - linear_reg actual         actual       27.3
+10 lm - linear_reg actual         actual       19.2
+# ℹ 118 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_wflw_pred</span>(frt_tbl, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(frt_tbl))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 256 × 4
+   .model_type     .data_category .data_type .value
+   &lt;chr&gt;           &lt;chr&gt;          &lt;chr&gt;       &lt;dbl&gt;
+ 1 lm - linear_reg actual         actual       21  
+ 2 lm - linear_reg actual         actual       17.3
+ 3 lm - linear_reg actual         actual       22.8
+ 4 lm - linear_reg actual         actual       21  
+ 5 lm - linear_reg actual         actual       15.2
+ 6 lm - linear_reg actual         actual       24.4
+ 7 lm - linear_reg actual         actual       22.8
+ 8 lm - linear_reg actual         actual       15.5
+ 9 lm - linear_reg actual         actual       27.3
+10 lm - linear_reg actual         actual       19.2
+# ℹ 246 more rows</code></pre>
+</div>
+</div>
+<p>The first line of code extracts the predictions for the first model in the output. The second line of code extracts the predictions for the first two models in the output. The third line of code extracts the predictions for all models in the output.</p>
+<p>Now, let’s visualize the predictions for the models in the output and the actual values. We will use the <code>ggplot2</code> package for visualization. First, we will extract the predictions for all models in the output and store them in a table called <code>pred_tbl</code>. Then, we will use <code>ggplot2</code> to visualize the predictions and actual values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">pred_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_wflw_pred</span>(frt_tbl, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(frt_tbl))</span>
+<span id="cb14-2"></span>
+<span id="cb14-3">pred_tbl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_split</span>(.model_type) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span>(\(x) x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-6">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(.data_category) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-7">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">row_number</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-8">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-9">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pivot_wider</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">names_from =</span> .data_type, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">values_from =</span> .value) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb14-10">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> actual, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> .data_category)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb14-11">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb14-12">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> training), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>,</span>
+<span id="cb14-13">                  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb14-14">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> testing), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>,</span>
+<span id="cb14-15">                  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb14-16">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb14-17">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb14-18">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb14-19">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Observed/Predicted Value"</span>,</span>
+<span id="cb14-20">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Observed vs. Predicted Values by Model Type"</span>,</span>
+<span id="cb14-21">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">subtitle =</span> x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>.model_type[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb14-22">        )</span>
+<span id="cb14-23">      )</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[2]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[3]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[4]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-3-4.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Or we can facet them by model type:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1">pred_tbl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb19-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(.model_type, .data_category) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb19-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">row_number</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb19-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb19-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> .value)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> . <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(.data_type <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"actual"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"black"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> . <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(.data_type <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"training"</span>), </span>
+<span id="cb19-8">            <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> . <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(.data_type <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"testing"</span>), </span>
+<span id="cb19-10">            <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> .model_type, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scales =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"free"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb19-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb19-14">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Observed/Predicted Value"</span>,</span>
+<span id="cb19-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Observed vs. Predicted Values by Model Type"</span></span>
+<span id="cb19-16">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb19-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Ok, so what about this new function I talked about above? Well let’s go over it here. We have already discussed it’s syntax so no need to go over it again. Let’s just jump right into an example. This function will return the residuals for all models. We will slice off just the first model for demonstration purposes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_regression_residuals</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.model_tbl =</span> frt_tbl, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.pivot_long =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 32 × 4
+   .model_type     .actual .predicted .resid
+   &lt;chr&gt;             &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+ 1 lm - linear_reg    21         22.1 -1.13 
+ 2 lm - linear_reg    17.3       15.8  1.54 
+ 3 lm - linear_reg    22.8       23.5 -0.732
+ 4 lm - linear_reg    21         22.1 -1.09 
+ 5 lm - linear_reg    15.2       15.9 -0.686
+ 6 lm - linear_reg    24.4       23.1  1.33 
+ 7 lm - linear_reg    22.8       24.8 -2.00 
+ 8 lm - linear_reg    15.5       17.0 -1.46 
+ 9 lm - linear_reg    27.3       26.7  0.648
+10 lm - linear_reg    19.2       16.6  2.59 
+# ℹ 22 more rows</code></pre>
+</div>
+</div>
+<p>Now let’s set <code>.pivot_long = TRUE</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_regression_residuals</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.model_tbl =</span> frt_tbl, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.pivot_long =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 96 × 3
+   .model_type     name        value
+   &lt;chr&gt;           &lt;chr&gt;       &lt;dbl&gt;
+ 1 lm - linear_reg .actual    21    
+ 2 lm - linear_reg .predicted 22.1  
+ 3 lm - linear_reg .resid     -1.13 
+ 4 lm - linear_reg .actual    17.3  
+ 5 lm - linear_reg .predicted 15.8  
+ 6 lm - linear_reg .resid      1.54 
+ 7 lm - linear_reg .actual    22.8  
+ 8 lm - linear_reg .predicted 23.5  
+ 9 lm - linear_reg .resid     -0.732
+10 lm - linear_reg .actual    21    
+# ℹ 86 more rows</code></pre>
+</div>
+</div>
+<p>Now let’s visualize the data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1">resid_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">extract_regression_residuals</span>(frt_tbl, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb24-2"></span>
+<span id="cb24-3">resid_tbl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span>(\(x) x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-5">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(name) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-6">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">row_number</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-7">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-8">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plot_group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ifelse</span>(name <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">".resid"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Residuals"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Actual and Predictions"</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb24-9">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> name, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> name)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb24-10">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb24-11">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb24-12">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> plot_group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scales =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"free"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb24-13">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb24-14">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb24-15">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Value"</span>,</span>
+<span id="cb24-16">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Actual, Predicted, and Residual Values by Model Type"</span>,</span>
+<span id="cb24-17">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">subtitle =</span> x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>.model_type[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>],</span>
+<span id="cb24-18">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Data Type"</span></span>
+<span id="cb24-19">        )</span>
+<span id="cb24-20">      )</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[2]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[3]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-7-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+[[4]]</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-19/index_files/figure-html/unnamed-chunk-7-4.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>And that’s it!</p>
+<p>Thank you for reading and I would love to hear your feedback. Please feel free to reach out to me.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>tidyaml</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-19/index.html</guid>
+  <pubDate>Fri, 19 Jan 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Exploring the Enhanced Features of tidyAML’s internal_make_wflw_predictions()</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -7030,293 +7837,6 @@ font-style: inherit;">$</span>residuals)</span></code></pre></div>
   <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-12-12/index.html</guid>
   <pubDate>Tue, 12 Dec 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Exploring TidyAML: Simplifying Regression Analysis in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-12-08/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>If you’re a data enthusiast diving into the world of regression analysis in R, you’ve likely encountered the challenges of managing code complexity and juggling different modeling engines. The good news is that there’s a powerful tool to streamline your regression workflow – the tidyAML R package.</p>
-</section>
-<section id="getting-started-with-tidyaml" class="level1">
-<h1>Getting Started with TidyAML</h1>
-<p>Before we dive into the script, let’s make sure you have the necessary libraries installed. Fire up your R console and install the tidyAML package along with its dependencies:</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"tidyAML"</span>)</span></code></pre></div>
-<p>Now, let’s explore a script that leverages tidyAML for quick and efficient regression analysis. Here’s a breakdown of the key components:</p>
-</section>
-<section id="intial-setup" class="level1">
-<h1>Intial Setup</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyAML)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyverse)</span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidymodels)</span>
-<span id="cb2-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(multilevelmod)</span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(earth)</span>
-<span id="cb2-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(randomForest)</span>
-<span id="cb2-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(rpart)</span>
-<span id="cb2-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(lightgbm)</span>
-<span id="cb2-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(baguette)</span>
-<span id="cb2-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(bonsai)</span>
-<span id="cb2-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(gee)</span>
-<span id="cb2-12"></span>
-<span id="cb2-13"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidymodels_prefer</span>()</span></code></pre></div>
-</div>
-<section id="setting-up-the-recipe" class="level2">
-<h2 class="anchored" data-anchor-id="setting-up-the-recipe">Setting Up the Recipe</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> mtcars</span>
-<span id="cb3-2">recipe <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">recipe</span>(mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> df)</span></code></pre></div>
-</div>
-<p>In this snippet, we’re creating a recipe for our regression analysis. The response variable (<code>mpg</code>) is modeled against all other variables in the <code>mtcars</code> dataset.</p>
-</section>
-<section id="fast-regression-with-tidyaml" class="level2">
-<h2 class="anchored" data-anchor-id="fast-regression-with-tidyaml">Fast Regression with TidyAML</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">fr_tbl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">fast_regression</span>(</span>
-<span id="cb4-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.data =</span> df,</span>
-<span id="cb4-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.rec_obj =</span> recipe,</span>
-<span id="cb4-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.parsnip_fns =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"linear_reg"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"mars"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"bag_mars"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"rand_forest"</span>,</span>
-<span id="cb4-5">                   <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"boost_tree"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"bag_tree"</span>),</span>
-<span id="cb4-6">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.parsnip_eng =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lm"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gee"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"glm"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gls"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"earth"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"rpart"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightgbm"</span>)</span>
-<span id="cb4-7">)</span></code></pre></div>
-</div>
-<p>This is where the magic happens. The <code>fast_regression</code> function performs regression using various modeling functions (<code>linear_reg</code>, <code>mars</code>, etc.) and engines (<code>lm</code>, <code>gee</code>, etc.) specified. It’s a versatile approach to quickly explore different models.</p>
-</section>
-<section id="visualizing-residuals" class="level2">
-<h2 class="anchored" data-anchor-id="visualizing-residuals">Visualizing Residuals</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">fr_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">res =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">map</span>(fitted_wflw, \(x) x <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> </span>
-<span id="cb5-3">                     broom<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">augment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">new_data =</span> df))) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unnest</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> res) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pfe =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste0</span>(.parsnip_engine, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">" - "</span>, .parsnip_fns)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.res =</span> mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> .pred) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> pfe, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> .res, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fill =</span> pfe)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb5-8">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_boxplot</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb5-9">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb5-10">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Residuals by Fitted Model"</span>,</span>
-<span id="cb5-11">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">subtitle =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Residuals are mpg - .pred"</span>,</span>
-<span id="cb5-12">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Model"</span>,</span>
-<span id="cb5-13">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Residuals"</span>,</span>
-<span id="cb5-14">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Engine + Function"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb5-15">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">axis.text.x =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">angle =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">45</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">hjust =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-08/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>This block of code generates a boxplot visualizing residuals by model. Residuals are the differences between observed and predicted values. The plot helps you assess how well your models are performing.</p>
-</section>
-</section>
-<section id="try-it-yourself" class="level1">
-<h1>Try It Yourself!</h1>
-<p>Now that you’ve seen the power of tidyAML in action, it’s time to try it yourself. Install the package, load your data, and adapt the script to your specific use case. TidyAML provides a clean and efficient way to explore different regression models, making your analysis more manageable and insightful.</p>
-<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"tidyAML"</span>)</span>
-<span id="cb6-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyAML)</span>
-<span id="cb6-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Your data loading and analysis code here</span></span></code></pre></div>
-<p>Happy coding, and may your regression analyses be tidy and insightful!</p>
-
-
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>regression</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-08/index.html</guid>
-  <pubDate>Fri, 08 Dec 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
