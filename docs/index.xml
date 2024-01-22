@@ -10,7 +10,450 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Fri, 19 Jan 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 22 Jan 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Demystifying bootstrap_stat_plot(): Your Ticket to Insightful Data Exploration</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-01-22/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Ever feel like your data is hiding secrets? Like it’s whispering truths but you just can’t quite grasp them? Well, fear not, fellow data sleuths! Today, we’ll crack the code of an R function that’s like a magnifying glass for your statistical investigations: <code>bootstrap_stat_plot()</code> from the <strong>TidyDensity</strong> package.</p>
+<p><strong>Imagine this:</strong> You have a dataset, say, car mileage (MPG) from the classic <code>mtcars</code> dataset. You want to understand the <strong>average</strong> MPG, but what if that average is just a mirage? What if it’s skewed by a few outliers or doesn’t capture the full story?</p>
+<p>Enter <strong>bootstrapping</strong>, a statistical technique that’s like taking your data on a wild ride. It creates <strong>multiple copies</strong> of your data, each with a slight twist, and then calculates the statistic you’re interested in (e.g., average MPG) for each copy. This gives you a <strong>distribution</strong> of possible averages, revealing the variability and potential biases lurking beneath the surface.</p>
+<p><strong><code>bootstrap_stat_plot()</code></strong> takes this magic a step further. It not only calculates the distribution but also <strong>visualizes</strong> it, giving you a clear picture of how the statistic fluctuates across different versions of your data. It’s like a <strong>magnifying glass</strong> for your statistical investigations!</p>
+</section>
+<section id="function" class="level1">
+<h1>Function</h1>
+<section id="syntax" class="level2">
+<h2 class="anchored" data-anchor-id="syntax">Syntax</h2>
+<p>Let’s take a look at the function:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(</span>
+<span id="cb1-2">  .data,</span>
+<span id="cb1-3">  .value,</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmean"</span>,</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb1-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_labels =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb1-8">)</span></code></pre></div>
+</section>
+<section id="arguments" class="level2">
+<h2 class="anchored" data-anchor-id="arguments">Arguments</h2>
+<p><strong>1. The Data:</strong></p>
+<ul>
+<li><code>.data</code>: The data frame containing your data.</li>
+</ul>
+<p><strong>2. The Value:</strong></p>
+<ul>
+<li><code>.value</code>: The variable you want to calculate the statistic for.</li>
+</ul>
+<p><strong>3. The Statistic:</strong></p>
+<ul>
+<li><p><code>.stat</code>: The statistic you want to calculate. Options include:</p>
+<ul>
+<li><code>cmean</code>: The mean</li>
+<li><code>cmedian</code>: The median</li>
+<li><code>cmin</code>: The minimum</li>
+<li><code>cmax</code>: The maximum</li>
+<li><code>csd</code>: The standard deviation</li>
+<li><code>cvar</code>: The variance</li>
+<li>and many others!</li>
+</ul></li>
+</ul>
+<p><strong>4. Show Groups:</strong></p>
+<ul>
+<li><code>.show_groups</code>: Whether to show the groups in the plot. Default is <code>FALSE</code>.</li>
+</ul>
+<p><strong>5. Show Confidence Interval Labels:</strong></p>
+<ul>
+<li><code>.show_ci_labels</code>: Whether to show the confidence interval labels in the plot. Default is <code>TRUE</code>.</li>
+</ul>
+<p><strong>6. Interactive:</strong></p>
+<ul>
+<li><code>.interactive</code>: Whether to make the plot interactive. Default is <code>FALSE</code>.</li>
+</ul>
+</section>
+</section>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+</section>
+<section id="example-1---show-replications" class="level1">
+<h1>Example 1 - Show replications</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(TidyDensity)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(patchwork)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> mtcars<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>mpg</span>
+<span id="cb2-5">ns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span></span>
+<span id="cb2-6"></span>
+<span id="cb2-7">p1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_sims =</span> ns) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb2-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb2-9">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmean"</span>, </span>
+<span id="cb2-10">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb2-11">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb2-12">  ) </span>
+<span id="cb2-13"></span>
+<span id="cb2-14">p2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_sims =</span> ns) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb2-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb2-16">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmin"</span>, </span>
+<span id="cb2-17">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb2-18">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb2-19">  )</span>
+<span id="cb2-20"></span>
+<span id="cb2-21">p3 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_sims =</span> ns) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb2-22">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb2-23">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmax"</span>, </span>
+<span id="cb2-24">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb2-25">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb2-26">  )</span>
+<span id="cb2-27"></span>
+<span id="cb2-28">p4 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_sims =</span> ns) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb2-29">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb2-30">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"csd"</span>, </span>
+<span id="cb2-31">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb2-32">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb2-33">  )</span>
+<span id="cb2-34"></span>
+<span id="cb2-35"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">wrap_plots</span>(</span>
+<span id="cb2-36">  p1, p2, p4, p3, </span>
+<span id="cb2-37">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, </span>
+<span id="cb2-38">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">widths =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">heights =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb2-39">  )</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-22/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Let’s dissect the code to see how it works:</p>
+<p><strong>1. The Data:</strong></p>
+<ul>
+<li><code>.data</code>: This is where your bootstrapped data lives, usually after using <code>tidy_bootstrap()</code> or <code>bootstrap_unnest_tbl()</code> to create it.</li>
+</ul>
+<p><strong>2. The Statistic:</strong></p>
+<ul>
+<li><code>.value</code>: This is the column you want to analyze, like <code>mpg</code> in our example.</li>
+<li><code>.stat</code>: This is the magic spell! It tells the function what statistic to calculate on your chosen value. By default, it’s <code>"cmean"</code> for the <strong>cumulative mean</strong>, but you can choose others like <code>"cmin"</code> for the minimum, <code>"cmax"</code> for the maximum, or even <code>"csd"</code> for the circular standard deviation.</li>
+</ul>
+<p><strong>3. Visualization Options:</strong></p>
+<ul>
+<li><code>.show_groups</code>: Turn this to <code>TRUE</code> if you want to see the distribution for <strong>each bootstrap sample</strong> (think of it as a swarm of data points). By default, it shows just the overall distribution.</li>
+<li><code>.show_ci_labels</code>: This one displays the <strong>confidence interval</strong> bounds (think of it as the range where the true statistic likely lies). By default, you get the last values of the upper and lower bounds.</li>
+</ul>
+<p><strong>4. Interactive Mode:</strong></p>
+<ul>
+<li><code>.interactive</code>: Set this to <code>TRUE</code> if you want to get a <strong>plotly plot object</strong> back, which you can then customize further. Think of it as a living graph you can play with!</li>
+</ul>
+</section>
+<section id="example-2---hide-replications" class="level1">
+<h1>Example 2 - Hide replications</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">p1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb3-3">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmean"</span>, </span>
+<span id="cb3-4">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-5">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb3-6">  )</span>
+<span id="cb3-7"></span>
+<span id="cb3-8">p2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb3-10">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmin"</span>, </span>
+<span id="cb3-11">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-12">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb3-13">  )</span>
+<span id="cb3-14"></span>
+<span id="cb3-15">p3 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb3-17">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cmax"</span>, </span>
+<span id="cb3-18">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-19">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb3-20">  )</span>
+<span id="cb3-21"></span>
+<span id="cb3-22">p4 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidy_bootstrap</span>(x) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb3-23">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">bootstrap_stat_plot</span>(y,</span>
+<span id="cb3-24">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.stat =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"csd"</span>, </span>
+<span id="cb3-25">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_groups =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-26">                      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.show_ci_label =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb3-27">  )</span>
+<span id="cb3-28"></span>
+<span id="cb3-29"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">wrap_plots</span>(</span>
+<span id="cb3-30">  p1, p2, p4, p3, </span>
+<span id="cb3-31">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, </span>
+<span id="cb3-32">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">widths =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">heights =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb3-33">)</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-22/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>In this example we did two things different, we hid the replications, the simulations was left to the default of 2000 and the labels were turned off. This is useful when you want to show a summary of the data.</p>
+</section>
+<section id="your-turn-to-explore" class="level1">
+<h1>Your Turn to Explore</h1>
+<p>Don’t just take our word for it! Try <code>bootstrap_stat_plot()</code> on your own data. Experiment with different statistics, explore the interactive mode, and see how it unlocks new insights you might have missed before. Remember, the more you play, the more you discover!</p>
+<p><strong>So, unleash your inner data detective and let <code>bootstrap_stat_plot()</code> guide you to a deeper understanding of your data.</strong> Happy exploring!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>tidyaml</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-22/index.html</guid>
+  <pubDate>Mon, 22 Jan 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>The new function on the block with tidyAML extract_regression_residuals()</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -7615,229 +8058,6 @@ Volvo 142E             -2.968267683</code></pre>
   <category>regression</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2023-12-14/index.html</guid>
   <pubDate>Thu, 14 Dec 2023 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Conquering Unequal Variance with Weighted Least Squares in R: A Practical Guide</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2023-12-12/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Tired of your least-squares regression model giving wonky results because some data points shout louder than others? Meet Weighted Least Squares (WLS), the superhero of regression, ready to tackle unequal variance (heteroscedasticity) and give your model the justice it deserves! Today, we’ll dive into the world of WLS in R, using base functions for maximum transparency. Buckle up, data warriors!</p>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<p><strong>The Scenario:</strong> Imagine studying the relationship between exam scores and study hours. But wait, some students took the test multiple times, inflating their data points! This unequal variance can skew your ordinary least squares (OLS) model, making it unreliable. WLS to the rescue!</p>
-<section id="steps" class="level2">
-<h2 class="anchored" data-anchor-id="steps">Steps</h2>
-<p><strong>Step 1: Gathering the Troops (Data):</strong></p>
-<p>Let’s create some simulated data:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate exam scores and study hours</span></span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb1-3">scores <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">70</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)</span>
-<span id="cb1-4">hours <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb1-5">hours <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> hours <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.2</span>) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add heteroscedasticity</span></span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a data frame</span></span>
-<span id="cb1-8">data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(scores, hours)</span></code></pre></div>
-</div>
-<p><strong>Step 2: Visualizing the Battlefield:</strong></p>
-<p>A scatter plot is our trusty map:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>hours, data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>scores)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Do you see those clusters of high-scoring students with more study hours? They’re the loud ones skewing the OLS line.</p>
-<p><strong>Step 3: Building the WLS Wall:</strong></p>
-<p>It’s time to define our weights. We want to give less weight to observations with high variance (those loud students) and more weight to those with low variance. Here’s a simple approach:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate inverse of variance</span></span>
-<span id="cb3-2">weights <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> (data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>hours)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span></span>
-<span id="cb3-3"></span>
-<span id="cb3-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fit WLS model</span></span>
-<span id="cb3-5">wls_model <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lm</span>(scores <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> hours, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">weights =</span> weights, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> data)</span></code></pre></div>
-</div>
-<p><strong>Step 4: Inspecting the Model’s Performance:</strong></p>
-<p>Let’s see if WLS silenced the loud ones:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summary</span>(wls_model)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = scores ~ hours, data = data, weights = weights)
-
-Weighted Residuals:
-    Min      1Q  Median      3Q     Max 
--75.854  -1.456   0.927   3.509  57.472 
-
-Coefficients:
-            Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)   68.524      0.632 108.421   &lt;2e-16 ***
-hours         -1.085      1.480  -0.733    0.465    
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 14.65 on 98 degrees of freedom
-Multiple R-squared:  0.00545,   Adjusted R-squared:  -0.004698 
-F-statistic: 0.537 on 1 and 98 DF,  p-value: 0.4654</code></pre>
-</div>
-</div>
-<p>Compare this summary to your OLS model’s. Do the coefficients and residuals look more sensible?</p>
-<p><strong>Step 5: Visualizing the Conquered Land:</strong></p>
-<p>Time to see if WLS straightened the line:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>hours, data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>scores)</span>
-<span id="cb6-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>hours, wls_model<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>fitted, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Notice how the red WLS line now passes closer to the majority of data points, unlike the blue OLS line that chased the loud ones.</p>
-<p><strong>Step 6: Residuals: The Echoes of Battle:</strong></p>
-<p>Let’s see if the residuals (errors) are under control:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(data<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>hours, wls_model<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>residuals)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2023-12-12/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>A random scatterplot of residuals is a good sign! No more funky patterns indicating heteroscedasticity.</p>
-<p><strong>The Victory Lap:</strong></p>
-<p>WLS has restored justice to your regression model! Remember, this is just a basic example. You can customize your weights based on your specific data and needs.</p>
-<p><strong>Now it’s your turn!</strong> Try WLS on your own data and see the magic unfold. Remember, data analysis is an adventure, and WLS is your trusty steed. Ride on, data warrior!</p>
-<p><strong>Bonus Tip:</strong> Check out the <code>lmtest</code> and <code>sandwich</code> packages for even more advanced WLS analysis.</p>
-<p>Happy coding!</p>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>rtip</category>
-  <category>regression</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2023-12-12/index.html</guid>
-  <pubDate>Tue, 12 Dec 2023 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
