@@ -1,0 +1,73 @@
+---
+title: "Accounts Recievables Pathways in SQL"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-02-02"
+categories: [code, sql]
+---
+
+Yesterday I was working on a project that required me to create a SQL query to generate a table of accounts receivables pathways. I thought it would be interesting to share the SQL code I wrote for this task. The code is as follows:
+
+```sql
+-- Create the table in the specified schema
+-- Create a new table called 'c_tableau_collector_pathway_tbl' in schema 'dbo'
+-- Drop the table if it already exists
+IF OBJECT_ID('dbo.c_tableau_collector_pathway_tbl', 'U') IS NOT NULL
+DROP TABLE dbo.c_tableau_collector_pathway_tbl
+GO
+-- Create the table in the specified schema
+CREATE TABLE dbo.c_tableau_collector_pathway_tbl
+(
+	c_tableau_collector_pathway_tblId INT NOT NULL IDENTITY(1, 1) PRIMARY KEY, -- primary key column
+	pt_no VARCHAR(50) NOT NULL,
+	collector_dept_path VARCHAR(MAX)
+);
+
+WITH tmp AS (
+	SELECT DISTINCT pt_no
+	FROM sms.dbo.c_tableau_times_with_worklist_tbl
+	)
+INSERT INTO sms.dbo.c_tableau_collector_pathway_tbl (
+	pt_no,
+	collector_dept_path
+	)
+SELECT rtrim(ltrim(tmp.pt_no)) AS [pt_no],
+	stuff((
+			SELECT ', ' + z.collector_dept
+			FROM sms.dbo.c_tableau_times_with_worklist_tbl AS z
+			WHERE z.pt_no = tmp.pt_no
+			GROUP BY z.collector_dept
+			ORDER BY max(event_number)
+			FOR XML path('')
+			), 1, 2, '') AS [collector_dept_path]
+FROM tmp AS tmp;
+
+select pt_no,
+	[collector_dept_path],	
+	[number_of_distinct_collector_dept] = (LEN(REPLACE(collector_dept_path, ',', '**')) - LEN(collector_dept_path)) + 1
+from dbo.c_tableau_collector_pathway_tbl
+```
+
+So what does it do? Let's break it down step by step:
+
+1. `IF OBJECT_ID('dbo.c_tableau_collector_pathway_tbl', 'U') IS NOT NULL`
+   - This part checks if a table named `c_tableau_collector_pathway_tbl` exists in the `dbo` schema. If it does, it proceeds to the next step.
+
+2. `DROP TABLE dbo.c_tableau_collector_pathway_tbl`
+   - If the table exists, it drops (deletes) the table `c_tableau_collector_pathway_tbl`.
+
+3. `CREATE TABLE dbo.c_tableau_collector_pathway_tbl (...)`
+   - This part creates a new table named `c_tableau_collector_pathway_tbl` in the `dbo` schema with three columns: 
+     - `c_tableau_collector_pathway_tblId` of type `INT`, which is the primary key and automatically increments by 1 for each new row.
+     - `pt_no` of type `VARCHAR(50)`, which stores values up to 50 characters long and cannot be NULL.
+     - `collector_dept_path` of type `VARCHAR(MAX)`, which can store large amounts of text.
+
+4. `WITH tmp AS (...)`
+   - This part defines a temporary table (`tmp`) that contains distinct values of `pt_no` from another table named `sms.dbo.c_tableau_times_with_worklist_tbl`.
+
+5. `INSERT INTO sms.dbo.c_tableau_collector_pathway_tbl (...) SELECT ...`
+   - This part inserts data into the newly created `c_tableau_collector_pathway_tbl` table. It selects distinct `pt_no` values from the temporary table `tmp` and concatenates corresponding `collector_dept` values into a single string, separated by commas. The `FOR XML path('')` part formats the result as XML, and `stuff(..., 1, 2, '')` removes the leading comma and space.
+
+6. `SELECT pt_no, [collector_dept_path], [number_of_distinct_collector_dept] = (...)`
+   - Finally, this part selects data from the `c_tableau_collector_pathway_tbl` table. It selects `pt_no`, `collector_dept_path`, and calculates the number of distinct collector departments by counting the commas in the `collector_dept_path` string.
+
+In summary, this SQL code drops an existing table (if it exists), creates a new table with specific columns, inserts data into the new table by concatenating values from another table, and then selects data from the new table along with a calculated value for the number of distinct collector departments.

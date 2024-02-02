@@ -10,7 +10,232 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Thu, 01 Feb 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 02 Feb 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Accounts Recievables Pathways in SQL</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-02-02/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Yesterday I was working on a project that required me to create a SQL query to generate a table of accounts receivables pathways. I thought it would be interesting to share the SQL code I wrote for this task. The code is as follows:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- Create the table in the specified schema</span></span>
+<span id="cb1-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- Create a new table called 'c_tableau_collector_pathway_tbl' in schema 'dbo'</span></span>
+<span id="cb1-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- Drop the table if it already exists</span></span>
+<span id="cb1-4"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">IF</span> OBJECT_ID(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'dbo.c_tableau_collector_pathway_tbl'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'U'</span>) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">IS</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NOT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NULL</span></span>
+<span id="cb1-5"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">DROP</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">TABLE</span> dbo.c_tableau_collector_pathway_tbl</span>
+<span id="cb1-6">GO</span>
+<span id="cb1-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- Create the table in the specified schema</span></span>
+<span id="cb1-8"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">CREATE</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">TABLE</span> dbo.c_tableau_collector_pathway_tbl</span>
+<span id="cb1-9">(</span>
+<span id="cb1-10">    c_tableau_collector_pathway_tblId <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">INT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NOT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NULL</span> IDENTITY(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">PRIMARY</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">KEY</span>, <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- primary key column</span></span>
+<span id="cb1-11">    pt_no <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">VARCHAR</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NOT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">NULL</span>,</span>
+<span id="cb1-12">    collector_dept_path <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">VARCHAR</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">MAX</span>)</span>
+<span id="cb1-13">);</span>
+<span id="cb1-14"></span>
+<span id="cb1-15"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">WITH</span> tmp <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">AS</span> (</span>
+<span id="cb1-16">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">SELECT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">DISTINCT</span> pt_no</span>
+<span id="cb1-17">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">FROM</span> sms.dbo.c_tableau_times_with_worklist_tbl</span>
+<span id="cb1-18">    )</span>
+<span id="cb1-19"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">INSERT</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">INTO</span> sms.dbo.c_tableau_collector_pathway_tbl (</span>
+<span id="cb1-20">    pt_no,</span>
+<span id="cb1-21">    collector_dept_path</span>
+<span id="cb1-22">    )</span>
+<span id="cb1-23"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">SELECT</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rtrim</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ltrim</span>(tmp.pt_no)) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">AS</span> [pt_no],</span>
+<span id="cb1-24">    stuff((</span>
+<span id="cb1-25">            <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">SELECT</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">', '</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> z.collector_dept</span>
+<span id="cb1-26">            <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">FROM</span> sms.dbo.c_tableau_times_with_worklist_tbl <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">AS</span> z</span>
+<span id="cb1-27">            <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">WHERE</span> z.pt_no <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> tmp.pt_no</span>
+<span id="cb1-28">            <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">GROUP</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">BY</span> z.collector_dept</span>
+<span id="cb1-29">            <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">ORDER</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">BY</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(event_number)</span>
+<span id="cb1-30">            <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">FOR</span> XML path(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">''</span>)</span>
+<span id="cb1-31">            ), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">''</span>) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">AS</span> [collector_dept_path]</span>
+<span id="cb1-32"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">FROM</span> tmp <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">AS</span> tmp;</span>
+<span id="cb1-33"></span>
+<span id="cb1-34"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">select</span> pt_no,</span>
+<span id="cb1-35">    [collector_dept_path],  </span>
+<span id="cb1-36">    [number_of_distinct_collector_dept] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (LEN(<span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">REPLACE</span>(collector_dept_path, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">','</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'**'</span>)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> LEN(collector_dept_path)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb1-37"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">from</span> dbo.c_tableau_collector_pathway_tbl</span></code></pre></div>
+<p>So what does it do? Let’s break it down step by step:</p>
+<ol type="1">
+<li><code>IF OBJECT_ID('dbo.c_tableau_collector_pathway_tbl', 'U') IS NOT NULL</code>
+<ul>
+<li>This part checks if a table named <code>c_tableau_collector_pathway_tbl</code> exists in the <code>dbo</code> schema. If it does, it proceeds to the next step.</li>
+</ul></li>
+<li><code>DROP TABLE dbo.c_tableau_collector_pathway_tbl</code>
+<ul>
+<li>If the table exists, it drops (deletes) the table <code>c_tableau_collector_pathway_tbl</code>.</li>
+</ul></li>
+<li><code>CREATE TABLE dbo.c_tableau_collector_pathway_tbl (...)</code>
+<ul>
+<li>This part creates a new table named <code>c_tableau_collector_pathway_tbl</code> in the <code>dbo</code> schema with three columns:
+<ul>
+<li><code>c_tableau_collector_pathway_tblId</code> of type <code>INT</code>, which is the primary key and automatically increments by 1 for each new row.</li>
+<li><code>pt_no</code> of type <code>VARCHAR(50)</code>, which stores values up to 50 characters long and cannot be NULL.</li>
+<li><code>collector_dept_path</code> of type <code>VARCHAR(MAX)</code>, which can store large amounts of text.</li>
+</ul></li>
+</ul></li>
+<li><code>WITH tmp AS (...)</code>
+<ul>
+<li>This part defines a temporary table (<code>tmp</code>) that contains distinct values of <code>pt_no</code> from another table named <code>sms.dbo.c_tableau_times_with_worklist_tbl</code>.</li>
+</ul></li>
+<li><code>INSERT INTO sms.dbo.c_tableau_collector_pathway_tbl (...) SELECT ...</code>
+<ul>
+<li>This part inserts data into the newly created <code>c_tableau_collector_pathway_tbl</code> table. It selects distinct <code>pt_no</code> values from the temporary table <code>tmp</code> and concatenates corresponding <code>collector_dept</code> values into a single string, separated by commas. The <code>FOR XML path('')</code> part formats the result as XML, and <code>stuff(..., 1, 2, '')</code> removes the leading comma and space.</li>
+</ul></li>
+<li><code>SELECT pt_no, [collector_dept_path], [number_of_distinct_collector_dept] = (...)</code>
+<ul>
+<li>Finally, this part selects data from the <code>c_tableau_collector_pathway_tbl</code> table. It selects <code>pt_no</code>, <code>collector_dept_path</code>, and calculates the number of distinct collector departments by counting the commas in the <code>collector_dept_path</code> string.</li>
+</ul></li>
+</ol>
+<p>In summary, this SQL code drops an existing table (if it exists), creates a new table with specific columns, inserts data into the new table by concatenating values from another table, and then selects data from the new table along with a calculated value for the number of distinct collector departments.</p>
+
+
+
+ ]]></description>
+  <category>code</category>
+  <category>sql</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-02-02/index.html</guid>
+  <pubDate>Fri, 02 Feb 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>R for the Real World: Counting those Business Days like a Pro!</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5531,1783 +5756,6 @@ font-style: inherit;">0.628</span></span>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-01-05/index.html</guid>
   <pubDate>Fri, 05 Jan 2024 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Reflecting on the Past Year: A LinkedIn Year in Review (2023)</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-01-04/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>As we close the door on another year, it’s always a good time to look back and reflect on the past 12 months. And what better way to do that than with a LinkedIn Year in Review?</p>
-<p>Whether you’re a job seeker, a business owner, or just someone who enjoys staying connected with their professional network, LinkedIn is an invaluable tool for staying up to date with the latest trends and opportunities in your field. And as we wrap up 2023, now is the perfect time to take a look at how you’ve been using LinkedIn and see where you can improve.</p>
-<p>So what did your LinkedIn Year in Review have in store for you? Here are just a few of the things you might have seen:</p>
-<ul>
-<li>A summary of your activity on LinkedIn, including how many people you’ve connected with, how many posts you’ve shared, and how many likes, comments, and shares your content has received.</li>
-<li>A breakdown of the industries and job titles of the people you’ve connected with, which can give you a good idea of the types of people you’ve been spending the most time interacting with.</li>
-<li>A summary of your skills and endorsements, as well as which skills are most in demand in your industry.</li>
-</ul>
-<p>All of these insights can be incredibly valuable as you start planning for the year ahead. With this information in hand, you can start looking for new opportunities, strengthening your existing relationships, and building new ones. And with the start of the new year, it’s a perfect time to set new goals and improve your LinkedIn profile.</p>
-<p>If you haven’t yet checked out your LinkedIn Year in Review, don’t wait any longer! Log in to your account and take a look. And while you’re there, why not make a resolution to be more active on LinkedIn in the coming year? The more you put into your professional network, the more you’ll get out of it.</p>
-<p>So let’s make the most of this new year, take advantage of the insights from your LinkedIn Year in Review, and make the most of your professional network. Here’s to a successful, connected, and productive 2024!</p>
-<p>I have done a lot of work on this already, it is not comprehensive but it is enough to understand what is happening, and I used a lot of functionality from the <a href="https://www.spsanderson.com/healthyverse/"><code>{healthyverse}</code></a></p>
-<p>Don’t forget you can also see my package and GitHub development wrap up <a href="https://www.spsanderson.com/year_review_2023.html">on my year in review 2023</a></p>
-</section>
-<section id="analysis" class="level1">
-<h1>Analysis</h1>
-<p>I will do this in chunks, as it will be easier to digest. First of course you have to get your data. I am not going to go over this process as there are many a great link just a search away.</p>
-<p>Let’s load in those libraries and read the files in.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(readxl)</span>
-<span id="cb1-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(lubridate)</span>
-<span id="cb1-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(timetk)</span>
-<span id="cb1-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyr)</span>
-<span id="cb1-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(janitor)</span>
-<span id="cb1-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringr)</span>
-<span id="cb1-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggplot2)</span>
-<span id="cb1-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(healthyR.ts)</span>
-<span id="cb1-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(knitr)</span>
-<span id="cb1-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(kableExtra)</span>
-<span id="cb1-12"></span>
-<span id="cb1-13">fp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"linkedin_content.xlsx"</span></span>
-<span id="cb1-14"></span>
-<span id="cb1-15">engagement_tbl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read_excel</span>(fp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"ENGAGEMENT"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-16">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clean_names</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-17">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">date =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mdy</span>(date)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> </span>
-<span id="cb1-18">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> (engagements <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> impressions) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-19">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">filter_by_time</span>(</span>
-<span id="cb1-20">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb1-21">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.end_date =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2023-12-31"</span></span>
-<span id="cb1-22">  )</span>
-<span id="cb1-23"></span>
-<span id="cb1-24">top_posts_tbl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read_excel</span>(fp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"TOP POSTS"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">skip =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-25">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clean_names</span>()</span>
-<span id="cb1-26"></span>
-<span id="cb1-27">followers_tbl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read_excel</span>(fp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"FOLLOWERS"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">skip =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-28">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clean_names</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-29">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">date =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mdy</span>(date)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-30">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">filter_by_time</span>(</span>
-<span id="cb1-31">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb1-32">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.end_date =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2023-12-31"</span></span>
-<span id="cb1-33">  )</span>
-<span id="cb1-34"></span>
-<span id="cb1-35">demographics_tbl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read_excel</span>(fp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"DEMOGRAPHICS"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb1-36">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clean_names</span>()</span></code></pre></div>
-</div>
-<p>Now let’s take a look at that data.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>(engagement_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 365
-Columns: 4
-$ date              &lt;date&gt; 2023-01-01, 2023-01-02, 2023-01-03, 2023-01-04, 202…
-$ impressions       &lt;dbl&gt; 4872, 3735, 10360, 12217, 27036, 26084, 8720, 2753, …
-$ engagements       &lt;dbl&gt; 34, 17, 51, 80, 173, 124, 32, 17, 80, 54, 106, 135, …
-$ `Engagement Rate` &lt;dbl&gt; 0.6978654, 0.4551539, 0.4922780, 0.6548252, 0.639887…</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>(top_posts_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 50
-Columns: 7
-$ post_url_1          &lt;chr&gt; "https://www.linkedin.com/feed/update/urn:li:activ…
-$ post_publish_date_2 &lt;chr&gt; "2/16/2023", "2/16/2023", "3/16/2023", "1/24/2023"…
-$ engagements         &lt;dbl&gt; 281, 227, 220, 194, 181, 172, 160, 145, 138, 124, …
-$ x4                  &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
-$ post_url_5          &lt;chr&gt; "https://www.linkedin.com/feed/update/urn:li:activ…
-$ post_publish_date_6 &lt;chr&gt; "2/16/2023", "1/5/2023", "1/17/2023", "1/24/2023",…
-$ impressions         &lt;dbl&gt; 43951, 38656, 34402, 32505, 25205, 24916, 22656, 2…</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>(followers_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 365
-Columns: 2
-$ date          &lt;date&gt; 2023-01-01, 2023-01-02, 2023-01-03, 2023-01-04, 2023-01…
-$ new_followers &lt;dbl&gt; 11, 13, 17, 16, 26, 15, 14, 18, 14, 9, 11, 23, 6, 13, 5,…</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>(demographics_tbl)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 30
-Columns: 3
-$ top_demographics &lt;chr&gt; "Job titles", "Job titles", "Job titles", "Job titles…
-$ value            &lt;chr&gt; "Data Scientist", "Data Analyst", "Software Engineer"…
-$ percentage       &lt;chr&gt; "0.05210459977388382", "0.03567609563469887", "0.0223…</code></pre>
-</div>
-</div>
-<p>We are really only going to focus on the <strong>engagement_tbl</strong> and the <strong>followers_tbl</strong> as this is more of a time series analysis.</p>
-<p>Ok, so let’s see how my <strong>Impressions</strong>, <strong>Engagements</strong>, and <strong>Engagement Rate</strong> have been.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">engagement_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb10-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>date) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb10-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">name =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_to_title</span>(name)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb10-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_time_series</span>(</span>
-<span id="cb10-5">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.facet_vars =</span> name,</span>
-<span id="cb10-6">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.value =</span> value,</span>
-<span id="cb10-7">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb10-8">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb10-9">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.smooth =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb10-10">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"LinkedIn Stats Time Series Plot"</span></span>
-<span id="cb10-11">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb10-12">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">followers_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb11-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_time_series</span>(</span>
-<span id="cb11-3">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.value =</span> new_followers,</span>
-<span id="cb11-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb11-5">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb11-6">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.smooth =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb11-7">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"LinkedIn Stats Time Series Plot - New Followers"</span></span>
-<span id="cb11-8">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb11-9">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Let’s look at a cumulative view of things.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">engagement_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summarise_by_time</span>(</span>
-<span id="cb12-3">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb12-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.by =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month"</span>,</span>
-<span id="cb12-5">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Impressions</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sum</span>(impressions),</span>
-<span id="cb12-6">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Engagements</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sum</span>(engagements)</span>
-<span id="cb12-7">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-8">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(</span>
-<span id="cb12-9">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Impressions</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cumsum</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Impressions</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>),</span>
-<span id="cb12-10">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Engagements</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cumsum</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Engagements</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>)</span>
-<span id="cb12-11">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-12">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">slice</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-13">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pivot_longer</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cols =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>date) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-14">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">name =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_to_title</span>(name)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb12-15">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> date, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> value)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb12-16">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_col</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb12-17">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> name, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scales =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"free"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb12-18">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(</span>
-<span id="cb12-19">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Date"</span>,</span>
-<span id="cb12-20">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb12-21">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"LinkedIn Stats Time Series Plot"</span></span>
-<span id="cb12-22">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb12-23">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>() </span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">followers_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb13-2">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summarise_by_time</span>(</span>
-<span id="cb13-3">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.date_var =</span> date,</span>
-<span id="cb13-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.by =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month"</span>,</span>
-<span id="cb13-5">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Followers</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sum</span>(new_followers)</span>
-<span id="cb13-6">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb13-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(</span>
-<span id="cb13-8">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Followers</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cumsum</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Followers</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>)</span>
-<span id="cb13-9">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb13-10">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">slice</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb13-11">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> date, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Cumulative Followers</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb13-12">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_col</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb13-13">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(</span>
-<span id="cb13-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Date"</span>,</span>
-<span id="cb13-15">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb13-16">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"LinkedIn Stats Time Series Plot - New Followers"</span></span>
-<span id="cb13-17">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb13-18">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>() </span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>It seems again that writing blog posts and sharing them daily has a nice effect. Now we are going to look at some <strong>Value</strong>, <strong>Velocity</strong>, and <strong>Acceleration</strong> plots with the <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_vva_plot.html?q=ts_vva#ref-usage"><code>ts_vva_plot()</code></a> function from the <a href="https://www.spsanderson.com/healthyR.ts/"><code>{healthyR.ts</code>}</a> package.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_vva_plot</span>(engagement_tbl, date, engagements)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_vva_plot</span>(engagement_tbl, date, impressions)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_vva_plot</span>(engagement_tbl, date, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_vva_plot</span>(followers_tbl, date, new_followers)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-5-4.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Now some simple moving average plots using the function <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_sma_plot.html?q=ts_sma#null"><code>ts_sma_plot()</code></a> again from the <code>{healthyR.ts}</code> library.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_sma_plot</span>(engagement_tbl, date, impressions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sma_order =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_sma_plot</span>(engagement_tbl, date, engagements, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sma_order =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_sma_plot</span>(engagement_tbl, date, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sma_order =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-6-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_sma_plot</span>(followers_tbl, date, new_followers, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sma_order =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>static_plot</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-6-4.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Now some calendar heatmaps with <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_calendar_heatmap_plot.html?q=calendar#null"><code>ts_calendar_heatmap_plot()</code></a></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_calendar_heatmap_plot</span>(engagement_tbl, date, impressions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb22-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Calendar Heatmap - Impressions"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_calendar_heatmap_plot</span>(engagement_tbl, date, engagements, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb23-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Calendar Heatmap - Engagemets"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_calendar_heatmap_plot</span>(engagement_tbl, date, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb24-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Calendar Heatmap - Engagement Rate"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-7-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_calendar_heatmap_plot</span>(followers_tbl, date, new_followers, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb25-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Calendar Heatmap - New Followers"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-7-4.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Some seasonal diagnostics using <a href="https://business-science.github.io/timetk/"><code>{timetk}</code></a></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_seasonal_diagnostics</span>(engagement_tbl</span>
-<span id="cb26-2">                          , date, engagements, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb26-3">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.feature_set =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"wday.lbl"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month.lbl"</span>),</span>
-<span id="cb26-4">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Seasonal Diagnostics - Engagements"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb26-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_seasonal_diagnostics</span>(engagement_tbl</span>
-<span id="cb27-2">                          , date, impressions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb27-3">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.feature_set =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"wday.lbl"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month.lbl"</span>),</span>
-<span id="cb27-4">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Seasonal Diagnostics - Impressions"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb27-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-8-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_seasonal_diagnostics</span>(engagement_tbl</span>
-<span id="cb28-2">                          , date, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb28-3">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.feature_set =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"wday.lbl"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month.lbl"</span>),</span>
-<span id="cb28-4">                          <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Seasonal Diagnostics - Engagement Rate"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb28-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-8-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot_seasonal_diagnostics</span>(</span>
-<span id="cb29-2">  followers_tbl, date, new_followers, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.interactive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, </span>
-<span id="cb29-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.feature_set =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"wday.lbl"</span>,<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"month.lbl"</span>), </span>
-<span id="cb29-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Seasonal Diagnostics - New Followers"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb29-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-8-4.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>Finally some lag correlation plots with <a href="https://www.spsanderson.com/healthyR.ts/reference/ts_lag_correlation.html?q=ts_lag#null"><code>ts_lag_correlation()</code></a>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_lag_correlation</span>(engagement_tbl, date, engagements, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.lags =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>lag_plot <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb30-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Lag Correlation Plot - Engagements"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb30-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_smooth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">se =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lm"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_lag_correlation</span>(engagement_tbl, date, impressions, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.lags =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>lag_plot <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb31-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Lag Correlation Plot - Impressions"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb31-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_smooth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">se =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lm"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_lag_correlation</span>(engagement_tbl, date, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Engagement Rate</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">`</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.lags =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>lag_plot <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Lag Correlation Plot - Engagement Rate"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_smooth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">se =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lm"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-9-3.png" class="img-fluid" width="672"></p>
-</div>
-<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts_lag_correlation</span>(followers_tbl, date, new_followers, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.lags =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>))<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>plots<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>lag_plot <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb33-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Lag Correlation Plot - New Followers"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb33-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_smooth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">se =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lm"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-04/index_files/figure-html/unnamed-chunk-9-4.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-<section id="key-stats-and-tables" class="level1">
-<h1>Key Stats and Tables</h1>
-<p>Now we are going to look at some key stats and tables. First we will look at the top 10 posts by impressions.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1">top_posts_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb34-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">select</span>(post_publish_date_2, impressions, post_url_1) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb34-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">arrange</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">desc</span>(impressions)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb34-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb34-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">setNames</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post Date"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Impressions"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post URL"</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb34-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">kable</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">caption =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Top 10 Posts by Impressions"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"c"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<caption>Top 10 Posts by Impressions</caption>
-<thead>
-<tr class="header">
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post Date</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Impressions</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post URL</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">2/16/2023</td>
-<td style="text-align: center;">43951</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7031977309351890944</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">2/16/2023</td>
-<td style="text-align: center;">38656</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7031977249448820737</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">3/16/2023</td>
-<td style="text-align: center;">34402</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7042173970149728257</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">1/24/2023</td>
-<td style="text-align: center;">32505</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7023663053699207168</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">8/24/2023</td>
-<td style="text-align: center;">25205</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7100535469263699968</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">1/17/2023</td>
-<td style="text-align: center;">24916</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7021114787371614209</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">1/5/2023</td>
-<td style="text-align: center;">22656</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7016769698595749888</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">3/10/2023</td>
-<td style="text-align: center;">21943</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7039960379266883585</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">6/23/2023</td>
-<td style="text-align: center;">20559</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7078000250656808960</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">2/21/2023</td>
-<td style="text-align: center;">19730</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7033888693216018432</td>
-</tr>
-</tbody>
-</table>
-
-
-</div>
-</div>
-<p>Now we will look at the top 10 posts by engagements.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1">top_posts_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb35-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">select</span>(post_publish_date_2, engagements, post_url_1) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb35-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">arrange</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">desc</span>(engagements)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb35-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb35-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">setNames</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post Date"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Engagements"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post URL"</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb35-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">kable</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">caption =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Top 10 Posts by Engagements"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"c"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<caption>Top 10 Posts by Engagements</caption>
-<thead>
-<tr class="header">
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post Date</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Engagements</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post URL</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">2/16/2023</td>
-<td style="text-align: center;">281</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7031977309351890944</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">2/16/2023</td>
-<td style="text-align: center;">227</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7031977249448820737</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">3/16/2023</td>
-<td style="text-align: center;">220</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7042173970149728257</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">1/24/2023</td>
-<td style="text-align: center;">194</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7023663053699207168</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">8/24/2023</td>
-<td style="text-align: center;">181</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7100535469263699968</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">1/17/2023</td>
-<td style="text-align: center;">172</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7021114787371614209</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">1/5/2023</td>
-<td style="text-align: center;">160</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7016769698595749888</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">3/10/2023</td>
-<td style="text-align: center;">145</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7039960379266883585</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">6/23/2023</td>
-<td style="text-align: center;">138</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7078000250656808960</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">2/21/2023</td>
-<td style="text-align: center;">124</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7033888693216018432</td>
-</tr>
-</tbody>
-</table>
-
-
-</div>
-</div>
-<p>Now we will look at the top 10 posts by engagement rate.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1">top_posts_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">select</span>(post_publish_date_2, engagements, impressions, post_url_1) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">engagement_rate =</span> engagements <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> impressions) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">arrange</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">desc</span>(engagement_rate)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">select</span>(post_publish_date_2, engagement_rate, post_url_1) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">setNames</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post Date"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Engagement Rate"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Post URL"</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb36-8">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">kable</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">caption =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Top 10 Posts by Engagement Rate"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"c"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<caption>Top 10 Posts by Engagement Rate</caption>
-<thead>
-<tr class="header">
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post Date</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Engagement Rate</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Post URL</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">8/24/2023</td>
-<td style="text-align: center;">0.0071811</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7100535469263699968</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">1/5/2023</td>
-<td style="text-align: center;">0.0070621</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7016769698595749888</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">1/17/2023</td>
-<td style="text-align: center;">0.0069032</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7021114787371614209</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">5/10/2023</td>
-<td style="text-align: center;">0.0068692</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7062043144850137088</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">2/6/2023</td>
-<td style="text-align: center;">0.0067925</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7028379188441010176</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">7/17/2023</td>
-<td style="text-align: center;">0.0067441</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7086688278245961728</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">11/29/2023</td>
-<td style="text-align: center;">0.0067365</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7135620032557940736</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">6/23/2023</td>
-<td style="text-align: center;">0.0067124</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7078000250656808960</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">1/25/2023</td>
-<td style="text-align: center;">0.0066225</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7024095415348133889</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">3/10/2023</td>
-<td style="text-align: center;">0.0066080</td>
-<td style="text-align: center;">https://www.linkedin.com/feed/update/urn:li:activity:7039960379266883585</td>
-</tr>
-</tbody>
-</table>
-
-
-</div>
-</div>
-<p>Total Impressions: 2,720,605</p>
-<p>Total Engagements: 20,000</p>
-<p>Mean Engagement Rate: 0.0073513</p>
-<p>New Followers: 6,388</p>
-<p>And finally the demographics of people who typically interact with my posts:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1">demographics_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb37-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">percentage =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">substr</span>(percentage, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb37-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">kable</span>(</span>
-<span id="cb37-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">caption =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Demographics of People Who Interact With My Posts"</span>, </span>
-<span id="cb37-5">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"c"</span></span>
-<span id="cb37-6">    )</span></code></pre></div>
-<div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<caption>Demographics of People Who Interact With My Posts</caption>
-<thead>
-<tr class="header">
-<th style="text-align: center;" data-quarto-table-cell-role="th">top_demographics</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">value</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">percentage</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">Job titles</td>
-<td style="text-align: center;">Data Scientist</td>
-<td style="text-align: center;">0.05</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Job titles</td>
-<td style="text-align: center;">Data Analyst</td>
-<td style="text-align: center;">0.03</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Job titles</td>
-<td style="text-align: center;">Software Engineer</td>
-<td style="text-align: center;">0.02</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Job titles</td>
-<td style="text-align: center;">Data Engineer</td>
-<td style="text-align: center;">0.01</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Job titles</td>
-<td style="text-align: center;">Professor</td>
-<td style="text-align: center;">0.01</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Locations</td>
-<td style="text-align: center;">New York City Metropolitan Area</td>
-<td style="text-align: center;">0.06</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Locations</td>
-<td style="text-align: center;">Greater Bengaluru Area</td>
-<td style="text-align: center;">0.03</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Locations</td>
-<td style="text-align: center;">Greater Delhi Area</td>
-<td style="text-align: center;">0.02</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Locations</td>
-<td style="text-align: center;">Pune/Pimpri-Chinchwad Area</td>
-<td style="text-align: center;">0.02</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Locations</td>
-<td style="text-align: center;">Mumbai Metropolitan Region</td>
-<td style="text-align: center;">0.01</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Industries</td>
-<td style="text-align: center;">IT Services and IT Consulting</td>
-<td style="text-align: center;">0.22</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Industries</td>
-<td style="text-align: center;">Software Development</td>
-<td style="text-align: center;">0.11</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Industries</td>
-<td style="text-align: center;">Higher Education</td>
-<td style="text-align: center;">0.05</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Industries</td>
-<td style="text-align: center;">Financial Services</td>
-<td style="text-align: center;">0.05</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Industries</td>
-<td style="text-align: center;">Hospitals and Health Care</td>
-<td style="text-align: center;">0.05</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Seniority</td>
-<td style="text-align: center;">Senior</td>
-<td style="text-align: center;">0.33</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Seniority</td>
-<td style="text-align: center;">Entry</td>
-<td style="text-align: center;">0.27</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Seniority</td>
-<td style="text-align: center;">Director</td>
-<td style="text-align: center;">0.03</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Seniority</td>
-<td style="text-align: center;">Manager</td>
-<td style="text-align: center;">0.03</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Seniority</td>
-<td style="text-align: center;">Training</td>
-<td style="text-align: center;">0.02</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Company size</td>
-<td style="text-align: center;">10,001+ employees</td>
-<td style="text-align: center;">0.17</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Company size</td>
-<td style="text-align: center;">1001-5000 employees</td>
-<td style="text-align: center;">0.10</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Company size</td>
-<td style="text-align: center;">51-200 employees</td>
-<td style="text-align: center;">0.08</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Company size</td>
-<td style="text-align: center;">11-50 employees</td>
-<td style="text-align: center;">0.08</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Company size</td>
-<td style="text-align: center;">1-10 employees</td>
-<td style="text-align: center;">0.06</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Companies</td>
-<td style="text-align: center;">Tata Consultancy Services</td>
-<td style="text-align: center;">&lt; 1%</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Companies</td>
-<td style="text-align: center;">Long Island Community Hospital</td>
-<td style="text-align: center;">&lt; 1%</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Companies</td>
-<td style="text-align: center;">Amazon</td>
-<td style="text-align: center;">&lt; 1%</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">Companies</td>
-<td style="text-align: center;">EY</td>
-<td style="text-align: center;">&lt; 1%</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">Companies</td>
-<td style="text-align: center;">Citi</td>
-<td style="text-align: center;">&lt; 1%</td>
-</tr>
-</tbody>
-</table>
-
-
-</div>
-</div>
-<p>Voila!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>linkedin</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-04/index.html</guid>
-  <pubDate>Thu, 04 Jan 2024 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
