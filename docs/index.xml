@@ -10,7 +10,248 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Fri, 02 Feb 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 05 Feb 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Taming Excel Dates in R: From Numbers to Meaningful Dates!</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-02-05/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Have you ever battled with Excel’s quirky date formats in your R projects? If so, you’re not alone! Those cryptic numbers can be a real headache, but fear not, fellow R warriors! Today, we’ll conquer this challenge and transform those numbers into beautiful, usable dates.</p>
+<p><strong>Our Mission:</strong> We’ll convert two date columns in a tibble named “df”:</p>
+<ol type="1">
+<li><strong><code>date</code>:</strong> Stored as numbers, representing days since some mysterious date.</li>
+<li><strong><code>datetime</code>:</strong> Also in numberland, but with an additional decimal for time.</li>
+</ol>
+<p><strong>Our Weapons:</strong></p>
+<ul>
+<li><strong><code>as.Date()</code>:</strong> This built-in R function is our date-conversion hero, but we need to give it a secret weapon: <code>origin = "1899-12-30"</code>. This tells <code>as.Date()</code> where the Excel date system starts counting days from.</li>
+<li><strong><code>openxlsx</code> library:</strong> This package helps us deal with Excel files. We’ll use its <code>convertToDateTime()</code> function to handle the <code>datetime</code> column, which includes both date and time information.</li>
+</ul>
+</section>
+<section id="lets-code" class="level1">
+<h1>Let’s Code!</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install and load the openxlsx library (if needed)</span></span>
+<span id="cb1-2"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">if</span> (<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">require</span>(openxlsx)) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"openxlsx"</span>)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(openxlsx)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Our example data</span></span>
+<span id="cb1-6">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">date =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44563</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44566</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44635</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44670</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44706</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44716</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44761</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44782</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44864</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44919</span>),</span>
+<span id="cb1-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">datetime =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44563.17</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44566.51</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44635.64</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44670.40</span>,</span>
+<span id="cb1-9">               <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44706.43</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44716.42</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44761.05</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44782.09</span>,</span>
+<span id="cb1-10">               <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44864.19</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">44919.89</span>),</span>
+<span id="cb1-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sales =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">14</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">19</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">22</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">29</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">24</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">28</span>)</span>
+<span id="cb1-12">)</span>
+<span id="cb1-13"></span>
+<span id="cb1-14">df</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    date datetime sales
+1  44563 44563.17    14
+2  44566 44566.51    19
+3  44635 44635.64    22
+4  44670 44670.40    29
+5  44706 44706.43    24
+6  44716 44716.42    25
+7  44761 44761.05    25
+8  44782 44782.09    30
+9  44864 44864.19    35
+10 44919 44919.89    28</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert "date" column using as.Date() and the magic origin</span></span>
+<span id="cb3-2">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>date <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.Date</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>date, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">origin =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"1899-12-30"</span>)</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert "datetime" column using openxlsx and convertToDateTime()</span></span>
+<span id="cb3-5">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>datetime <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">convertToDateTime</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>datetime)</span></code></pre></div>
+</div>
+</section>
+<section id="breaking-it-down" class="level1">
+<h1>Breaking it Down</h1>
+<ol type="1">
+<li>The first line checks if <code>openxlsx</code> is installed and loads it if needed.</li>
+<li>We create our sample data frame <code>df</code> with the <code>date</code> and <code>datetime</code> columns.</li>
+<li>The magic happens! We use <code>as.Date()</code> on <code>df$date</code>, specifying the <code>origin</code> as “1899-12-30”. This tells R to interpret the numbers as days since that date.</li>
+<li>For <code>df$datetime</code>, we use <code>convertToDateTime()</code> from the <code>openxlsx</code> package. This function handles both date and time information stored as decimals.</li>
+</ol>
+<p><strong>Voila!</strong> Our <code>df</code> now has proper date and datetime columns, ready for further analysis and visualization. Let’s see the results:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(df, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        date            datetime sales
+1 2022-01-02 2022-01-02 04:04:48    14</code></pre>
+</div>
+</div>
+</section>
+<section id="youre-turn" class="level1">
+<h1>You’re Turn!</h1>
+<p>Now it’s your turn! Grab your own Excel data with mysterious date formats and try this code. Play with different <code>origin</code> values if needed (depending on your Excel version). Remember, R is a playground, so have fun exploring and taming those dates!</p>
+<p><strong>Bonus Tip:</strong> Want to format your dates for readability? Use the <code>format()</code> function, like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>date <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">format</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>date, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%d/%m/%Y"</span>)</span>
+<span id="cb6-2">df</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         date            datetime sales
+1  02/01/2022 2022-01-02 04:04:48    14
+2  05/01/2022 2022-01-05 12:14:24    19
+3  15/03/2022 2022-03-15 15:21:36    22
+4  19/04/2022 2022-04-19 09:36:00    29
+5  25/05/2022 2022-05-25 10:19:12    24
+6  04/06/2022 2022-06-04 10:04:48    25
+7  19/07/2022 2022-07-19 01:12:00    25
+8  09/08/2022 2022-08-09 02:09:36    30
+9  30/10/2022 2022-10-30 04:33:36    35
+10 24/12/2022 2022-12-24 21:21:36    28</code></pre>
+</div>
+</div>
+<p>This will display your dates in the familiar “day/month/year” format.</p>
+<p>So there you have it, fellow R enthusiasts! With these tools, you can confidently handle Excel’s date quirks and unleash the power of your data. Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>timeseries</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-02-05/index.html</guid>
+  <pubDate>Mon, 05 Feb 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Accounts Recievables Pathways in SQL</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5316,446 +5557,6 @@ font-style: inherit;">head</span>(yearly_data)</span></code></pre></div>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-01-08/index.html</guid>
   <pubDate>Mon, 08 Jan 2024 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Unveiling the Smooth Operator: Rolling Averages in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-01-05/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Ever felt those data points were a bit too jittery? Smoothing out trends and revealing underlying patterns is a breeze with rolling averages in R. Ready to roll? Let’s dive in!</p>
-</section>
-<section id="rolling-with-the-zoo" class="level1">
-<h1>Rolling with the ‘zoo’</h1>
-<p>Meet the ‘zoo’ package, your trusty companion for time series data wrangling. It’s got a handy function called ‘rollmean’ that handles those rolling averages with ease.</p>
-</section>
-<section id="installing-and-loading" class="level1">
-<h1>Installing and Loading</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># install.packages("zoo")  # Grab it if you haven't already</span></span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(zoo)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Bring it into your workspace</span></span></code></pre></div>
-</div>
-</section>
-<section id="example" class="level1">
-<h1>Example</h1>
-<section id="creating-a-simple-time-series" class="level2">
-<h2 class="anchored" data-anchor-id="creating-a-simple-time-series">Creating a Simple Time Series</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set seed for reproducibility (optional</span></span>
-<span id="cb2-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Let's imagine some daily sales data</span></span>
-<span id="cb2-3">sales <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">trunc</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">112</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">500</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate some random sales</span></span>
-<span id="cb2-4">days <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.Date</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">112</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">origin =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2022-12-31"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add some dates!</span></span>
-<span id="cb2-5">data_zoo <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">zoo</span>(sales, days)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Convert to a zoo object</span></span></code></pre></div>
-</div>
-</section>
-<section id="calculating-rolling-averages" class="level2">
-<h2 class="anchored" data-anchor-id="calculating-rolling-averages">Calculating Rolling Averages</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Say we want a 7-day rolling average:</span></span>
-<span id="cb3-2">rolling_avg7 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)</span>
-<span id="cb3-3">rolling_avg7_left <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"left"</span>)</span>
-<span id="cb3-4">rolling_avg7_right <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"right"</span>)</span>
-<span id="cb3-5"></span>
-<span id="cb3-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># How about a 28-day one?</span></span>
-<span id="cb3-7">rolling_avg28 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>)</span>
-<span id="cb3-8">rolling_avg28_left <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"left"</span>)</span>
-<span id="cb3-9">rolling_avg28_right <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rollmean</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">28</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">align =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"right"</span>)</span></code></pre></div>
-</div>
-</section>
-<section id="visualizing-the-smoothness" class="level2">
-<h2 class="anchored" data-anchor-id="visualizing-the-smoothness">Visualizing the Smoothness</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Sales"</span>)</span>
-<span id="cb4-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg7, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg7_left, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb4-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg7_right, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"orange"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb4-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">legend</span>(</span>
-<span id="cb4-6">  <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"bottomleft"</span>, </span>
-<span id="cb4-7">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(</span>
-<span id="cb4-8">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original Data"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"7-day Avg"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"7-day Avg (left-aligned)"</span>, </span>
-<span id="cb4-9">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"7-day Avg (right-aligned)"</span></span>
-<span id="cb4-10">    ),</span>
-<span id="cb4-11">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"orange"</span>), </span>
-<span id="cb4-12">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb4-13">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.628</span></span>
-<span id="cb4-14">  )</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-05/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(data_zoo, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Sales"</span>)</span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg28, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb5-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg28_left, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb5-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(rolling_avg28_right, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"brown"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb5-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">legend</span>(</span>
-<span id="cb5-6">  <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"bottomleft"</span>, </span>
-<span id="cb5-7">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(</span>
-<span id="cb5-8">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original Data"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"28-day Avg"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"28-day Avg (left-aligned)"</span>, </span>
-<span id="cb5-9">    <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"28-day Avg (right-aligned)"</span></span>
-<span id="cb5-10">    ),</span>
-<span id="cb5-11">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"steelblue"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"brown"</span>), </span>
-<span id="cb5-12">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb5-13">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.628</span></span>
-<span id="cb5-14">  )</span></code></pre></div>
-<div class="cell-output-display">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2024-01-05/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-</section>
-</section>
-<section id="experimenting-and-interpreting" class="level1">
-<h1>Experimenting and Interpreting</h1>
-<p>Play with different ‘k’ values to see how they affect the smoothness. Remember, larger ‘k’ means more smoothing, but potential loss of detail.</p>
-</section>
-<section id="your-turn-to-roll" class="level1">
-<h1>Your Turn to Roll!</h1>
-<p>Grab your data and start exploring rolling averages! It’s a powerful tool to uncover hidden patterns and trends. Share your discoveries and join the rolling conversation!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-05/index.html</guid>
-  <pubDate>Fri, 05 Jan 2024 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

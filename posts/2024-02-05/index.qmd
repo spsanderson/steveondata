@@ -1,0 +1,73 @@
+---
+title: "Taming Excel Dates in R: From Numbers to Meaningful Dates!"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-02-05"
+categories: [code, rtip, timeseries]
+---
+
+# Introduction
+
+Have you ever battled with Excel's quirky date formats in your R projects? If so, you're not alone! Those cryptic numbers can be a real headache, but fear not, fellow R warriors! Today, we'll conquer this challenge and transform those numbers into beautiful, usable dates.
+
+**Our Mission:** We'll convert two date columns in a tibble named "df":
+
+1. **`date`:** Stored as numbers, representing days since some mysterious date.
+2. **`datetime`:** Also in numberland, but with an additional decimal for time.
+
+**Our Weapons:**
+
+* **`as.Date()`:** This built-in R function is our date-conversion hero, but we need to give it a secret weapon: `origin = "1899-12-30"`. This tells `as.Date()` where the Excel date system starts counting days from.
+* **`openxlsx` library:** This package helps us deal with Excel files. We'll use its `convertToDateTime()` function to handle the `datetime` column, which includes both date and time information.
+
+# Let's Code!
+
+```{r message=FALSE, warning=FALSE}
+# Install and load the openxlsx library (if needed)
+if (!require(openxlsx)) install.packages("openxlsx")
+library(openxlsx)
+
+# Our example data
+df <- data.frame(
+  date = c(44563, 44566, 44635, 44670, 44706, 44716, 44761, 44782, 44864, 44919),
+  datetime = c(44563.17, 44566.51, 44635.64, 44670.40,
+               44706.43, 44716.42, 44761.05, 44782.09,
+               44864.19, 44919.89),
+  sales = c(14, 19, 22, 29, 24, 25, 25, 30, 35, 28)
+)
+
+df
+
+# Convert "date" column using as.Date() and the magic origin
+df$date <- as.Date(df$date, origin = "1899-12-30")
+
+# Convert "datetime" column using openxlsx and convertToDateTime()
+df$datetime <- convertToDateTime(df$datetime)
+```
+
+# Breaking it Down
+
+1. The first line checks if `openxlsx` is installed and loads it if needed.
+2. We create our sample data frame `df` with the `date` and `datetime` columns.
+3. The magic happens! We use `as.Date()` on `df$date`, specifying the `origin` as "1899-12-30". This tells R to interpret the numbers as days since that date.
+4. For `df$datetime`, we use `convertToDateTime()` from the `openxlsx` package. This function handles both date and time information stored as decimals.
+
+**Voila!** Our `df` now has proper date and datetime columns, ready for further analysis and visualization. Let's see the results:
+
+```{r}
+head(df, 1)
+```
+
+# You're Turn!
+
+Now it's your turn! Grab your own Excel data with mysterious date formats and try this code. Play with different `origin` values if needed (depending on your Excel version). Remember, R is a playground, so have fun exploring and taming those dates!
+
+**Bonus Tip:** Want to format your dates for readability? Use the `format()` function, like this:
+
+```{r}
+df$date <- format(df$date, "%d/%m/%Y")
+df
+```
+
+This will display your dates in the familiar "day/month/year" format.
+
+So there you have it, fellow R enthusiasts! With these tools, you can confidently handle Excel's date quirks and unleash the power of your data. Happy coding!
