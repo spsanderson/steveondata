@@ -10,7 +10,253 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Fri, 23 Feb 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 26 Feb 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Unveiling the Magic of dcast Function in R’s data.table Package</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-02-26/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Here is a draft blog post on using the dcast function from the data.table package in R:</p>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The <code>dcast</code> function in the data.table package is a handy tool for reshaping data from long to wide format in R. It allows you to easily aggregate values and pivot dataframes. In this post, we’ll explore how to use dcast through several examples.</p>
+</section>
+<section id="what-is-dcast" class="level1">
+<h1>What is dcast?</h1>
+<p>The <code>dcast</code> stands for “data cast” and it works similarly to reshape2’s <code>dcast</code> function. The key difference is that <code>dcast</code> from data.table is much faster as it works directly on data.table objects and leverages fast data.table syntax.</p>
+<p>To use dcast, you need to have the data.table package installed:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span></code></pre></div>
+</div>
+<p>The main arguments for dcast are:</p>
+<ul>
+<li><code>data</code>: the data.table or data.frame to reshape</li>
+<li><code>formula</code>: specifies columns to use, in the form <code>value.var ~ key1 + key2</code></li>
+<li><code>fun.aggregate</code>: the aggregation function to apply (default is length)</li>
+</ul>
+<section id="reshaping-from-long-to-wide" class="level2">
+<h2 class="anchored" data-anchor-id="reshaping-from-long-to-wide">Reshaping from Long to Wide</h2>
+<p>Let’s walk through an example with the mtcars dataset. First we convert mtcars to a data.table:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">dt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.table</span>(mtcars)</span></code></pre></div>
+</div>
+<p>Say we want to reshape the data from long to wide, aggregating the hp values by cyl. We can use dcast:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dcast</span>(dt, cyl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value.var=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hp"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fun.aggregate=</span>mean)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Key: &lt;cyl&gt;
+     cyl         .
+   &lt;num&gt;     &lt;num&gt;
+1:     4  82.63636
+2:     6 122.28571
+3:     8 209.21429</code></pre>
+</div>
+</div>
+<p>This aggregates the hp by cyl, casting the other columns as identifiers. The result is a table with one row per cyl, and columns for mean hp and all other variables.</p>
+</section>
+<section id="aggregating-multiple-columns" class="level2">
+<h2 class="anchored" data-anchor-id="aggregating-multiple-columns">Aggregating Multiple Columns</h2>
+<p>You can also aggregate multiple value columns in one call. Let’s add aggregating disp by the mean:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dcast</span>(dt, cyl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value.var=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hp"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"disp"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fun.aggregate=</span>mean)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Key: &lt;cyl&gt;
+     cyl        hp     disp
+   &lt;num&gt;     &lt;num&gt;    &lt;num&gt;
+1:     4  82.63636 105.1364
+2:     6 122.28571 183.3143
+3:     8 209.21429 353.1000</code></pre>
+</div>
+</div>
+<p>Now we have mean hp and mean disp aggregated by cyl in the wide format.</p>
+</section>
+<section id="using-multiple-formulas" class="level2">
+<h2 class="anchored" data-anchor-id="using-multiple-formulas">Using Multiple Formulas</h2>
+<p>Another common operation is aggregating over several formulas separately. For example, aggregating hp by cyl and gear.</p>
+<p>We can pass a list of formulas to dcast:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dcast</span>(dt, cyl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value.var=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hp"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fun.aggregate=</span>mean) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> </span>
+<span id="cb7-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dcast</span>(dt, gear <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value.var=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hp"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fun.aggregate=</span>mean)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     cyl        .
+   &lt;num&gt;    &lt;num&gt;
+1:     7 258.7697
+2:    10 211.7857
+3:    13 404.8143</code></pre>
+</div>
+</div>
+<p>This outputs two sets of aggregations, by cyl and gear, in a single wide table.</p>
+</section>
+<section id="reshaping-from-wide-to-long" class="level2">
+<h2 class="anchored" data-anchor-id="reshaping-from-wide-to-long">Reshaping from Wide to Long</h2>
+<p>The <code>melt</code> function from data.table can reshape from wide to long format. For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">melt</span>(dt, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">id.vars =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cyl"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">measure.vars =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hp"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"disp"</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      cyl variable value
+    &lt;num&gt;   &lt;fctr&gt; &lt;num&gt;
+ 1:     6       hp 110.0
+ 2:     6       hp 110.0
+ 3:     4       hp  93.0
+ 4:     6       hp 110.0
+ 5:     8       hp 175.0
+ 6:     6       hp 105.0
+ 7:     8       hp 245.0
+ 8:     4       hp  62.0
+ 9:     4       hp  95.0
+10:     6       hp 123.0
+11:     6       hp 123.0
+12:     8       hp 180.0
+13:     8       hp 180.0
+14:     8       hp 180.0
+15:     8       hp 205.0
+16:     8       hp 215.0
+17:     8       hp 230.0
+18:     4       hp  66.0
+19:     4       hp  52.0
+20:     4       hp  65.0
+21:     4       hp  97.0
+22:     8       hp 150.0
+23:     8       hp 150.0
+24:     8       hp 245.0
+25:     8       hp 175.0
+26:     4       hp  66.0
+27:     4       hp  91.0
+28:     4       hp 113.0
+29:     8       hp 264.0
+30:     6       hp 175.0
+31:     8       hp 335.0
+32:     4       hp 109.0
+33:     6     disp 160.0
+34:     6     disp 160.0
+35:     4     disp 108.0
+36:     6     disp 258.0
+37:     8     disp 360.0
+38:     6     disp 225.0
+39:     8     disp 360.0
+40:     4     disp 146.7
+41:     4     disp 140.8
+42:     6     disp 167.6
+43:     6     disp 167.6
+44:     8     disp 275.8
+45:     8     disp 275.8
+46:     8     disp 275.8
+47:     8     disp 472.0
+48:     8     disp 460.0
+49:     8     disp 440.0
+50:     4     disp  78.7
+51:     4     disp  75.7
+52:     4     disp  71.1
+53:     4     disp 120.1
+54:     8     disp 318.0
+55:     8     disp 304.0
+56:     8     disp 350.0
+57:     8     disp 400.0
+58:     4     disp  79.0
+59:     4     disp 120.3
+60:     4     disp  95.1
+61:     8     disp 351.0
+62:     6     disp 145.0
+63:     8     disp 301.0
+64:     4     disp 121.0
+      cyl variable value</code></pre>
+</div>
+</div>
+<p>This melts the data to long form based on the id and measure columns.</p>
+</section>
+<section id="additional-tips" class="level2">
+<h2 class="anchored" data-anchor-id="additional-tips">Additional Tips</h2>
+<ul>
+<li>Use <code>fun.aggregate=length</code> to get counts per group</li>
+<li>Set <code>fill=NA</code> to output NA for combinations without data instead of 0</li>
+<li>Use <code>variable.name</code> to set custom column names</li>
+</ul>
+</section>
+</section>
+<section id="wrapping-up" class="level1">
+<h1>Wrapping Up</h1>
+<p>The dcast function provides a fast way to reshape data and aggregate values in R. It’s perfect for pivoting dataframes and getting data ready for analysis and visualization. The data.table syntax helps make the reshape very fast and efficient. Give it a try on your datasets! Let me know in the comments if you have any other dcast examples to share.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>operations</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-02-26/index.html</guid>
+  <pubDate>Mon, 26 Feb 2024 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Taming the Data Jungle: Filtering data.tables and data.frames in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3734,255 +3980,6 @@ font-style: inherit;">print</span>(earliest_date)</span></code></pre></div>
   <category>timeseries</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-01-26/index.html</guid>
   <pubDate>Fri, 26 Jan 2024 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mastering Date Calculations in R: A Guide to Calculating Months with Base R and lubridate</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-01-25/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="how-to-subtract-hours-from-time-in-r-with-examples" class="level1">
-<h1>How to Subtract Hours from Time in R (With Examples)</h1>
-<p>Welcome back, fellow R enthusiasts! Today, we’re diving into a common task in data manipulation: subtracting hours from time objects in R. Whether you’re working with timestamps, time durations, or time series data, knowing how to subtract hours can be incredibly useful. In this post, we’ll explore two popular methods: using base R functions and the <code>lubridate</code> package.</p>
-<section id="why-subtract-hours" class="level2">
-<h2 class="anchored" data-anchor-id="why-subtract-hours">Why Subtract Hours?</h2>
-<p>Before we jump into the code, let’s quickly discuss why you might need to subtract hours from time objects. This operation is handy in various scenarios, such as:</p>
-<ul>
-<li>Adjusting timestamps for different time zones.</li>
-<li>Calculating time differences between events.</li>
-<li>Shifting time points in time series analysis.</li>
-</ul>
-<p>Now, let’s get our hands dirty with some code!</p>
-</section>
-<section id="using-base-r-functions" class="level2">
-<h2 class="anchored" data-anchor-id="using-base-r-functions">Using Base R Functions</h2>
-<p>In base R, we can perform basic arithmetic operations on time objects. To subtract hours from a time object, we’ll use the <code>POSIXct</code> class, which represents date and time information. Here’s a simple example:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a POSIXct object representing a specific time</span></span>
-<span id="cb1-2">my_time <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.POSIXct</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 10:00:00"</span>)</span>
-<span id="cb1-3"></span>
-<span id="cb1-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Subtract 2 hours from the original time</span></span>
-<span id="cb1-5">new_time <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> my_time <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> (<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">60</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">60</span>)</span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Print the original and modified times</span></span>
-<span id="cb1-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(my_time)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 10:00:00 EST"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(new_time)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 08:00:00 EST"</code></pre>
-</div>
-</div>
-<p>In this code snippet, we first create a <code>POSIXct</code> object <code>my_time</code> representing 10:00 AM on January 25, 2024. Then, we subtract 2 hours and assign the result to <code>new_time</code>. Finally, we print both the original and modified times to see the difference.</p>
-</section>
-<section id="using-lubridate-package" class="level2">
-<h2 class="anchored" data-anchor-id="using-lubridate-package">Using lubridate Package</h2>
-<p>The <code>lubridate</code> package provides convenient functions for handling date-time data in R. It simplifies common tasks like parsing dates, extracting components, and performing arithmetic operations. Let’s see how we can subtract hours using <code>lubridate</code>:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the lubridate package</span></span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(lubridate)</span>
-<span id="cb5-3"></span>
-<span id="cb5-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a POSIXct object representing a specific time</span></span>
-<span id="cb5-5">my_time <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ymd_hms</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 10:00:00"</span>)</span>
-<span id="cb5-6"></span>
-<span id="cb5-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Subtract 2 hours from the original time</span></span>
-<span id="cb5-8">new_time <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> my_time <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hours</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb5-9"></span>
-<span id="cb5-10"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Print the original and modified times</span></span>
-<span id="cb5-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(my_time)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 10:00:00 UTC"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(new_time)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 08:00:00 UTC"</code></pre>
-</div>
-</div>
-<p>In this example, we start by loading the <code>lubridate</code> package. Then, we use the <code>ymd_hms()</code> function to create a <code>POSIXct</code> object <code>my_time</code>. Next, we subtract 2 hours using the <code>hours()</code> function and assign the result to <code>new_time</code>. Finally, we print both times to compare the changes.</p>
-</section>
-<section id="additional-examples" class="level2">
-<h2 class="anchored" data-anchor-id="additional-examples">Additional Examples</h2>
-<p>Let’s explore a few more examples to solidify our understanding:</p>
-<section id="example-1-subtracting-hours-from-a-vector-of-times" class="level3">
-<h3 class="anchored" data-anchor-id="example-1-subtracting-hours-from-a-vector-of-times">Example 1: Subtracting Hours from a Vector of Times</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a vector of POSIXct times</span></span>
-<span id="cb9-2">times <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.POSIXct</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 08:00:00"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 12:00:00"</span>))</span>
-<span id="cb9-3"></span>
-<span id="cb9-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Subtract 1 hour from each time</span></span>
-<span id="cb9-5">adjusted_times <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> times <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hours</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb9-6"></span>
-<span id="cb9-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Print the original and modified times</span></span>
-<span id="cb9-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(times)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 08:00:00 EST" "2024-01-25 12:00:00 EST"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(adjusted_times)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "2024-01-25 07:00:00 EST" "2024-01-25 11:00:00 EST"</code></pre>
-</div>
-</div>
-<p>In this example, we have a vector of two times, and we subtract 1 hour from each using the <code>hours()</code> function.</p>
-</section>
-<section id="example-2-subtracting-hours-from-a-time-interval" class="level3">
-<h3 class="anchored" data-anchor-id="example-2-subtracting-hours-from-a-time-interval">Example 2: Subtracting Hours from a Time Interval</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a time interval from 9:00 AM to 5:00 PM</span></span>
-<span id="cb13-2">time_interval <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">interval</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ymd_hms</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 09:00:00"</span>), <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ymd_hms</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"2024-01-25 17:00:00"</span>))</span>
-<span id="cb13-3"></span>
-<span id="cb13-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Subtract 2 hours from the interval</span></span>
-<span id="cb13-5">adjusted_interval <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">int_shift</span>(time_interval, <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hours</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb13-6"></span>
-<span id="cb13-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Print the original and modified intervals</span></span>
-<span id="cb13-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(time_interval)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2024-01-25 09:00:00 UTC--2024-01-25 17:00:00 UTC</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(adjusted_interval)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2024-01-25 07:00:00 UTC--2024-01-25 15:00:00 UTC</code></pre>
-</div>
-</div>
-<p>In this example, we create a time interval representing working hours and subtract 2 hours from it.</p>
-</section>
-</section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>Subtracting hours from time objects is a fundamental operation in data manipulation and time series analysis. In this post, we explored two methods: using base R functions and the <code>lubridate</code> package. Whether you prefer the simplicity of base R or the convenience of <code>lubridate</code>, mastering this skill will undoubtedly enhance your R programming repertoire.</p>
-<p>Now it’s your turn! Try out these examples with your own time data and experiment with different hour values. Don’t hesitate to reach out if you have any questions or want to share your experiences. Happy coding!</p>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>timeseries</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-01-25/index.html</guid>
-  <pubDate>Thu, 25 Jan 2024 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
