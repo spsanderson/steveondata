@@ -10,7 +10,523 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.3.450</generator>
-<lastBuildDate>Wed, 27 Mar 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 28 Mar 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Mastering Quantile Normalization in R: A Step-by-Step Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-03-28/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Quantile normalization is a crucial technique in data preprocessing, especially in fields like genomics and bioinformatics. It ensures that the distributions of different samples are aligned, making them directly comparable. In this tutorial, we’ll walk through the process step by step, demystifying the syntax and empowering you to apply this technique confidently in your projects.</p>
+</section>
+<section id="understanding-quantile-normalization" class="level1">
+<h1>Understanding Quantile Normalization</h1>
+<p>Before we dive into the code, let’s understand the concept behind quantile normalization. At its core, quantile normalization aims to equalize the distributions of multiple datasets by aligning their quantiles. This ensures that each dataset has the same distribution of values, making meaningful comparisons possible.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="step-1-load-your-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-load-your-data">Step 1: Load Your Data</h2>
+<p>First things first, you’ll need some data to work with. For the sake of this tutorial, let’s say you have a dataframe called <code>df</code> containing your datasets.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># For reproducibility</span></span>
+<span id="cb1-2">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sample1 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sample2 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sample3 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb1-6">)</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   sample1   sample2    sample3
+1 7.741917 11.200965 -2.0009292
+2 3.870604 11.044751  0.3337772
+3 5.726257  8.996791  1.1713251
+4 6.265725 11.848482  2.0595392
+5 5.808537  9.333227 -1.3768616
+6 4.787751 10.105514 -1.1508556</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sample1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'red'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlim=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(df), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(df)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Distribution of Sample 1'</span>)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sample2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'blue'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">add =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb3-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sample3, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'green'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">add =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#add legend</span></span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'topright'</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 1'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 2'</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 3'</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'red'</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'blue'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'green'</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-03-28/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="step-2-perform-quantile-normalization" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-perform-quantile-normalization">Step 2: Perform Quantile Normalization</h2>
+<p>Now, it’s time to perform quantile normalization using R’s built-in <code>quantile()</code> function. This function calculates quantiles for a given dataset, which is essential for aligning the distributions. Function from: https://lifewithdata.com/2023/09/02/how-to-perform-quantile-normalization-in-r/</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Perform quantile normalization</span></span>
+<span id="cb4-2">qn <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">function</span>(.data){</span>
+<span id="cb4-3"> data_sort <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(.data, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, sort)</span>
+<span id="cb4-4"> row_means <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rowMeans</span>(data_sort)</span>
+<span id="cb4-5"> data_sort <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(row_means, </span>
+<span id="cb4-6">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(data_sort), </span>
+<span id="cb4-7">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(data_sort), </span>
+<span id="cb4-8">                     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb4-9">                     )</span>
+<span id="cb4-10"> index_rank <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(.data, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, order)</span>
+<span id="cb4-11"> normalized_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(.data), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(.data))</span>
+<span id="cb4-12"> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(.data)){</span>
+<span id="cb4-13">   normalized_data[,i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> data_sort[index_rank[,i], i]</span>
+<span id="cb4-14"> }</span>
+<span id="cb4-15"> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(normalized_data)</span>
+<span id="cb4-16">}</span>
+<span id="cb4-17"></span>
+<span id="cb4-18">normalized_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">qn</span>(df)</span></code></pre></div>
+</div>
+<p>Let’s break down this code snippet:</p>
+<p>Absolutely, let’s break down this R code block piece by piece:</p>
+<p><strong>1. Function Definition:</strong></p>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">qn <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">function</span>(.data){</span>
+<span id="cb5-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># ... function body here ...</span></span>
+<span id="cb5-3">}</span></code></pre></div>
+<p>This defines a function named <code>qn</code> that takes a data frame (<code>data</code>) as input. This data frame is most likely your dataset you want to normalize.</p>
+<p><strong>2. Sorting Each Column:</strong></p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">data_sort <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(.data, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, sort)</span></code></pre></div>
+<p>This line sorts each column of the data frame <code>data</code> independently. Imagine sorting rows of data like sorting words in a dictionary. Here, we are sorting each column (each variable) from smallest to largest values. The result is stored in <code>data_sort</code>.</p>
+<p><strong>3. Calculating Row Means:</strong></p>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">row_means <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rowMeans</span>(data_sort)</span></code></pre></div>
+<p>This line calculates the average value for each row in the sorted data frame (<code>data_sort</code>). So, for each row (each data point), it finds the mean of the sorted values across all variables. The result is stored in <code>row_means</code>.</p>
+<p><strong>4. Replicating Row Means into a Matrix:</strong></p>
+<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">data_sort <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(row_means, </span>
+<span id="cb8-2">                    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(data_sort), </span>
+<span id="cb8-3">                    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(data_sort), </span>
+<span id="cb8-4">                    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb8-5">                    )</span></code></pre></div>
+<p>This part is a bit trickier. It creates a new matrix (<code>data_sort</code>) with the same dimensions (number of rows and columns) as the original sorted data. Then, it fills each row of this new matrix with the corresponding row mean calculated earlier (<code>row_means</code>). The <code>byrow</code> argument ensures this replication happens row-wise.</p>
+<p><strong>5. Ranking Each Value’s Position:</strong></p>
+<div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">index_rank <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(.data, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, order)</span></code></pre></div>
+<p>Similar to sorting, this line assigns a rank (position) to each value within its column (variable) in the original data frame (<code>data</code>). Imagine a race where the first place gets rank 1, second place gets rank 2, and so on. Here, the rank indicates the original position of each value after everything was sorted in step 2. The result is stored in <code>index_rank</code>.</p>
+<p><strong>6. Building the Normalized Data Frame:</strong></p>
+<div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">normalized_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(.data), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(.data))</span></code></pre></div>
+<p>This line creates an empty matrix (<code>normalized_data</code>) with the same dimensions as the original data frame. This will eventually hold the normalized data.</p>
+<p><strong>7. Looping Through Columns and Assigning Ranked Values:</strong></p>
+<div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(.data)){</span>
+<span id="cb11-2">  normalized_data[,i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> data_sort[index_rank[,i], i]</span>
+<span id="cb11-3">}</span></code></pre></div>
+<p>This is the core of the normalization process. It loops through each column (variable) of the original data frame (<code>data</code>). For each column, it uses the ranks (<code>index_rank</code>) as indices to pick values from the sorted data with row means (<code>data_sort</code>). Basically, it replaces each value in the original data with the value from the sorted data that has the same rank (original position). This effectively replaces the original values with their corresponding row means (representing the center point) based on their original order.</p>
+<p><strong>8. Returning the Normalized Data:</strong></p>
+<div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(normalized_data)</span></code></pre></div>
+<p>Finally, the function returns the <code>normalized_data</code> matrix, which contains the quantile normalized version of your original data frame.</p>
+<p>In essence, this code performs a type of rank-based normalization where each value is replaced with the row mean that corresponds to its original position after sorting all the data together. This approach ensures that the distribution of values across columns becomes more consistent.</p>
+</section>
+<section id="step-3-explore-the-results" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-explore-the-results">Step 3: Explore the Results</h2>
+<p>After quantile normalization, you’ll have a list of normalized datasets ready for further analysis. Take a moment to explore the results and ensure that the distributions are aligned as expected.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    sample1           sample2          sample3        
+ Min.   :-0.9862   Min.   : 7.975   Min.   :-2.69993  
+ 1st Qu.: 3.7666   1st Qu.: 9.409   1st Qu.:-0.71167  
+ Median : 5.1796   Median : 9.931   Median :-0.02474  
+ Mean   : 5.0650   Mean   : 9.913   Mean   :-0.01037  
+ 3rd Qu.: 6.3231   3rd Qu.:10.462   3rd Qu.: 0.65254  
+ Max.   : 9.5733   Max.   :12.702   Max.   : 2.45959  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Explore the results</span></span>
+<span id="cb15-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(normalized_data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       V1              V2              V3       
+ Min.   :1.430   Min.   :1.430   Min.   :1.430  
+ 1st Qu.:4.154   1st Qu.:4.154   1st Qu.:4.154  
+ Median :5.029   Median :5.029   Median :5.029  
+ Mean   :4.989   Mean   :4.989   Mean   :4.989  
+ 3rd Qu.:5.812   3rd Qu.:5.812   3rd Qu.:5.812  
+ Max.   :8.245   Max.   :8.245   Max.   :8.245  </code></pre>
+</div>
+</div>
+</section>
+<section id="step-4-obtain-quantiles" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-obtain-quantiles">Step 4: Obtain Quantiles</h2>
+<p>Now that the data is normalized, we can extract the quantiles to compare the distributions across datasets. This will help you confirm that the normalization process was successful.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>(normalized_data) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb17-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sapply</span>(<span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">function</span>(x) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">quantile</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">probs =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>)))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           V1       V2       V3
+0%   1.429737 1.429737 1.429737
+25%  4.154481 4.154481 4.154481
+50%  5.028521 5.028521 5.028521
+75%  5.812480 5.812480 5.812480
+100% 8.244925 8.244925 8.244925</code></pre>
+</div>
+</div>
+<p>As we can see, the quantiles of the normalized data are consistent across the different datasets. This indicates that the distributions have been aligned through quantile normalization.</p>
+<p>Let’s visuzlize for another confirmation</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1">df_normalized <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>(normalized_data)</span>
+<span id="cb19-2"></span>
+<span id="cb19-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df_normalized<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>V1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'red'</span>)</span>
+<span id="cb19-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df_normalized<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>V2, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'blue'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">add =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb19-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(df_normalized<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>V3, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'green'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">add =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb19-6"></span>
+<span id="cb19-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'topright'</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 1'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 2'</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Sample 3'</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'red'</span>,<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'blue'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'green'</span>))</span></code></pre></div>
+<div class="cell-output-display">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2024-03-28/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="wrapping-up" class="level1">
+<h1>Wrapping Up</h1>
+<p>Congratulations! You’ve successfully mastered quantile normalization in R. By understanding the underlying concept and applying the <code>quantile()</code> function effectively, you can ensure that your datasets are comparable and ready for downstream analysis.</p>
+<p>I encourage you to experiment with different datasets and explore the impact of quantile normalization on your analyses. Remember, practice makes perfect, so don’t hesitate to try it out on your own data. Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>operations</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-03-28/index.html</guid>
+  <pubDate>Thu, 28 Mar 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Mastering Text Manipulation in R: A Guide to Using gsub() for Multiple Pattern Replacement</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -3565,208 +4081,6 @@ font-style: inherit;">5</span>) </span></code></pre></div>
   <category>operations</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-03-01/index.html</guid>
   <pubDate>Fri, 01 Mar 2024 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Unlocking Efficiency: How to Set a Data Frame Column as Index in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-02-29/index.html</link>
-  <description><![CDATA[ 
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In the realm of data manipulation and analysis, efficiency is paramount. One powerful technique to enhance your workflow is setting a column in a data frame as the index. This seemingly simple task can unlock a plethora of benefits, from faster data access to streamlined operations. In this blog post, we’ll delve into the why and how of setting a data frame column as the index in R, with practical examples to illustrate its importance and ease of implementation.</p>
-</section>
-<section id="why-set-a-data-frame-column-as-index" class="level1">
-<h1>Why Set a Data Frame Column as Index?</h1>
-<p>Before we dive into the how, let’s briefly discuss why you might want to set a column as the index in your data frame. By doing so, you essentially designate that column as the unique identifier for each row in your data. This can be particularly useful when dealing with time-series data, categorical variables, or any other column that serves as a natural identifier.</p>
-<p>Setting a column as the index offers several advantages:</p>
-<ul>
-<li>Efficient Data Retrieval: With the index in place, R can quickly locate and retrieve rows based on their index values, leading to faster data access.</li>
-<li>Enhanced Subset Selection: Indexing by specific values becomes more intuitive and efficient, simplifying subset selection operations.</li>
-<li>Facilitates Join Operations: When performing join operations between multiple data frames, having a common index simplifies the process and improves performance.</li>
-<li>Enables Time-Series Analysis: For time-series data, setting the date/time column as the index enables convenient time-based operations and analysis.</li>
-</ul>
-<p>Now that we understand the benefits, let’s explore how to set a data frame column as the index in R.</p>
-</section>
-<section id="setting-a-data-frame-column-as-index" class="level1">
-<h1>Setting a Data Frame Column as Index</h1>
-<p>In R, the <code>setDT()</code> function from the <code>data.table</code> package and the <code>column_to_rownames()</code> function from the <code>tibble</code> package provide convenient ways to set a data frame column as the index. We’ll demonstrate both methods with examples below:</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="using-data.table-package" class="level2">
-<h2 class="anchored" data-anchor-id="using-data.table-package">Using data.table package</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(data.table)</span>
-<span id="cb1-2"></span>
-<span id="cb1-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data frame</span></span>
-<span id="cb1-4">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ID =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>),</span>
-<span id="cb1-5">                 <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Name =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Alice"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Bob"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Charlie"</span>),</span>
-<span id="cb1-6">                 <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Score =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">75</span>))</span>
-<span id="cb1-7"></span>
-<span id="cb1-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set 'ID' column as index</span></span>
-<span id="cb1-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">setDT</span>(df, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">key =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"ID"</span>)</span>
-<span id="cb1-10"></span>
-<span id="cb1-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check the updated data frame</span></span>
-<span id="cb1-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Key: &lt;ID&gt;
-      ID    Name Score
-   &lt;num&gt;  &lt;char&gt; &lt;num&gt;
-1:     1   Alice    85
-2:     2     Bob    90
-3:     3 Charlie    75</code></pre>
-</div>
-</div>
-</section>
-<section id="using-tibble-package" class="level2">
-<h2 class="anchored" data-anchor-id="using-tibble-package">Using tibble package:</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tibble)</span>
-<span id="cb3-2"></span>
-<span id="cb3-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample data frame</span></span>
-<span id="cb3-4">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ID =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">101</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">202</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">303</span>),</span>
-<span id="cb3-5">                 <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Name =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Alice"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Bob"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Charlie"</span>),</span>
-<span id="cb3-6">                 <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Score =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">75</span>))</span>
-<span id="cb3-7"></span>
-<span id="cb3-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set 'ID' column as index</span></span>
-<span id="cb3-9">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">column_to_rownames</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">var =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'ID'</span>)</span>
-<span id="cb3-10"></span>
-<span id="cb3-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check the updated data frame</span></span>
-<span id="cb3-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       Name Score
-101   Alice    85
-202     Bob    90
-303 Charlie    75</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="encouragement-to-try-on-your-own" class="level1">
-<h1>Encouragement to try on your own!</h1>
-<p>Now that you’ve seen how straightforward it is to set a column as the index in R, I encourage you to try it out with your own datasets. Experiment with different columns as indices and observe the impact on your data manipulation tasks. By incorporating this technique into your R repertoire, you’ll unlock greater efficiency and productivity in your data analysis workflows.</p>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>In this blog post, we’ve explored the importance of setting a data frame column as the index in R and provided practical examples using both the <code>data.table</code> and <code>dplyr</code> packages. By leveraging this technique, you can enhance data retrieval, streamline subset selection, and simplify join operations, ultimately empowering you to extract more insights from your data with greater efficiency. So go ahead, give it a try, and unlock the full potential of your data frames in R!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>operations</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-02-29/index.html</guid>
-  <pubDate>Thu, 29 Feb 2024 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
