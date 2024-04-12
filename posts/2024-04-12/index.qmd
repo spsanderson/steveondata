@@ -1,0 +1,88 @@
+---
+title: "Taking the data out of the glue with regex in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-04-12"
+categories: [code, rtip, operations, glue, unglue]
+---
+
+# Introduction
+
+Regular expressions, or regex, are incredibly powerful tools for pattern matching and extracting specific information from text data. Today, we'll explore how to harness the might of regex in R with a practical example.
+
+Let's dive into a scenario where we have data that needs cleaning and extracting numerical values from strings. Our data, stored in a dataframe named `df`, consists of four columns (`x1`, `x2`, `x3`, `x4`) with strings containing numerical values along with percentage values enclosed in parentheses. Our goal is to extract these numerical values and compute a total for each row.
+
+# Loading Libraries
+
+Before we begin, we need to load the necessary libraries. We'll be using the `tidyverse` package for data manipulation, along with `glue` and `unglue` for string manipulation.
+
+```{r message=FALSE, warning=FALSE}
+# Library Loading
+pacman::p_load(tidyverse, glue, unglue)
+```
+
+# Exploring the Data
+
+Let's take a sneak peek at our data using the `head()` function to understand its structure.
+
+```{r}
+df <- tibble(
+  x1 = rep("Unit A", 11),
+  x2 = c(glue("{11:20} ({1:10}%)"),  glue("{251} ({13}%)")),
+  x3 = c(glue("{21:30} ({11:20}%)"), glue("{252} ({14}%)")),
+  x4 = c(glue("{31:40} ({21:30}%)"), glue("{253} ({15}%)"))
+)
+
+head(df, 3)
+```
+
+This command displays the first three rows of our dataframe `df`, giving us an idea of how our data looks like.
+
+# Creating a Regex Function
+
+Now, we'll define a custom function named `reg_val_fns` to extract numerical values from strings using regular expressions. This function takes two parameters: `.col_data` (column data) and `.pattern` (regex pattern). If no pattern is provided, it defaults to extracting any sequence of digits followed by non-word characters or the end of the string.
+
+```{r}
+# Make regex function
+reg_val_fns <- function(.col_data, .pattern = NULL){
+  ptrn <- .pattern
+  if(is.null(ptrn)){
+    ptrn <- "\\d+(?=\\W|$)"
+  }
+  
+  reged_val <- .col_data |>
+    str_extract(ptrn) |>
+    as.numeric()
+
+  return(reged_val)
+}
+```
+
+# Applying the Regex Function
+
+With our regex function defined, we apply it across desired columns using the `mutate(across())` function from the `dplyr` package. This extracts numerical values from strings in each column, converting them into numeric format. Additionally, we compute the total value for each row using `rowSums()`.
+
+```{r}
+# Apply the function across the desired columns
+df |>
+  mutate(across(-x1, reg_val_fns)) |>
+  mutate(total_val = rowSums(across(-x1)))
+```
+
+# Alternative Approach: Using unglue
+
+An alternative method to extract values from strings is using the `unglue` package. Here, we apply the `unglue_data()` function across columns (excluding `x1`) to extract values and percentages separately, then unnest the resulting dataframe and compute the total value for each row.
+
+```{r}
+# Use unglue
+df |>
+  mutate(across(-x1, \(x) unglue_data(x, "{val} ({val_pct}%)"))) |> 
+  unnest(cols = everything(), names_sep = "_") |>
+  mutate(across(.cols = contains("val"), \(x) as.numeric(x))) |>
+  mutate(total_val = rowSums(across(where(is.numeric))))
+```
+
+# Conclusion
+
+In this tutorial, we've explored how to leverage the power of regular expressions in R to extract numerical values from strings within a dataframe. By defining custom regex functions and using packages like `dplyr` and `unglue`, we can efficiently clean and manipulate text data for further analysis.
+
+I encourage you to try out these techniques on your own datasets and explore the endless possibilities of regex in R. Happy coding!
