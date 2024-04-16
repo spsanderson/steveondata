@@ -1,0 +1,116 @@
+---
+title: "Selecting Rows with Specific Values: Exploring Options in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-04-16"
+categories: [code, rtip, operations]
+---
+
+# Introduction
+
+In R, we often need to filter data frames based on whether a specific value appears within any of the columns. Both base R and the dplyr package offer efficient ways to achieve this. Let's delve into both approaches and see how they work!
+
+# Examples
+
+## Example 1 - Use dplyr
+
+The dplyr package provides a concise and readable syntax for data manipulation. We can achieve our goal using the `filter()` function in conjunction with `if_any()`.
+
+```r
+library(dplyr)
+
+filtered_data <- data %>%
+  filter(if_any(everything(), ~ .x == "your_value"))
+```
+
+Let's break down the code:
+
+*   `data`: This represents your data frame.
+*   `filter()`: This function keeps rows that meet a specified condition.
+*   `if_any()`: This checks if the condition is true for any of the columns.
+*   `everything()`: This indicates we want to consider all columns.
+*   `.x`: This represents each individual column within the `everything()` selection.
+*   `== "your_value"`: This is the condition to check. Here, we are looking for rows where the value in any column is equal to "your_value".
+
+Example:
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+
+data <- data.frame(
+  fruit = c("apple", "banana", "orange"),
+  color = c("red", "yellow", "orange"),
+  price = c(0.5, 0.75, 0.6)
+)
+
+data %>%
+  filter(if_any(everything(), ~ .x == "apple"))
+```
+
+
+This code will return the row where "apple" appears in the "fruit" column.
+
+## Example 2 - Base R Approach
+
+Base R offers its own set of functions for data manipulation. We can achieve the same row filtering using apply() and logical operations.
+
+```r
+# Identify rows with the value
+row_indices <- apply(data, 1, function(row) any(row == "your_value"))
+
+# Subset the data
+filtered_data <- data[row_indices, ]
+```
+
+Explanation:
+
+*   `apply(data, 1, ...)`: This applies a function to each row of the data frame. The `1` indicates row-wise application.
+*   `function(row) any(row == "your_value")`: This anonymous function checks if "your_value" is present in any element of the row using the `any()` function and returns `TRUE` or `FALSE`.
+*   `row_indices`: This stores the logical vector indicating which rows meet the condition.
+*   `data[row_indices, ]`: We subset the data frame using the logical vector, keeping only the rows where the condition is `TRUE`.
+
+Example:
+
+```{r message=FALSE, warning=FALSE}
+data <- data.frame(
+  fruit = c("apple", "banana", "orange"),
+  color = c("red", "yellow", "orange"),
+  price = c(0.5, 0.75, 0.6)
+)
+
+row_indices <- apply(data, 1, function(row) any(row == "apple"))
+filtered_data <- data[row_indices, ]
+filtered_data
+```
+    
+This code will also return the row where "apple" appears.
+
+## Example 3 - Base R Approach 2
+
+Another base R approach involves using the `rowSums()` function to identify rows with the specified value.
+
+```R
+# Identify rows with the value
+filtered_rows <- which(rowSums(data == "your_value") > 0, arr.ind = TRUE)
+df_filtered <- data[filtered_rows, ]
+```
+While dplyr offers a concise approach, base R also provides solutions using loops. Here's one way to achieve the same result:
+
+*   `which(rowSums(df == value) > 0, arr.ind = TRUE)`: This part finds the row indices where the sum of elements in each row being equal to the value is greater than zero (indicating at least one match).
+*   `rowSums(df == value)`: Calculates the sum across rows, checking if any value in the row matches the target value.
+*   `> 0`: Filters rows where the sum is greater than zero (i.e., at least one match).
+*   `arr.ind = TRUE`: Ensures the output includes both row and column indices (useful for debugging but not required here).
+*   `df[filtered_rows, ]`: Subsets the original data frame (df) based on the identified row indices (filtered_rows), creating the filtered data frame (df_filtered).
+
+Example:
+
+```{r message=FALSE, warning=FALSE}
+filtered_rows <- which(rowSums(data == "apple") > 0, arr.ind = TRUE)
+df_filtered <- data[filtered_rows, ]
+df_filtered
+```
+
+This code will return the row where "apple" appears in any column.
+
+# Conclusion
+
+All methods effectively select rows with specific values in any column. Experiment with them and different approaches on your own data and with different conditions!
