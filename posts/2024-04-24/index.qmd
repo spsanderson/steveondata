@@ -1,0 +1,100 @@
+---
+title: "A Practical Guide to Selecting Top N Values by Group in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-04-24"
+categories: [code, rtip, operations]
+---
+
+# Introduction
+
+In data analysis, there often arises a need to extract the top N values within each group of a dataset. Whether you're dealing with sales data, survey responses, or any other type of grouped data, identifying the top performers or outliers within each group can provide valuable insights. In this tutorial, we'll explore how to accomplish this task using three popular R packages: dplyr, data.table, and base R. By the end of this guide, you'll have a solid understanding of various approaches to selecting top N values by group in R.
+
+# Examples
+
+## Using dplyr
+
+dplyr is a powerful package for data manipulation, providing intuitive functions for common data manipulation tasks. To select the top N values by group using dplyr, we'll use the `group_by()` and `top_n()` functions.
+
+```{r message=FALSE, warning=FALSE}
+# Load the dplyr package
+library(dplyr)
+
+# Example dataset
+data <- data.frame(
+  group = c(rep("A", 5), rep("B", 5)),
+  value = c(10, 15, 8, 12, 20, 25, 18, 22, 17, 30)
+)
+
+# Select top 2 values by group
+top_n_values <- data %>%
+  group_by(group) %>%
+  top_n(2, value)
+
+# View the result
+print(top_n_values)
+```
+
+### Explanation
+
+- We begin by loading the dplyr package.
+- We create a sample dataset with two columns: 'group' and 'value'.
+- Using the `%>%` (pipe) operator, we first group the data by the 'group' column using `group_by()`.
+- Then, we use the `top_n()` function to select the top 2 values within each group based on the 'value' column.
+- Finally, we print the resulting dataset containing the top N values by group.
+
+## Using data.table
+
+data.table is another popular package for efficient data manipulation, particularly with large datasets. To achieve the same task using data.table, we'll use the `by` argument along with the `.SD` special symbol.
+
+```{r message=FALSE, warning=FALSE}
+# Load the data.table package
+library(data.table)
+
+# Convert data frame to data.table
+setDT(data)
+
+# Select top 2 values by group
+top_n_values <- data[, .SD[order(-value)][1:2], by = group]
+
+# View the result
+print(top_n_values)
+```
+
+### Explanation
+
+- After loading the data.table package, we convert our data frame to a data.table using `setDT()`.
+- We then select the top 2 values within each group by ordering the data in descending order of 'value' and selecting the first 2 rows using `[1:2]`.
+- The `by` argument is used to specify grouping by the 'group' column.
+- Finally, we print the resulting dataset containing the top N values by group.
+
+## Using base R
+
+While dplyr and data.table are powerful packages for data manipulation, base R also provides functionality to achieve this task using functions like `split()` and `lapply()`.
+
+```{r message=FALSE, warning=FALSE}
+# Example dataset
+data <- data.frame(
+  group = c(rep("A", 5), rep("B", 5)),
+  value = c(10, 15, 8, 12, 20, 25, 18, 22, 17, 30)
+)
+
+# Select top 2 values by group using base R
+top_n_values <- do.call(rbind, lapply(split(data, data$group), function(x) head(x[order(-x$value), ], 2)))
+
+# Convert row names to a column
+rownames(top_n_values) <- NULL
+
+# View the result
+print(top_n_values)
+```
+
+### Explanation
+
+- We start with our sample dataset.
+- Using `split()`, we split the dataset into subsets based on the 'group' column.
+- Then, we apply a function using `lapply()` to each subset, which sorts the values in descending order and selects the top 2 rows using `head()`.
+- The resulting subsets are combined into a single data frame using `do.call(rbind, ...)`.
+
+# Conclusion
+
+In this tutorial, we've covered three different methods to select the top N values by group in R using dplyr, data.table, and base R. Each approach has its advantages depending on the complexity of your dataset and your familiarity with the packages. I encourage you to try out these examples with your own data and explore further functionalities offered by these packages for efficient data manipulation. Happy coding!
