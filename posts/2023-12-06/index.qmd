@@ -5,23 +5,35 @@ date: "2023-12-06"
 categories: [rtip, regression]
 ---
 
-# Introduction 
+# Introduction
 
 Stepwise regression is a powerful technique used to build predictive models by iteratively adding or removing variables based on statistical criteria. In R, this can be achieved using functions like `step()` or manually with forward and backward selection.
 
 # Example
 
+## Empty Model:
+
+Let's start with an empty model, an intercept only model.
+
+```{r}
+intercept_model <- lm(mpg ~ 1, data = mtcars)
+step(intercept_model)
+```
+
+In simple terms, we start with a model containing no predictors (`mpg ~ 1`) and iteratively add the most statistically significant variables until no improvement is observed. Since there are no predictors there is nothing to run through.
+
 ## Forward Stepwise Regression:
 
 ```{r}
-# Initialize an empty model
+# Initialize model
 forward_model <- lm(mpg ~ ., data = mtcars)
 
 # Forward stepwise regression
 forward_model <- step(forward_model, direction = "forward", scope = formula(~ .))
 ```
 
-In simple terms, we start with a model containing no predictors (`mpg ~ 1`) and iteratively add the most statistically significant variables until no improvement is observed.
+In simple terms, we start with a model containing all of the predictors (`mpg ~ .`) and iteratively add the most statistically significant variables until no improvement is observed.
+
 
 ## Backward Stepwise Regression:
 
@@ -30,7 +42,7 @@ In simple terms, we start with a model containing no predictors (`mpg ~ 1`) and 
 backward_model <- lm(mpg ~ ., data = mtcars)
 
 # Backward stepwise regression
-backward_model <- step(backward_model, direction = "backward")
+backward_model <- step(backward_model, direction = "backward", trace = 0)
 ```
 
 Here, we begin with a model including all predictors and iteratively remove the least statistically significant variables until the model no longer improves.
@@ -42,7 +54,7 @@ Here, we begin with a model including all predictors and iteratively remove the 
 both_model <- lm(mpg ~ ., data = mtcars)
 
 # Both-direction stepwise regression
-both_model <- step(both_model, direction = "both")
+both_model <- step(both_model, direction = "both", trace = 0)
 ```
 
 In both-direction regression, the algorithm combines both forward and backward steps, optimizing the model by adding significant variables and removing insignificant ones.
@@ -58,12 +70,21 @@ plot(mtcars$hp, mtcars$mpg,
      xlab = "hp", ylab = "mpg", pch = 20
      )
 abline(lm(mpg ~ hp, data = mtcars), col = "black", lwd = 2)
+points(sort(mtcars$hp), intercept_model$fitted.values, col = "purple", pch = 20)
 points(sort(mtcars$hp), forward_model$fitted.values, col = "red", pch = 20)
 points(sort(mtcars$hp), backward_model$fitted.values, col = "blue", pch = 20)
 points(sort(mtcars$hp), both_model$fitted.values, col = "green", pch = 20)
 
-legend("topright", legend = c("Forward", "Backward", "Both-Direction"), 
-       col = c("red", "blue", "green"), pch = 20)
+legend(
+  "topright", 
+  legend = c(
+    "Intercept Only", 
+    "Forward", 
+    "Backward", 
+    "Both-Direction"
+    ),
+  col = c("red", "blue", "green"), pch = 20
+)
 
 ```
 
@@ -75,6 +96,9 @@ This plot displays the scatter plot of `mpg` against `hp` with fitted lines for 
 # Residual plots for each model
 par(mfrow = c(2, 2))
 
+# Intercept Model
+plot(intercept_model$residuals, main = "Intercept Residuals", ylab = "Residuals")
+
 # Forward stepwise regression residuals
 plot(forward_model$residuals, main = "Forward Residuals", ylab = "Residuals")
 
@@ -83,6 +107,8 @@ plot(backward_model$residuals, main = "Backward Residuals", ylab = "Residuals")
 
 # Both-direction stepwise regression residuals
 plot(both_model$residuals, main = "Both-Direction Residuals", ylab = "Residuals")
+
+par(mfrow = c(1, 1))
 ```
 
 These plots help assess how well the models fit the data by examining the residuals.
