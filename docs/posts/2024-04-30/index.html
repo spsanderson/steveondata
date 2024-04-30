@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Steven P. Sanderson II, MPH">
-<meta name="dcterms.date" content="2024-04-29">
+<meta name="dcterms.date" content="2024-04-30">
 
-<title>Steve’s Data Tips and Tricks - Introducing TidyDensity Version 1.4.0: Enhancing Data Analysis in R</title>
+<title>Steve’s Data Tips and Tricks - Quantile Normalization in R with the {TidyDensity} Package</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -75,10 +109,10 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Steve’s Data Tips and Tricks - Introducing TidyDensity Version 1.4.0: Enhancing Data Analysis in R">
+<meta property="og:title" content="Steve’s Data Tips and Tricks - Quantile Normalization in R with the {TidyDensity} Package">
 <meta property="og:description" content="">
 <meta property="og:site-name" content="Steve's Data Tips and Tricks">
-<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Introducing TidyDensity Version 1.4.0: Enhancing Data Analysis in R">
+<meta name="twitter:title" content="Steve’s Data Tips and Tricks - Quantile Normalization in R with the {TidyDensity} Package">
 <meta name="twitter:description" content="">
 <meta name="twitter:creator" content="@steveondata">
 <meta name="twitter:site" content="@steveondata">
@@ -148,7 +182,7 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Introducing TidyDensity Version 1.4.0: Enhancing Data Analysis in R</h1>
+      <h1 class="title">Quantile Normalization in R with the {TidyDensity} Package</h1>
                                 <div class="quarto-categories">
                 <div class="quarto-category">code</div>
                 <div class="quarto-category">rtip</div>
@@ -170,7 +204,7 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">April 29, 2024</p>
+        <p class="date">April 30, 2024</p>
       </div>
     </div>
     
@@ -190,49 +224,214 @@ gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>I’m thrilled to announce the release of TidyDensity version 1.4.0, packed with exciting features and improvements to elevate your data analysis experience in R. Let’s dive into what this latest update has to offer.</p>
+<p>In data analysis, especially when dealing with multiple samples or distributions, ensuring comparability and removing biases is crucial. One powerful technique for achieving this is quantile normalization. This method aligns the distributions of values across different samples, making them more similar in terms of their statistical properties.</p>
 </section>
-<section id="new-features" class="level1">
-<h1>New Features</h1>
-<section id="quantile-normalization" class="level2">
-<h2 class="anchored" data-anchor-id="quantile-normalization">Quantile Normalization</h2>
-<p>Say goodbye to skewed data distributions! With the new <code>quantile_normalize()</code> function, you can now easily normalize your data using quantiles, ensuring more accurate and reliable analysis results.</p>
+<section id="what-is-quantile-normalization" class="level1">
+<h1>What is Quantile Normalization?</h1>
+<p>Quantile normalization is a statistical method used to adjust the distributions of values in different datasets so that they have similar quantiles. This technique is particularly valuable when working with high-dimensional data, such as gene expression data or other omics datasets, where ensuring comparability across samples is essential.</p>
 </section>
-<section id="duplicate-row-detection" class="level2">
-<h2 class="anchored" data-anchor-id="duplicate-row-detection">Duplicate Row Detection</h2>
-<p>Data integrity matters, which is why we’ve introduced the <code>check_duplicate_rows()</code> function. Quickly identify and eliminate duplicate rows in your data frame, streamlining your workflow and improving data quality.</p>
+<section id="introducing-quantile_normalize-in-tidydensity" class="level1">
+<h1>Introducing <code>quantile_normalize()</code> in TidyDensity</h1>
+<p>The <code>quantile_normalize()</code> function is a new addition to the TidyDensity package, designed to simplify the process of quantile normalization within R. Let’s delve into how this function works and how you can integrate it into your data analysis pipeline.</p>
 </section>
-<section id="chi-square-distribution-parameter-estimation" class="level2">
-<h2 class="anchored" data-anchor-id="chi-square-distribution-parameter-estimation">Chi-Square Distribution Parameter Estimation</h2>
-<p>Estimating parameters for the chi-square distribution is now a breeze with the <code>util_chisquare_param_estimate()</code> function. Empower your statistical analysis with precise parameter estimation capabilities.</p>
-</section>
-<section id="markov-chain-monte-carlo-mcmc-sampling" class="level2">
-<h2 class="anchored" data-anchor-id="markov-chain-monte-carlo-mcmc-sampling">Markov Chain Monte Carlo (MCMC) Sampling</h2>
-<p>Unlock the power of Markov Chain Monte Carlo sampling with the new <code>tidy_mcmc_sampling()</code> function. Seamlessly sample from distributions using MCMC, and visualize the results with diagnostic plots for deeper insights into your data.</p>
-</section>
-<section id="aic-calculation-for-distributions" class="level2">
-<h2 class="anchored" data-anchor-id="aic-calculation-for-distributions">AIC Calculation for Distributions</h2>
-<p>Making informed model selection decisions just got easier! TidyDensity now includes <code>util_dist_aic()</code> functions to calculate the Akaike Information Criterion (AIC) for various distributions, providing valuable metrics for model evaluation.</p>
-</section>
-</section>
-<section id="minor-fixes-and-improvements" class="level1">
-<h1>Minor Fixes and Improvements</h1>
-<p>In addition to these exciting new features, we’ve also made several minor fixes and enhancements to further refine your user experience:</p>
+<section id="function-usage" class="level1">
+<h1>Function Usage</h1>
+<p>The <code>quantile_normalize()</code> function takes a numeric matrix as input, where each column represents a sample. Here’s a breakdown of its usage:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile_normalize</span>(.data, <span class="at">.return_tibble =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
-<li>Enhanced <code>tidy_multi_single_dist()</code> function to respect the <code>.return_tibble</code> parameter.</li>
-<li>Improved documentation, including updates related to MCMC usage.</li>
-<li>Updated <code>tidy_distribution_comparison()</code> to incorporate AIC calculations from dedicated <code>util_dist_aic()</code> functions.</li>
+<li><code>.data</code>: A numeric matrix where each column corresponds to a sample that requires quantile normalization.</li>
+<li><code>.return_tibble</code>: A logical value (default: <code>FALSE</code>) indicating whether the output should be returned as a tibble.</li>
 </ul>
 </section>
-<section id="upgrade-now" class="level1">
-<h1>Upgrade Now!</h1>
-<p>Ready to supercharge your data analysis workflow? Upgrade to TidyDensity version 1.4.0 today and take advantage of these powerful new features and enhancements. Whether you’re a seasoned data analyst or just getting started with R, TidyDensity is your go-to toolkit for streamlined and robust data analysis.</p>
-<p>As always, we welcome your feedback and suggestions for future improvements. Stay tuned for more updates as we continue to evolve and enhance the TidyDensity package to meet your data analysis needs.</p>
-<p>Happy analyzing!</p>
-<p><em>Steve, Manager of Applications at Stony Brook Medicine</em></p>
-<p><em>Creator and Maintainer of TidyDensity</em></p>
+<section id="understanding-the-output" class="level1">
+<h1>Understanding the Output</h1>
+<p>When you apply <code>quantile_normalize()</code> to your data, you receive a list object containing the following components:</p>
+<ol type="1">
+<li><strong>Quantile-Normalized Matrix</strong>: A numeric matrix where each column has been quantile-normalized.</li>
+<li><strong>Row Means</strong>: The means of each row across the quantile-normalized matrix.</li>
+<li><strong>Sorted Data</strong>: The sorted values used during the quantile normalization process.</li>
+<li><strong>Ranked Indices</strong>: The indices of the sorted values.</li>
+</ol>
+</section>
+<section id="how-quantile-normalization-works" class="level1">
+<h1>How Quantile Normalization Works</h1>
+<p>The <code>quantile_normalize()</code> function performs quantile normalization through the following steps:</p>
+<ol type="1">
+<li><strong>Sorting</strong>: Each column of the input matrix is sorted.</li>
+<li><strong>Row Mean Calculation</strong>: The mean of each row across the sorted columns is computed.</li>
+<li><strong>Normalization</strong>: Each column’s sorted values are replaced with the corresponding row means.</li>
+<li><strong>Unsorting</strong>: The columns are restored to their original order, ensuring that the quantile-normalized matrix maintains the same structure as the input.</li>
+</ol>
+</section>
+<section id="examples" class="level1">
+<h1>Examples</h1>
+<p>Let’s demonstrate the usage of <code>quantile_normalize()</code> with a simple example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load TidyDensity</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(TidyDensity)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a sample matrix</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">50</span>), <span class="at">ncol =</span> <span class="dv">4</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            [,1]       [,2]       [,3]       [,4]
+[1,] -0.56047565  0.1106827  0.8377870 -0.3804710
+[2,] -0.23017749 -0.5558411  0.1533731 -0.6947070
+[3,]  1.55870831  1.7869131 -1.1381369 -0.2079173
+[4,]  0.07050839  0.4978505  1.2538149 -1.2653964
+[5,]  0.12928774 -1.9666172  0.4264642  2.1689560</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply quantile normalization</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">quantile_normalize</span>(data)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Access the quantile-normalized matrix</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>normalized_matrix <span class="ot">&lt;-</span> result[[<span class="st">"normalized_data"</span>]]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># View the normalized matrix</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(normalized_matrix, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            [,1]       [,2]        [,3]       [,4]
+[1,] -0.65451945 -0.3180877  0.84500772 -0.6545195
+[2,] -0.06327669  0.8450077  1.09078797 -0.9506544
+[3,] -1.40880292 -0.5235134  0.33150422  0.0863713
+[4,]  0.84500772  1.0907880  0.08637130  0.1991151
+[5,] -0.31808774 -0.6545195 -0.06327669  0.3315042</code></pre>
+</div>
+</div>
+<p>Let’s now look at the rest of the output components:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(result[[<span class="st">"row_means"</span>]], <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -1.4088029 -0.9506544 -0.6545195 -0.5235134 -0.3180877</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(result[[<span class="st">"duplicated_ranks"</span>]], <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    9   13   13    7
+[2,]   10   10   12   12
+[3,]    2   11    2    9
+[4,]   13    9    9    3
+[5,]    7    1    1   11</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(result[[<span class="st">"duplicated_rank_row_indicies"</span>]], <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(result[[<span class="st">"duplicated_rank_data"</span>]], <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            [,1]       [,2]      [,3]       [,4]
+[1,] -0.23017749 -0.5558411 0.1533731 -0.6947070
+[2,]  0.07050839  0.4978505 1.2538149 -1.2653964
+[3,]  0.12928774 -1.9666172 0.4264642  2.1689560
+[4,] -0.68685285 -0.2179749 0.8215811 -0.4666554
+[5,] -0.44566197 -1.0260044 0.6886403  0.7799651</code></pre>
+</div>
+</div>
+<p>Now, lets take a look at the before and after quantile normalization summary:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.data.frame</span>(data) <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sapply</span>(<span class="cf">function</span>(x) <span class="fu">quantile</span>(x, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             V1         V2          V3          V4
+0%   -1.2650612 -1.9666172 -1.13813694 -1.26539635
+25%  -0.4456620 -1.0260044 -0.06191171 -0.56047565
+50%   0.1292877 -0.5558411  0.55391765 -0.38047100
+75%   0.4609162  0.1106827  0.83778704 -0.08336907
+100%  1.7150650  1.7869131  1.25381492  2.16895597</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.data.frame</span>(normalized_matrix) <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sapply</span>(<span class="cf">function</span>(x) <span class="fu">quantile</span>(x, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              V1          V2          V3          V4
+0%   -1.40880292 -1.40880292 -1.40880292 -1.40880292
+25%  -0.52351344 -0.52351344 -0.52351344 -0.52351344
+50%  -0.06327669 -0.06327669 -0.06327669 -0.06327669
+75%   0.33150422  0.33150422  0.33150422  0.33150422
+100%  1.73118725  1.73118725  1.73118725  1.73118725</code></pre>
+</div>
+</div>
+<p>Now let’s use the <code>.return_tibble</code> argument to return the output as a tibble:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile_normalize</span>(data, <span class="at">.return_tibble =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$normalized_data
+# A tibble: 13 × 4
+        V1      V2      V3      V4
+     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+ 1 -0.655  -0.318   0.845  -0.655 
+ 2 -0.0633  0.845   1.09   -0.951 
+ 3 -1.41   -0.524   0.332   0.0864
+ 4  0.845   1.09    0.0864  0.199 
+ 5 -0.318  -0.655  -0.0633  0.332 
+ 6  1.73   -0.0633 -0.133  -0.133 
+ 7 -0.524  -0.133  -0.524  -0.524 
+ 8 -0.133   1.73    1.73    1.73  
+ 9  0.332   0.0864  0.199   1.09  
+10  1.09   -0.951  -0.655  -0.318 
+11 -0.951  -1.41   -0.318  -1.41  
+12  0.199   0.199  -1.41    0.845 
+13  0.0864  0.332  -0.951  -0.0633
+
+$row_means
+# A tibble: 13 × 1
+     value
+     &lt;dbl&gt;
+ 1 -1.41  
+ 2 -0.951 
+ 3 -0.655 
+ 4 -0.524 
+ 5 -0.318 
+ 6 -0.133 
+ 7 -0.0633
+ 8  0.0864
+ 9  0.199 
+10  0.332 
+11  0.845 
+12  1.09  
+13  1.73  
+
+$duplicated_ranks
+# A tibble: 6 × 4
+     V1    V2    V3    V4
+  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+1     9    13    13     7
+2    10    10    12    12
+3     2    11     2     9
+4    13     9     9     3
+5     7     1     1    11
+6     3     6     7     6
+
+$duplicated_rank_row_indices
+# A tibble: 6 × 1
+  row_index
+      &lt;int&gt;
+1         2
+2         4
+3         5
+4         9
+5        10
+6        12
+
+$duplicated_rank_data
+# A tibble: 6 × 4
+       V1     V2      V3     V4
+    &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+1 -0.230  -0.556  0.153  -0.695
+2  0.0705  0.498  1.25   -1.27 
+3  0.129  -1.97   0.426   2.17 
+4 -0.687  -0.218  0.822  -0.467
+5 -0.446  -1.03   0.689   0.780
+6  0.360  -0.625 -0.0619 -0.560</code></pre>
+</div>
+</div>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>In summary, the <code>quantile_normalize()</code> function from the TidyDensity package offers a convenient and efficient way to perform quantile normalization on numeric matrices in R. By leveraging this function, you can enhance the comparability and statistical integrity of your data across multiple samples or distributions. Incorporate <code>quantile_normalize()</code> into your data preprocessing workflow to unlock deeper insights and more robust analyses.</p>
+<p>To explore more functionalities of TidyDensity and leverage its capabilities for advanced data analysis tasks, check out the package documentation and experiment with different parameters and options provided by the <code>quantile_normalize()</code> function.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

@@ -1,0 +1,99 @@
+---
+title: "Quantile Normalization in R with the {TidyDensity} Package"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-04-30"
+categories: [code, rtip, tidydensity]
+---
+
+# Introduction
+
+In data analysis, especially when dealing with multiple samples or distributions, ensuring comparability and removing biases is crucial. One powerful technique for achieving this is quantile normalization. This method aligns the distributions of values across different samples, making them more similar in terms of their statistical properties.
+
+# What is Quantile Normalization?
+
+Quantile normalization is a statistical method used to adjust the distributions of values in different datasets so that they have similar quantiles. This technique is particularly valuable when working with high-dimensional data, such as gene expression data or other omics datasets, where ensuring comparability across samples is essential.
+
+# Introducing `quantile_normalize()` in TidyDensity
+
+The `quantile_normalize()` function is a new addition to the TidyDensity package, designed to simplify the process of quantile normalization within R. Let's delve into how this function works and how you can integrate it into your data analysis pipeline.
+
+# Function Usage
+
+The `quantile_normalize()` function takes a numeric matrix as input, where each column represents a sample. Here's a breakdown of its usage:
+
+```R
+quantile_normalize(.data, .return_tibble = FALSE)
+```
+
+- `.data`: A numeric matrix where each column corresponds to a sample that requires quantile normalization.
+- `.return_tibble`: A logical value (default: `FALSE`) indicating whether the output should be returned as a tibble.
+
+# Understanding the Output
+
+When you apply `quantile_normalize()` to your data, you receive a list object containing the following components:
+
+1. **Quantile-Normalized Matrix**: A numeric matrix where each column has been quantile-normalized.
+2. **Row Means**: The means of each row across the quantile-normalized matrix.
+3. **Sorted Data**: The sorted values used during the quantile normalization process.
+4. **Ranked Indices**: The indices of the sorted values.
+
+# How Quantile Normalization Works
+
+The `quantile_normalize()` function performs quantile normalization through the following steps:
+
+1. **Sorting**: Each column of the input matrix is sorted.
+2. **Row Mean Calculation**: The mean of each row across the sorted columns is computed.
+3. **Normalization**: Each column's sorted values are replaced with the corresponding row means.
+4. **Unsorting**: The columns are restored to their original order, ensuring that the quantile-normalized matrix maintains the same structure as the input.
+
+# Examples
+
+Let's demonstrate the usage of `quantile_normalize()` with a simple example:
+
+```{r message=FALSE, warning=FALSE}
+# Load TidyDensity
+library(TidyDensity)
+
+# Create a sample matrix
+set.seed(123)
+data <- matrix(rnorm(50), ncol = 4)
+head(data, 5)
+
+# Apply quantile normalization
+result <- quantile_normalize(data)
+
+# Access the quantile-normalized matrix
+normalized_matrix <- result[["normalized_data"]]
+
+# View the normalized matrix
+head(normalized_matrix, 5)
+```
+Let's now look at the rest of the output components:
+
+```{r}
+head(result[["row_means"]], 5)
+head(result[["duplicated_ranks"]], 5)
+head(result[["duplicated_rank_row_indicies"]], 5)
+head(result[["duplicated_rank_data"]], 5)
+```
+
+Now, lets take a look at the before and after quantile normalization summary:
+
+```{r}
+as.data.frame(data) |>
+  sapply(function(x) quantile(x, probs = seq(0, 1, 1/4)))
+
+as.data.frame(normalized_matrix) |>
+  sapply(function(x) quantile(x, probs = seq(0, 1, 1/4)))
+```
+
+Now let's use the `.return_tibble` argument to return the output as a tibble:
+
+```{r message=FALSE, warning=FALSE}
+quantile_normalize(data, .return_tibble = TRUE)
+```
+### Conclusion
+
+In summary, the `quantile_normalize()` function from the TidyDensity package offers a convenient and efficient way to perform quantile normalization on numeric matrices in R. By leveraging this function, you can enhance the comparability and statistical integrity of your data across multiple samples or distributions. Incorporate `quantile_normalize()` into your data preprocessing workflow to unlock deeper insights and more robust analyses.
+
+To explore more functionalities of TidyDensity and leverage its capabilities for advanced data analysis tasks, check out the package documentation and experiment with different parameters and options provided by the `quantile_normalize()` function.
