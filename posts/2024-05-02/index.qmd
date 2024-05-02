@@ -1,0 +1,80 @@
+---
+title: "Estimating Chisquare Parameters with TidyDensity"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-05-02"
+categories: [code, rtip, tidydensity]
+---
+
+# Introduction
+
+Hello R users! Today, let's explore the latest addition to the TidyDensity package: `util_chisquare_param_estimate()`. This function is designed to estimate parameters for a Chi-square distribution from your data, providing valuable insights into the underlying distribution characteristics.
+
+# Understanding the Purpose
+
+The `util_chisquare_param_estimate()` function is a powerful tool for analyzing data that conforms to a Chi-square distribution. It utilizes maximum likelihood estimation (MLE) to infer the degrees of freedom (dof) and non-centrality parameter (ncp) of the Chi-square distribution based on your input vector.
+
+# Getting Started
+
+To begin, let's generate a dataset that conforms to a Chi-square distribution:
+
+```{r message=FALSE, warning=FALSE}
+library(TidyDensity)
+
+# Generate Chi-square distributed data
+set.seed(123)
+data <- rchisq(250, 10, 2)
+
+# Call util_chisquare_param_estimate()
+result <- util_chisquare_param_estimate(data)
+```
+
+By default, the function will automatically generate empirical distribution data if `.auto_gen_empirical` is set to `TRUE`. This means you'll not only get the Chi-square parameters but also a combined table of empirical and Chi-square distribution data.
+
+# Exploring the Output
+
+Let's unpack what the function returns:
+
+-   `dist_type`: Identifies the type of distribution, which will be "Chisquare" for this analysis.
+-   `samp_size`: Indicates the sample size, i.e., the number of data points in your vector `.x`.
+-   `min`, `max`, `mean`: Basic statistics summarizing your data.
+-   `dof`: The estimated degrees of freedom for the Chi-square distribution.
+-   `ncp`: The estimated non-centrality parameter for the Chi-square distribution.
+
+This comprehensive output allows you to gain deeper insights into your data's distribution characteristics, particularly when the Chi-square distribution is a potential model.
+
+Let's now take a look at the output itself.
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+
+result$combined_data_tbl |>
+  head(5) |>
+  glimpse()
+
+result$combined_data_tbl |>
+  tidy_distribution_summary_tbl(dist_type) |>
+  glimpse()
+```
+
+# Behind the Scenes: MLE Optimization
+
+Under the hood, the function leverages MLE through the `optim()` function to estimate the Chi-square parameters. It minimizes the negative log-likelihood function to obtain the best-fitting degrees of freedom (`dof`) and non-centrality parameter (`ncp`) for your data.
+
+Initial values for the optimization are intelligently set based on your data's sample variance and mean, ensuring a robust estimation process.
+
+# Visualizing the Results
+
+One of the strengths of TidyDensity is its seamless integration with visualization tools like `ggplot2`. With the combined output from `util_chisquare_param_estimate()`, you can easily create insightful plots that compare the empirical distribution with the estimated Chi-square distribution.
+
+```{r}
+result$combined_data_tbl |>
+  tidy_combined_autoplot()
+```
+
+This example demonstrates how you can visualize the empirical data overlaid with the fitted Chi-square distribution, providing a clear representation of your dataset's fit to the model.
+
+# Conclusion
+
+In summary, `util_chisquare_param_estimate()` from TidyDensity is a versatile tool for estimating Chi-square distribution parameters from your data. Whether you're exploring the underlying distribution of your dataset or conducting statistical inference, this function equips you with the necessary tools to gain valuable insights.
+
+If you haven't already, give it a try and let us know how you're using TidyDensity to enhance your data analysis workflows! Stay tuned for more updates and insights from the world of R programming. Happy coding!
