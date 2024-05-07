@@ -1,0 +1,94 @@
+---
+title: "Counting NA Values in Each Column: Comparing Methods in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-05-07"
+categories: [code, rtip, operations]
+---
+
+# Introduction
+
+Welcome back, R enthusiasts! Today, we're going to explore a fundamental task in data analysis: counting the number of missing (NA) values in each column of a dataset. This might seem straightforward, but there are different ways to achieve this using different packages and methods in R.
+
+Let's dive right in and compare how to accomplish this task using base R, dplyr, and data.table. Each method has its own strengths and can cater to different preferences and data handling scenarios.
+
+# Examples
+
+## Using Base R
+
+First up, let's tackle this using base R functions. We'll leverage the `colSums()` function along with `is.na()` to count NA values in each column of a dataframe.
+
+```{r}
+# Sample dataframe
+df <- data.frame(
+  A = c(1, 2, NA, 4),
+  B = c(NA, 2, 3, NA),
+  C = c(1, NA, NA, 4)
+)
+
+# Count NA values in each column using base R
+na_counts_base <- colSums(is.na(df))
+print(na_counts_base)
+```
+
+In this code snippet, `is.na(df)` creates a logical matrix indicating NA positions in `df`. `colSums()` then sums up the TRUE values (which represent NA) across each column, giving us the count of NAs per column. Simple and effective!
+
+## Using Base R (with lapply)
+
+To adapt this method for base R, we can directly apply `lapply()` to the dataframe (`df`) to achieve the same result.
+
+```{r}
+# Count NA values in each column using base R and lapply
+na_counts_base <- lapply(df, function(x) sum(is.na(x)))
+
+print(na_counts_base)
+```
+
+In this snippet, `lapply(df, function(x) sum(is.na(x)))` applies the function `function(x) sum(is.na(x))` to each column of the dataframe (`df`), resulting in a list of NA counts per column.
+
+## Using dplyr
+
+Now, let's switch gears and utilize the popular `dplyr` package to achieve the same task in a more streamlined manner.
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+
+# Count NA values in each column using dplyr
+na_counts_dplyr <- df %>%
+  summarise_all(~ sum(is.na(.)))
+
+print(na_counts_dplyr)
+```
+
+Here, `summarise_all()` from `dplyr` applies the `sum(is.na(.))` function to each column (`.` represents each column in this context), providing us with the count of NA values in each. This approach is clean and fits well into a tidyverse workflow.
+
+## Using data.table
+
+Last but not least, let's see how to accomplish this using `data.table`, a powerful package known for its efficiency with large datasets.
+
+```{r message=FALSE, warning=FALSE}
+library(data.table)
+
+# Convert dataframe to data.table
+dt <- as.data.table(df)
+
+# Count NA values in each column using data.table
+na_counts_data_table <- dt[, lapply(.SD, function(x) sum(is.na(x)))]
+
+print(na_counts_data_table)
+```
+
+In this snippet, `lapply(.SD, function(x) sum(is.na(x)))` within `data.table` allows us to apply the `sum(is.na())` function to each column (`.SD` represents the Subset of Data for each group, which in this case is each column).
+
+# Which Method to Choose?
+
+Now that we've explored three different methods to count NA values in each column, you might be wondering which one to use. The answer depends on your preference, the complexity of your dataset, and the packages you're comfortable working with.
+
+- **Base R** is straightforward and doesn't require additional packages.
+- **dplyr** is excellent for working within the tidyverse, especially if you're already using other tidy tools.
+- **data.table** shines with large datasets due to its efficiency and syntax.
+
+# Your Turn!
+
+I encourage you to try out these methods with your own datasets. Experimenting with different approaches will not only deepen your understanding of R but also empower you to handle data more efficiently.
+
+That's it for today! I hope you found this comparison helpful. Remember, the best method is the one that suits your specific needs and workflow. Happy coding!
