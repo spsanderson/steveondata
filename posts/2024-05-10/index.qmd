@@ -1,0 +1,106 @@
+---
+title: "How to Check if a Column Contains a String in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-05-10"
+categories: [code, rtip, operations]
+---
+
+# Introduction
+
+Whether you're doing some data cleaning or exploring your dataset, checking if a column contains a specific string can be a crucial task. Today, I'll show you how to do this using both `str_detect()` from the **stringr** package and base R methods. We'll also tackle finding partial strings and counting occurrences. Let's dive right in!
+
+# Using `str_detect` from **stringr**
+
+First, we'll use the `str_detect` function. The `stringr` package is part of the **tidyverse** collection, which brings a set of user-friendly functions to text manipulation. We'll start by ensuring it's installed and loaded:
+
+```r
+install.packages("stringr")
+```
+
+Now, let's create a sample dataset:
+
+```{r message=FALSE, warning=FALSE}
+library(stringr)
+# Sample data
+data <- data.frame(
+  name = c("Alice", "Bob", "Carol", "Dave", "Eve"),
+  description = c("Software developer", "Data analyst", "UX designer", "Project manager", "Data scientist")
+)
+data
+```
+
+# Examples
+
+## Using stringr
+
+### Check for Full String
+
+Suppose we want to check if any of the `description` column contains "Data analyst":
+
+```{r}
+# Detect if 'description' contains 'Data analyst'
+data$has_data_analyst <- str_detect(data$description, "Data analyst")
+print(data)
+```
+
+In the output, the `has_data_analyst` column will be `TRUE` for "Bob" and `FALSE` for others.
+
+### Check for Partial String
+
+Let's expand our search to any string containing "Data":
+
+```{r}
+# Detect if 'description' contains any word with 'Data'
+data$has_data <- str_detect(data$description, "Data")
+print(data)
+```
+
+This will show `TRUE` for "Bob" and "Eve," where both "Data analyst" and "Data scientist" are detected.
+
+### Count Occurrences
+
+If you need to count how many times "Data" appears, use `str_count`:
+
+```{r}
+# Count occurrences of 'Data'
+data$data_count <- str_count(data$description, "Data")
+print(data)
+```
+
+This will add a column `data_count` with the exact count of occurrences per row.
+
+## Using Base R
+
+For those who prefer base R, the **grepl** and **gregexpr** functions can help. 
+
+### Check for Full or Partial String
+
+`grepl` is ideal for checking if a string is present:
+
+```{r}
+# Using grepl for full/partial string detection
+data$has_data_grepl <- grepl("Data", data$description)
+print(data)
+```
+
+This will yield the same output as `str_detect`.
+
+### Count Occurrences
+
+For counting occurrences, `gregexpr` is helpful:
+
+```{r}
+# Count occurrences using gregexpr
+matches <- gregexpr("Data", data$description)
+data$data_count_base <- sapply(
+  matches, 
+  function(x) ifelse(x[1] == -1, 0, length(x))
+  )
+print(data)
+```
+
+This will add a new `data_count_base` column containing the count of "Data" in each row.
+
+# Give It a Try!
+
+The best way to master string detection in R is to experiment with different patterns and datasets. Whether you use `str_detect`, `grepl`, or any other approach, you'll find plenty of ways to customize the search. Try it out with your own datasets, and soon you'll be searching like a pro!
