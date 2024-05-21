@@ -1,0 +1,116 @@
+---
+title: "How to Split a Vector into Chunks in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-05-21"
+categories: [code, rtip, operations]
+toc: TRUE
+---
+
+# Introduction
+
+In data analysis, there are times when you need to split a vector into smaller chunks. Whether you’re managing large datasets or preparing data for parallel processing, breaking down vectors can be incredibly useful. In this post, we’ll explore how to achieve this in R using base R, `dplyr`, and `data.table`. 
+
+# Examples
+
+## Using Base R
+
+Base R provides a straightforward way to split a vector into chunks using the `split` function and a combination of other basic functions.
+
+### Example 1: Splitting a Vector into Chunks
+
+Let’s say we have a vector `x` and we want to split it into chunks of size 3.
+
+```{r}
+x <- 1:10
+chunk_size <- 3
+split_vector <- split(x, ceiling(seq_along(x) / chunk_size))
+print(split_vector)
+```
+
+**Explanation:**
+
+-   `x <- 1:10`: Creates a vector `x` with values from 1 to 10.
+-   `chunk_size <- 3`: Defines the size of each chunk.
+-   `seq_along(x)`: Generates a sequence of the same length as `x`.
+-   `ceiling(seq_along(x) / chunk_size)`: Divides the sequence by the chunk size and uses `ceiling` to round up to the nearest integer, creating a grouping factor.
+-   `split(x, ...)`: Splits the vector based on the grouping factor.
+
+## Using `dplyr`
+
+The `dplyr` package, part of the tidyverse, offers a more readable and pipe-friendly approach to splitting vectors.
+
+### Example 2: Splitting a Vector into Chunks
+
+Here’s how you can do it with `dplyr`.
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+
+x <- 1:10
+chunk_size <- 3
+split_vector <- x %>%
+  as.data.frame() %>%
+  mutate(group = ceiling(row_number() / chunk_size)) %>%
+  group_by(group) %>%
+  summarise(chunk = list(.)) %>%
+  pull(chunk)
+print(split_vector)
+```
+
+**Explanation:**
+
+-   `as.data.frame()`: Converts the vector to a data frame.
+-   `mutate(group = ceiling(row_number() / chunk_size))`: Adds a grouping column.
+-   `group_by(group)`: Groups the data by the newly created group column.
+-   `summarise(chunk = list(.))`: Summarizes the groups into list columns using the `.` placeholder.
+-   `pull(chunk)`: Extracts the list column as a vector of chunks.
+
+#### Example 3: Splitting a Vector using `group_split()`
+
+`group_split()` is another handy function from `dplyr` to split data into groups.
+
+```{r}
+x <- 1:10
+chunk_size <- 3
+split_vector <- x %>%
+  as.data.frame() %>%
+  mutate(group = ceiling(row_number() / chunk_size)) %>%
+  group_split(group)
+print(split_vector)
+```
+
+**Explanation:**
+
+-   `as.data.frame()`: Converts the vector to a data frame.
+-   `mutate(group = ceiling(row_number() / chunk_size))`: Adds a grouping column.
+-   `group_split(group)`: Splits the data frame into a list of data frames based on the group column.
+
+## Using `data.table`
+
+`data.table` is known for its efficiency with large datasets. Here’s how you can split a vector using `data.table`.
+
+### Example 4: Splitting a Vector into Chunks
+
+```{r message=FALSE, warning=FALSE}
+library(data.table)
+
+x <- 1:10
+chunk_size <- 3
+dt <- data.table(x = x)
+dt[, group := ceiling(.I / chunk_size)]
+split_vector <- dt[, .(chunk = list(x)), by = group]$chunk
+print(split_vector)
+```
+
+**Explanation:**
+
+-   `data.table(x = x)`: Converts the vector to a `data.table`.
+-   `group := ceiling(.I / chunk_size)`: Creates a group column using the row index `.I`.
+-   `.(chunk = list(x)), by = group`: Groups by the group column and creates list columns.
+-   `$chunk`: Extracts the list column.
+
+# Your Turn!
+
+These examples illustrate different ways to split vectors into chunks in R using base R, `dplyr`, and `data.table`. Each method has its own strengths, and you might prefer one over the others depending on your workflow and dataset size. Try these methods on your own data and see how they work for you. Experimenting with different chunk sizes and vector lengths can also help you understand the mechanics behind each approach better.
+
+Happy coding!
