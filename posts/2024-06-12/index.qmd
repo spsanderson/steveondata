@@ -1,0 +1,182 @@
+---
+title: "VBA Code to Check if a Sheet Exists"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-12"
+categories: [code, rtip, vba, excel]
+toc: TRUE
+---
+
+
+# Introduction
+
+In today's post we are going to go over VBA code to check if a sheet exists and then we are going to call that function from R using the `RDCOMClient` package. This can be useful when you need to perform certain actions based on the existence of a sheet in an Excel workbook.
+
+Let's break this down step by step. We'll start by writing a VBA function to check if a sheet exists, then we'll show how to call this function from R using the `RDCOMClient` package.
+
+# Code and Examples
+
+## VBA Code to Check if a Sheet Exists
+
+### VBA Function
+
+First, let's create a simple VBA function to check if a sheet exists in the workbook.
+
+```vba
+Function SheetExists(sheetName As String) As Boolean
+    Dim ws As Worksheet
+    SheetExists = False
+    For Each ws In ThisWorkbook.Sheets
+        If ws.Name = sheetName Then
+            SheetExists = True
+            Exit Function
+        End If
+    Next ws
+End Function
+```
+
+Let's see it in action:
+
+![Using VBA Function to Check if a Sheet Exists](Capture.PNG)
+
+#### Explanation:
+
+-   Function SheetExists(sheetName As String) As Boolean: Defines a function named SheetExists that takes a sheet name as a string and returns a boolean.
+-   Dim ws As Worksheet: Declares a variable ws as a worksheet.
+-   SheetExists = False: Initializes the function to return False by default.
+-   For Each ws In ThisWorkbook.Sheets: Loops through each worksheet in the workbook.
+-   If ws.Name = sheetName Then: Checks if the current worksheet's name matches the provided sheet name.
+-   SheetExists = True: Sets the function to return True if a match is found.
+-   Exit Function: Exits the function as soon as a match is found.
+-   Next ws: Continues to the next worksheet.
+
+This VBA function `SheetExists` takes a sheet name as an argument and returns `True` if the sheet exists, and `False` otherwise.
+
+## R Code to Execute the VBA Macro and Return a Boolean Value
+
+To run this VBA macro from R, you can use the `RDCOMClient` package. Here's how you can do it:
+
+1. **First, you'll need to create an Excel workbook with the VBA macro.**
+2. **Then, use the following R code to execute the macro.**
+
+### R Code using RDCOMClient to Execute the VBA Macro
+
+First you need to install the package which can be slightly cumbersome:
+
+```r
+# Install RDCOMClient if not already installed
+if (!requireNamespace("RDCOMClient", quietly = TRUE)) {
+  install.packages("RDCOMClient", repos = "http://www.omegahat.net/R")
+}
+```
+
+```{r message=FALSE, warning=FALSE}
+# Load RDCOMClient package
+library(RDCOMClient)
+
+# Create a connection to Excel
+excel_app <- COMCreate("Excel.Application")
+
+# Open your workbook
+wb_path <- "C:/Users/ssanders/Documents/GitHub/steveondata/posts/2024-06-12/sheet_exists.xlsm"
+workbook <- excel_app$Workbooks()$Open(wb_path)
+
+# Ensure Excel is visible (optional)
+excel_app[["Visible"]] <- TRUE
+
+# Run the VBA function and get the result
+sheet_name <- "Sheet1" # Replace with the sheet name you want to check
+result <- excel_app$Run("SheetExists", sheet_name)
+
+# Close the workbook without saving
+workbook$Close(FALSE)
+
+# Quit the Excel application
+excel_app$Quit()
+
+# Release the COM objects
+rm(excel_app, workbook)
+
+# Output the result
+result
+```
+
+Replace `wb_path` with the actual path to your Excel file containing the VBA macro.
+
+#### Explanation:
+
+-   RDCOMClient::COMCreate("Excel.Application"): Creates a COM object for Excel.
+-   excel_app[["Visible"]] <- TRUE: Makes Excel visible (optional, can be removed).
+-   excel_app[["Workbooks"]]$Open("C:\\path\\to\\your\\workbook.xlsx"): Opens the specified workbook. Adjust the path as needed.
+-   excel_app$Run("SheetExists", sheet_name): Runs the SheetExists VBA function with the provided sheet name and stores the result.
+-   workbook$Close(FALSE): Closes the workbook without saving changes.
+-   excel_app$Quit(): Quits the Excel application.
+-   excel_app <- NULL: Releases the COM object resources.
+
+### R Code using RDCOMClient to Achieve the Same Goal Without VBA
+
+If you prefer to check if a sheet exists directly using R without invoking VBA, you can do it with the `RDCOMClient` package as well:
+
+```{r message=FALSE, warning=FALSE}
+# Load RDCOMClient package
+library(RDCOMClient)
+
+# Create a connection to Excel
+excel_app <- COMCreate("Excel.Application")
+
+# Open your workbook
+wb_path <- "C:/Users/ssanders/Documents/GitHub/steveondata/posts/2024-06-12/sheet_exists.xlsm"
+workbook <- excel_app$Workbooks()$Open(wb_path)
+
+# Ensure Excel is visible (optional)
+excel_app[["Visible"]] <- TRUE
+
+# Function to check if a sheet exists
+sheet_exists <- function(workbook, sheet_name) {
+  sheets <- workbook$Sheets()
+  for (i in 1:sheets$Count()) {
+    if (sheets$Item(i)$Name() == sheet_name) {
+      return(TRUE)
+    }
+  }
+  return(FALSE)
+}
+
+# Check if the sheet exists
+sheet_name <- "Sheet1" # Replace with the sheet name you want to check
+result <- sheet_exists(workbook, sheet_name)
+
+# Close the workbook without saving
+workbook$Close(FALSE)
+
+# Quit the Excel application
+excel_app$Quit()
+
+# Release the COM objects
+rm(excel_app, workbook)
+
+# Output the result
+result
+```
+
+In this code, we directly check the existence of a sheet using the `RDCOMClient` package without invoking a VBA macro.
+
+#### Explanation:
+
+-   Similar steps to the previous R code, but instead of running a VBA macro, it directly interacts with the Excel object model.
+-   Loops through the sheets in the workbook to check if the specified sheet exists.
+
+# Summary
+
+- The VBA code checks if a sheet exists in an Excel workbook.
+- The first R code executes the VBA macro using the `RDCOMClient` package.
+- The second R code achieves the same goal directly using the `RDCOMClient` package without invoking VBA.
+
+I encourage you to try these code snippets on your own to get hands-on experience. Experiment with different sheet names and see how the functions behave. Understanding how to automate tasks with VBA and R can greatly enhance your productivity and open up new possibilities for your data analysis workflows. 
+
+# Bonus
+
+As an added bonus I have included the VBA Enabled Excel file that contains the VBA code to check if a sheet exists. You can download the file from the link below:
+
+[Workbook Here!](sheet_exists.xlsm)
+
+Happy coding!
