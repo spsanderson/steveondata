@@ -1,0 +1,274 @@
+---
+title: "An Introduction to healthyR"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-13"
+categories: [code, rtip, healthyr]
+toc: TRUE
+---
+
+# Introduction
+
+This article will introduce you to the `healthyR` package. `healthyR` is a package that provides functions for analyzing and visualizing health-related data. It is designed to make it easier for health professionals and researchers to work with health data in R. It is an experimental package that is still under active development, so some functions may change in the future along with the package structure and scope.
+
+Unfortunately, the package needs some love and attention. Which I am trying to give it. Given that information, I will be updating the package to include more functions and improve the existing ones. I will also be updating the documentation and adding more examples to help users get started with the package.
+
+So let's get started!
+
+# Installation
+
+You can easily install the `healthyR` package from CRAN or GitHub if you want to live in dev land.
+
+```r
+install.packages("healthyR")
+```
+
+Or alternatively:
+
+```r
+# install.packages("devtools")
+devtools::install_github("spsanderson/healthyR")
+```
+
+# Getting Started
+
+## The Goal
+
+The ultimate goal really of this package is to provide a set of functions that are easy to understand and follow. The functions should be able to take in data, process it, and output results in a way that is easy to understand and interpret. The package should also provide functions for visualizing the data in a way that is easy to understand and interpret. In healthycare, at least in my experience there are a great many small rural hospitals that do not have the resources to hire a data scientist or a statistician. This package and in fact the entire `healthyverse` suite are being designed to help those hospitals and other health organizations that may not have the resources to hire a data scientist or statistician.
+
+The only way anyone can improve is if they have their data and can then in turn analyze and interpret that data. This package is designed to help with that in some short way for now.
+
+Let's go through some examples. To do this we will also load in my `healthyR.data` package as it comes with a standard dataset that we can use to demonstrate the functions in `healthyR` and a host of other issues.
+
+```{r library_load, message=FALSE, warning=FALSE}
+# install.packages(healthyR.data)
+library(healthyR)
+library(healthyR.data)
+library(tidyverse)
+library(DT)
+```
+
+Now let's get a list of all of the functions that are exposed via the `healthyR` package.
+
+```{r function_tibble}
+# Functions and their arguments for healthyR
+
+pat <- c("%>%",":=","as_label","as_name","enquo","enquos","expr",
+         "dx_cc_mapping","px_cc_mapping","sym","syms")
+
+tibble(fns = ls.str("package:healthyR")) |>
+  filter(!fns %in% pat) |>
+  mutate(params = purrr::map(fns, formalArgs)) |> 
+  group_by(fns) |> 
+  mutate(func_with_params = toString(params)) |>
+  mutate(
+    func_with_params = ifelse(
+      str_detect(
+        func_with_params, "\\("), 
+      paste0(fns, func_with_params), 
+      paste0(fns, "(", func_with_params, ")")
+    )) |>
+  select(fns, func_with_params) |>
+  mutate(fns = as.factor(fns)) |>
+  datatable(
+    #class = 'cell-boarder-stripe',
+    colnames = c("Function", "Full Call"),
+    options = list(
+      autowidth = TRUE,
+      pageLength = 10
+    )
+  )
+```
+
+You can see the reference page for all of the available functions here: [healthyR Reference](https://www.spsanderson.com/healthyR/reference/index.html)
+
+Let's get started with a first example.
+
+# Examples
+
+## Example 1: Median Excess Lenght of Stay
+
+In this example, we will calculate the median excess length of stay for patients in the `inpatient` dataset. The excess length of stay is the difference between the actual length of stay and the expected length of stay for a patient. The expected length of stay is calculated based on the patient's diagnosis-related group (DRG) and other factors.
+
+For providers and hospitals, the excess length of stay is an important metric because it can help identify patients who are at risk of complications or other adverse outcomes. By identifying these patients early, providers can take steps to prevent complications and improve patient outcomes. Afterall, hospitals are full of sick people, as hard as they work to keep environments sterile one must remember that when your at your worst, you go to a hospital, so it is natural that complications can arise.
+
+```{r}
+# Load the inpatient dataset
+df <- healthyR_data |>
+  filter(ip_op_flag == "I") |>
+  select(visit_id, visit_end_date_time, length_of_stay)  |>
+  mutate(visit_end_date = as.Date(
+    visit_end_date_time, format = "%Y-%m-%d"
+    )) |>
+  select(-visit_end_date_time, visit_id, visit_end_date, length_of_stay) |>
+  filter(visit_end_date >= "2012-01-01",
+         visit_end_date < "2020-01-01") |>
+  arrange(visit_end_date)
+
+glimpse(df)
+```
+
+Now let's use the `ts_alos_plt()` function to see what the average length of stay (ALOS) looks like:
+
+```{r}
+ts_alos_plt(
+  df, 
+  .date_col = visit_end_date, 
+  .value_col = length_of_stay, 
+  .by_grouping = "month",
+  .interactive = TRUE
+  )
+```
+
+From here, we see that the alos is increasing over time. So, is this a bad sign? This could be due to a number of factors, such as an increase in the number of patients with complex conditions or an increase in the number of patients with complications. It could also be due to a lack of resources or staff, which can lead to delays in care and longer lengths of stay.
+
+This is why we want to see the median excess length of stay. Let's calculate that now.
+
+```{r}
+df_tbl <- ts_signature_tbl(df, .date_col = visit_end_date)
+glimpse(df_tbl)
+names(df_tbl)
+```
+
+Now that we have our table ready for calculation, let's get it done!
+
+```{r warning=FALSE, message=FALSE}
+ts_median_excess_plt(
+  .data = df_tbl, 
+  .date_col = visit_end_date,
+  .value_col = length_of_stay,
+  .x_axis = week,
+  .ggplot_group_var = year,
+  .years_back = 1
+) +
+  labs(
+    x = "Week of the Year",
+    y = "Median Excess Length of Stay (Days)",
+    title = "Median Excess Length of Stay by Week",
+    caption = "Data Source: Inpatient Dataset; Red Line Indicates Latest Year"
+  )
+```
+
+So we can see from here that even though the ALOS is increasing, the median excess length of stay is decreasing. This is a good sign as it indicates that the hospital is improving its efficiency and reducing the number of patients who are staying longer than expected.
+
+Let's move onto another example.
+
+## Example 2: Gartner Magic Chart
+
+In this example, we will create a Gartner Magic Chart to visualize the performance of different hospitals in terms of their length of stay and readmission rates. The Gartner Magic Chart is a popular tool used by healthcare organizations to compare the performance of different hospitals and identify areas for improvement.
+
+We will create a simulated dataset of 100 hospitals to achieve this and we will want it scaled, think of this like taking a look at the performance of the excess alos and excess readmit rates:
+
+```{r}
+set.seed(123)
+gartner_tbl <- tibble(
+  hospital_id = 1:100,
+  x = scale(rnorm(100, mean = 5, sd = 2)),
+  y = scale(rnorm(100, mean = 0.1, sd = 0.05))
+)
+
+summary(gartner_tbl[,-1])
+```
+
+Now that we have our simulated dataset, let's create the Gartner Magic Chart. Unfortunately at this point the columns must be named x and y, but this will be updated in the future to pass whatever column you like.
+
+```{r warning=FALSE, message=FALSE}
+gartner_magic_chart_plt(
+  .data = gartner_tbl,
+  .x_col = x,
+  .y_col = y,
+  .x_lab = "ALOS",
+  .y_lab = "ARR",
+  .point_size = NULL,
+  .plt_title = "Gartner Magic Chart - Scaled Data",
+  .tr_lbl = "High RA-LOS",
+  .tl_lbl = "High RA",
+  .bl_lbl = "Leader",
+  .br_lbl = "High LOS"
+)
+```
+
+## Example 3: Length Of Stay and Readmit Index with Variance
+
+Sometimes we want to see how the variance of the length of stay and readmission rates are changing over the length of stay of a patient visit. This can help us identify trends and patterns that may be affecting the performance of hospitals. What this means is that maybe we would rather have a longer length stay (a variance, longer than expected) if it helps to keep the reamission rate down. A provider/hospital would rather have someone in the hospital longer than see them get readmitted because they were discharged prematurely.
+
+Let's make our data:
+
+```{r}
+data_tbl <- tibble(
+  "alos"                 = runif(186, 1, 20)
+  , "elos"               = runif(186, 1, 17)
+  , "readmit_rate"       = runif(186, 0, .25)
+  , "readmit_rate_bench" = runif(186, 0, .2)
+)
+
+summary(data_tbl)
+```
+
+Let's take a look at the data quickly:
+
+```{r}
+data_tbl |>
+  pivot_longer(
+    cols = c(alos, elos, readmit_rate, readmit_rate_bench), 
+    names_to = "metric", values_to = "value"
+    ) |>
+  mutate(metric_group = ifelse(
+    metric %in% c("alos", "elos"), "Length of Stay", "Readmit Rate"
+    )
+  ) |>
+  ggplot(aes(x = value, color = metric)) +
+  facet_wrap(~ metric_group, scales = "free") +
+  geom_density() +
+  theme_minimal() +
+  labs(
+    x = "Value",
+    y = "Density",
+    title = "Density Plot of Length of Stay and Readmit Rate",
+    color = "Metric"
+  )
+```
+
+Now let's see how the variance of the length of stay and readmission rates are changing over the length of stay of a patient visit:
+
+```{r}
+los_ra_index_summary_tbl(
+  .data = data_tbl
+  , .max_los       = 15
+  , .alos_col      = alos
+  , .elos_col      = elos
+  , .readmit_rate  = readmit_rate
+  , .readmit_bench = readmit_rate_bench
+) %>%
+  los_ra_index_plt()
+```
+
+From here we can see that the variance of the length of stay and readmission rates are decreasing as the length of stay increases. This is a good sign as it indicates that the hospital is able to provide more consistent care to patients with longer stays, which may help to reduce the risk of readmission. Even though resource utilization may increase, the hospital is able to provide better care to patients with longer stays, which may help to reduce the risk of readmission in this example.
+
+## Example 4: Service Line Augmentation
+
+In this example, we will agument a service line to a patient visit. This can help us create groups of patient visits in a manner that is more managable then say at the DX, DRG or MDC levels. This can help us identify trends and patterns that may be affecting the performance of hospitals.
+
+Let's see how it works:
+
+```{r}
+df <- data.frame(
+  dx_col = "F10.10",
+  px_col = NA,
+  drg_col = "896"
+)
+
+service_line_augment(
+  .data = df,
+  .dx_col = dx_col,
+  .px_col = px_col,
+  .drg_col = drg_col
+)
+```
+
+We see here that a patient discharged with a diagnosis of F10.10 and DRG 896 would be classified as a patient visit for the service line of "alcohol_abuse". A term that is more generic then F10.10 which is "Alcohol Abuse, uncomplicated". This can help us identify trends and patterns that may be affecting the performance of hospitals.
+
+# Conclusion
+
+Thank you for reading along, I hope this helps shed some light on how to use the `healthyR` package, along with illustrating what it is I am trying to accomplish. If you have any questions, comments or concerns, please feel free to reach out to me. I am always looking for ways to improve the package and make it more useful for the community.
+
+Happy Coding!
