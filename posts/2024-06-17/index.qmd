@@ -1,0 +1,342 @@
+---
+title: "Introducing healthyR.ts: A Comprehensive R Package for Time Series Analysis"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-17"
+categories: [code, rtip, healthyrts]
+toc: TRUE
+---
+
+# Introduction
+
+Hello everyone,
+
+I’m excited to give you an overview of **healthyR.ts**, an R package designed to simplify and enhance your time series analysis experience. Just like my `healthyR` package, it is designed to be user friendly.
+
+# What is healthyR.ts?
+
+`healthyR.ts` is a robust package that integrates seamlessly with your existing R environment, providing a comprehensive toolkit for time series analysis. Its goal is to streamline the workflow, allowing you to focus on insights rather than the intricacies of implementation.
+
+# Key Features
+
+## 1. Versatile Functionality
+
+healthyR.ts comes packed with functions to handle various aspects of time series analysis, from basic preprocessing to advanced modeling and forecasting. Whether you need to decompose your series, detect anomalies, or fit complex models, healthyR.ts has got you covered.
+
+## 2. User-Friendly Interface
+
+The package is designed with usability in mind. Functions are well-documented and intuitive, making it easier for users at all levels to implement sophisticated time series techniques. You can find a comprehensive list of functions and their detailed descriptions in the [Reference Section](https://www.spsanderson.com/healthyR.ts/reference/index.html).
+
+## 3. Seamless Integration
+
+healthyR.ts integrates smoothly with other popular R packages, enhancing its utility and flexibility. This allows you to leverage the strengths of multiple tools within a single workflow, optimizing your analysis process.
+
+# Latest Updates
+
+We're continually working to improve healthyR.ts, adding new features and refining existing ones based on user feedback and advancements in the field. Check out the [Latest News Section](https://www.spsanderson.com/healthyR.ts/news/index.html#healthyrts-030) to stay updated with the most recent changes and enhancements.
+
+# Installation
+
+You can install the released version of healthyR.ts from CRAN with:
+
+```r
+install.packages("healthyR.ts")
+```
+
+And the development version from GitHub with:
+
+```r
+# install.packages("devtools")
+devtools::install_github("spsanderson/healthyR.ts")
+```
+
+
+# Getting Started
+
+Let's take a quick look at how you can use healthyR.ts for a variety of problems. Here's a simple example to get you started:
+
+First, let's load in our libraries:
+
+```{r message=FALSE, warning=FALSE}
+library(healthyR.ts)
+library(tidyverse)
+library(timetk)
+library(rsample)
+```
+
+Now, let's generate some sample data:
+
+```{r}
+# Generate
+set.seed(123)
+df <- ts_random_walk()
+```
+
+Let's take a look at our data:
+
+```{r}
+glimpse(df)
+```
+
+Now let's review the function we just used. Here is some information about the `ts_random_walk` function:
+
+## Syntax:
+
+```r
+ts_random_walk(
+  .mean = 0,
+  .sd = 0.1,
+  .num_walks = 100,
+  .periods = 100,
+  .initial_value = 1000
+)
+```
+
+## Arguments:
+
+-   `.mean`: The desired mean of the random walks
+-   `.sd`: The standard deviation of the random walks
+-   `.num_walks`: The number of random walks you want generated
+-   `.periods`: The length of the random walk(s) you want generated
+-   `.initial_value`: The initial value where the random walks should start
+
+## Visualize
+
+Now, let's visualize our data:
+
+```{r}
+df |>
+   ggplot(
+       mapping = aes(
+           x = x
+           , y = cum_y
+           , color = factor(run)
+           , group = factor(run)
+        )
+    ) +
+    geom_line(alpha = 0.8) +
+    ts_random_walk_ggplot_layers(df)
+
+library(dplyr)
+library(ggplot2)
+
+df |>
+    group_by(x) |>
+    summarise(
+        min_y = min(cum_y),
+        max_y = max(cum_y)
+    ) |>
+    ggplot(
+        aes(x = x)
+    ) +
+    geom_line(aes(y = max_y), color = "steelblue") +
+    geom_line(aes(y = min_y), color = "firebrick") +
+    geom_ribbon(aes(ymin = min_y, ymax = max_y), alpha = 0.2) +
+    ts_random_walk_ggplot_layers(df)
+```
+
+Now we have just gone over how to use a function to generate a simple random walk, this is only scratching the surface of what this package can do. I am going to go over a few more examples and try to break things up into sections.
+
+# Examples
+
+## Generating Functions
+
+We have already gone over how to generate a simple random walk, but there are other functions that can be used to generate data. Here are examples:
+
+### `ts_brownian_motion`
+
+```{r}
+# Generate
+set.seed(123)
+bm <- ts_brownian_motion()
+glimpse(bm)
+
+bm |>
+  ts_brownian_motion_plot(
+    .date_col = t,
+    .value_col = y,
+    .interactive = TRUE
+    )
+```
+
+### `ts_geometric_brownian_motion`
+
+```{r}
+gm <- ts_geometric_brownian_motion()
+glimpse(gm)
+
+gm |>
+  ts_brownian_motion_plot(
+    .date_col = t,
+    .value_col = y,
+    .interactive = TRUE
+    )
+```
+
+## Plotting Functions
+
+The package also includes a variety of plotting functions to help you visualize your data. Here are a few examples: 
+
+### `ts_vva_plot`
+
+```{r}
+# Generate
+set.seed(123)
+df <- ts_random_walk(.num_walks = 1, .periods = 100) |>
+  filter(run == 1)
+glimpse(df)
+
+ts_vva_plot(
+  .data = df,
+  .date_col = x,
+  .value_col = cum_y
+)
+```
+
+## Filtering Functions
+
+### `ts_compare_data`
+
+Compare data over time periods:
+
+```{r}
+data_tbl <- ts_to_tbl(AirPassengers) |>
+  select(-index)
+
+ts_compare_data(
+  .data           = data_tbl
+  , .date_col     = date_col
+  , .start_date   = "1955-01-01"
+  , .end_date     = "1955-12-31"
+  , .periods_back = "2 years"
+  ) |>
+  summarise_by_time(
+    .date_var = date_col
+    , .by     = "year"
+    , visits  = sum(value)
+  )
+```
+
+### `ts_time_event_analysis_tbl`
+
+```{r}
+tst <- ts_time_event_analysis_tbl(
+  data_tbl, 
+  date_col, 
+  value, 
+  .direction = "both",
+  .horizon = 6
+)
+
+tst |>
+  ts_event_analysis_plot(
+  .plot_type = "mean",
+  .plot_ci = TRUE,
+  .interactive = FALSE
+)
+```
+
+## Simulator
+
+### `ts_arima_simiulator`
+
+Simulate an arima model and visualize the results:
+
+```{r}
+output <- ts_arima_simulator()
+output$plots$static_plot
+```
+
+## Auto Workflowset Generators
+
+Want to create an automatic workflow set of data? Got you covered
+
+### `ts_wfs_`
+
+```{r}
+splits <- time_series_split(
+   data_tbl
+  , date_col
+  , assess = 12
+  , skip = 3
+  , cumulative = TRUE
+)
+
+rec_objs <- ts_auto_recipe(
+ .data = training(splits)
+ , .date_col = date_col
+ , .pred_col = value
+)
+
+wf_sets <- ts_wfs_arima_boost("all_engines", rec_objs)
+wf_sets
+```
+
+## Boilerplate Functions
+
+### `ts_auto_`
+
+Automatic functions to help you with your time series analysis:
+
+```{r}
+automatic_mars <- ts_auto_mars(
+  .data = data_tbl,
+  .num_cores = 2,
+  .date_col = date_col,
+  .value_col = value,
+  .rsamp_obj = splits,
+  .formula = value ~ .,
+  .grid_size = 20,
+  .tune = FALSE
+)
+
+automatic_mars
+```
+
+## Vectorized Function
+
+### `ts_growth_rate_vec`
+
+```{r}
+# Calculate the growth rate of a time series without any transformations.
+ts_growth_rate_vec(c(100, 110, 120, 130))
+
+# Calculate the growth rate with scaling and a power transformation.
+ts_growth_rate_vec(c(100, 110, 120, 130), .scale = 10, .power = 2)
+
+# Calculate the log differences of a time series with lags.
+ts_growth_rate_vec(c(100, 110, 120, 130), .log_diff = TRUE, .lags = -1)
+
+# Plot
+plot.ts(AirPassengers)
+
+plot.ts(ts_growth_rate_vec(AirPassengers))
+```
+
+## Helper Functions
+
+### `ts_auto_stationarize`
+
+```{r}
+# Example 1: Using the AirPassengers dataset
+auto_stationarize(AirPassengers)
+
+# Example 2: Using the BJsales dataset
+auto_stationarize(BJsales)
+```
+
+# Conclusion
+
+Ready to jump in? Visit the [main page](https://www.spsanderson.com/healthyR.ts) for an overview and to get started with healthyR.ts. The page provides installation instructions, usage examples, and links to detailed documentation to help you hit the ground running.
+
+# Join the Community
+
+I encourage you to explore the healthyR.ts package and join the growing community of users. Your feedback and contributions are invaluable in making healthyR.ts a better tool for everyone.
+
+Thank you for your interest, and happy analyzing!
+
+---
+
+Feel free to reach out if you have any questions or need further assistance. Let's make time series analysis simpler and more powerful with healthyR.ts!
+
+Best,
+Steve
