@@ -10,7 +10,252 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.4.555</generator>
-<lastBuildDate>Tue, 18 Jun 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 19 Jun 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Extracting Data from Another Workbook Using VBA and Executing It from R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-06-19/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>When working with Excel files, you may need to extract data from one workbook and use it in another. This can be done manually by copying and pasting the data, but it can be time-consuming and error-prone, especially when dealing with large datasets. One way to automate this process is by using Visual Basic for Applications (VBA) to extract the data from one workbook and execute the VBA code from R.</p>
+<p>In this blog post, I’ll walk you through the process of extracting data from another workbook using VBA and how to execute this from R. We’ll use the data in <code>Sheet1</code> from an example workbook.</p>
+</section>
+<section id="extracting-data-from-another-workbook-using-vba" class="level1">
+<h1>Extracting Data from Another Workbook Using VBA</h1>
+<section id="step-1-setting-up-the-vba-code" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-setting-up-the-vba-code">Step 1: Setting Up the VBA Code</h2>
+<p>First, we need to write a VBA script that will open another workbook, extract data from <code>Sheet1</code>, and return this data. Here’s a simple VBA code to accomplish this:</p>
+<ol type="1">
+<li>Open the VBA editor by pressing <code>Alt + F11</code>.</li>
+<li>Insert a new module by right-clicking on any existing module or the workbook name, then selecting <code>Insert &gt; Module</code>.</li>
+<li>Copy and paste the following VBA code into the module:</li>
+</ol>
+<pre class="vba"><code>Sub ExtractData()
+    Dim sourceWorkbook As Workbook
+    Dim targetWorkbook As Workbook
+    Dim sourceSheet As Worksheet
+    Dim targetSheet As Worksheet
+    Dim sourceRange As Range
+    Dim targetRange As Range
+
+    ' Define the path to the source workbook
+    Dim sourceFilePath As String
+    sourceFilePath = "C:\Users\ssanders\Documents\GitHub\steveondata\posts\2024-06-19\random_data.xlsx" ' Change this to your actual file path
+
+    ' Open the source workbook
+    Set sourceWorkbook = Workbooks.Open(sourceFilePath)
+    Set sourceSheet = sourceWorkbook.Sheets("Sheet1")
+    Set sourceRange = sourceSheet.Range("A1:B30") ' Adjust the range as needed
+
+    ' Open the target workbook
+    Set targetWorkbook = ThisWorkbook
+    Set targetSheet = targetWorkbook.Sheets("Sheet1")
+    Set targetRange = targetSheet.Range("A1:B30") ' Adjust the range as needed
+
+    ' Clear the target range before pasting
+    targetRange.Clear
+
+    ' Copy the data from source to target
+    sourceRange.Copy Destination:=targetRange
+
+    ' Close the source workbook without saving
+    sourceWorkbook.Close SaveChanges:=False
+
+    ' Save and close the target workbook
+    targetWorkbook.Save
+    targetWorkbook.Close SaveChanges:=True
+    
+    ' Quit Excel
+    Application.Quit
+End Sub</code></pre>
+<p>This script opens another workbook, copies the data from <code>Sheet1</code>, and pastes it into the current workbook’s <code>Sheet1</code>. Modify the <code>sourceFilePath</code> to the location of your source workbook and adjust the ranges as necessary. The data was already in a workbook and thus we knew the dimensions of the data.</p>
+</section>
+<section id="step-2-executing-the-vba-code-from-r" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-executing-the-vba-code-from-r">Step 2: Executing the VBA Code from R</h2>
+<p>Now that we have the VBA code ready, let’s write some R code to execute this VBA macro. We’ll use the <code>RDCOMClient</code> package to interact with Excel from R.</p>
+<ol type="1">
+<li>Install the <code>RDCOMClient</code> package if you haven’t already:</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"RDCOMClient"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">repos =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.omegahat.net/R"</span>)</span></code></pre></div>
+</div>
+<ol start="2" type="1">
+<li>Load the package and write the R code to run the VBA macro:</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RDCOMClient)</span>
+<span id="cb3-2"></span>
+<span id="cb3-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Path to your Excel workbook containing the VBA macro</span></span>
+<span id="cb3-4">excelFilePath <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/ssanders/Documents/GitHub/steveondata/posts/2024-06-19/get_data_from_another_workbook.xlsm"</span></span>
+<span id="cb3-5"></span>
+<span id="cb3-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a COM object to interact with Excel</span></span>
+<span id="cb3-7">excelApp <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">COMCreate</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Excel.Application"</span>)</span>
+<span id="cb3-8"></span>
+<span id="cb3-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Open the workbook</span></span>
+<span id="cb3-10">workbook <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> excelApp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Workbooks</span>()<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Open</span>(excelFilePath)</span>
+<span id="cb3-11"></span>
+<span id="cb3-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Make Excel visible (optional)</span></span>
+<span id="cb3-13">excelApp[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Visible"</span>]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb3-14"></span>
+<span id="cb3-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Run the VBA macro</span></span>
+<span id="cb3-16">excelApp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Run</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ExtractData"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Close the workbook without saving</span></span>
+<span id="cb5-2">workbook<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Close</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Quit Excel</span></span>
+<span id="cb7-2">excelApp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Quit</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Release COM object</span></span>
+<span id="cb9-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(excelApp, workbook)</span></code></pre></div>
+</div>
+<p>This R script creates a COM object to interact with Excel, opens the workbook containing our VBA macro, runs the macro, and then quits Excel. Make sure to modify the <code>excelFilePath</code> to point to your actual workbook.</p>
+<p>Now let’s see if it actually worked:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(readxl)</span>
+<span id="cb10-2"></span>
+<span id="cb10-3">f_path <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:/Users/ssanders/Documents/GitHub/steveondata/posts/2024-06-19/random_data.xlsx"</span></span>
+<span id="cb10-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">read_excel</span>(f_path, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sheet =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sheet1"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col_names =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>) </span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>New names:
+• `` -&gt; `...1`</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 30 × 1
+     ...1
+    &lt;dbl&gt;
+ 1 -0.371
+ 2 -1.00 
+ 3  0.226
+ 4 -0.323
+ 5 -0.142
+ 6  1.19 
+ 7 -0.827
+ 8  0.715
+ 9 -0.105
+10 -1.06 
+# ℹ 20 more rows</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>In this post, we’ve covered how to set up a VBA macro to extract data from another workbook and how to execute this macro from R using the <code>RDCOMClient</code> package. This approach allows you to leverage the power of VBA for Excel automation while controlling the process from R, providing a seamless integration between the two environments.</p>
+<p>Feel free to adjust the VBA code and R script to suit your specific needs. Happy coding!</p>
+<hr>
+<p>For more information on integrating R with other tools, check out my other posts at www.spsanderson.com/steveondata/.</p>
+<p>If you have any questions or run into issues, don’t hesitate to reach out on LinkedIn or Mastodon. Let’s keep the conversation going!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>vba</category>
+  <category>excel</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-06-19/</guid>
+  <pubDate>Wed, 19 Jun 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>How to Add Leading Zeros to Numbers in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -5518,358 +5763,6 @@ font-style: inherit;">print</span>(split_digits)</span></code></pre></div>
   <category>operations</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-05-22/</guid>
   <pubDate>Wed, 22 May 2024 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Split a Vector into Chunks in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-05-21/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In data analysis, there are times when you need to split a vector into smaller chunks. Whether you’re managing large datasets or preparing data for parallel processing, breaking down vectors can be incredibly useful. In this post, we’ll explore how to achieve this in R using base R, <code>dplyr</code>, and <code>data.table</code>.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="using-base-r" class="level2">
-<h2 class="anchored" data-anchor-id="using-base-r">Using Base R</h2>
-<p>Base R provides a straightforward way to split a vector into chunks using the <code>split</code> function and a combination of other basic functions.</p>
-<section id="example-1-splitting-a-vector-into-chunks" class="level3">
-<h3 class="anchored" data-anchor-id="example-1-splitting-a-vector-into-chunks">Example 1: Splitting a Vector into Chunks</h3>
-<p>Let’s say we have a vector <code>x</code> and we want to split it into chunks of size 3.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span></span>
-<span id="cb1-2">chunk_size <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span></span>
-<span id="cb1-3">split_vector <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">split</span>(x, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ceiling</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">seq_along</span>(x) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> chunk_size))</span>
-<span id="cb1-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(split_vector)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$`1`
-[1] 1 2 3
-
-$`2`
-[1] 4 5 6
-
-$`3`
-[1] 7 8 9
-
-$`4`
-[1] 10</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>x &lt;- 1:10</code>: Creates a vector <code>x</code> with values from 1 to 10.</li>
-<li><code>chunk_size &lt;- 3</code>: Defines the size of each chunk.</li>
-<li><code>seq_along(x)</code>: Generates a sequence of the same length as <code>x</code>.</li>
-<li><code>ceiling(seq_along(x) / chunk_size)</code>: Divides the sequence by the chunk size and uses <code>ceiling</code> to round up to the nearest integer, creating a grouping factor.</li>
-<li><code>split(x, ...)</code>: Splits the vector based on the grouping factor.</li>
-</ul>
-</section>
-</section>
-<section id="using-dplyr" class="level2">
-<h2 class="anchored" data-anchor-id="using-dplyr">Using <code>dplyr</code></h2>
-<p>The <code>dplyr</code> package, part of the tidyverse, offers a more readable and pipe-friendly approach to splitting vectors.</p>
-<section id="example-2-splitting-a-vector-into-chunks" class="level3">
-<h3 class="anchored" data-anchor-id="example-2-splitting-a-vector-into-chunks">Example 2: Splitting a Vector into Chunks</h3>
-<p>Here’s how you can do it with <code>dplyr</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb3-2"></span>
-<span id="cb3-3">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span></span>
-<span id="cb3-4">chunk_size <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span></span>
-<span id="cb3-5">split_vector <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> x <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb3-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb3-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">group =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ceiling</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">row_number</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> chunk_size)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb3-8">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">group_by</span>(group) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb3-9">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">chunk =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">list</span>(.)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb3-10">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pull</span>(chunk)</span>
-<span id="cb3-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(split_vector)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1 2 3
-
-[[2]]
-[1] 4 5 6
-
-[[3]]
-[1] 7 8 9
-
-[[4]]
-[1] 10</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>as.data.frame()</code>: Converts the vector to a data frame.</li>
-<li><code>mutate(group = ceiling(row_number() / chunk_size))</code>: Adds a grouping column.</li>
-<li><code>group_by(group)</code>: Groups the data by the newly created group column.</li>
-<li><code>summarise(chunk = list(.))</code>: Summarizes the groups into list columns using the <code>.</code> placeholder.</li>
-<li><code>pull(chunk)</code>: Extracts the list column as a vector of chunks.</li>
-</ul>
-</section>
-<section id="example-3-splitting-a-vector-using-group_split" class="level3">
-<h3 class="anchored" data-anchor-id="example-3-splitting-a-vector-using-group_split">Example 3: Splitting a Vector using <code>group_split()</code></h3>
-<p><code>group_split()</code> is another handy function from <code>dplyr</code> to split data into groups.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span></span>
-<span id="cb5-2">chunk_size <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span></span>
-<span id="cb5-3">split_vector <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> x <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb5-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.data.frame</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb5-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">group =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ceiling</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">row_number</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> chunk_size)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span></span>
-<span id="cb5-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">group_split</span>(group)</span>
-<span id="cb5-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(split_vector)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;list_of&lt;
-  tbl_df&lt;
-    .    : integer
-    group: double
-  &gt;
-&gt;[4]&gt;
-[[1]]
-# A tibble: 3 × 2
-      . group
-  &lt;int&gt; &lt;dbl&gt;
-1     1     1
-2     2     1
-3     3     1
-
-[[2]]
-# A tibble: 3 × 2
-      . group
-  &lt;int&gt; &lt;dbl&gt;
-1     4     2
-2     5     2
-3     6     2
-
-[[3]]
-# A tibble: 3 × 2
-      . group
-  &lt;int&gt; &lt;dbl&gt;
-1     7     3
-2     8     3
-3     9     3
-
-[[4]]
-# A tibble: 1 × 2
-      . group
-  &lt;int&gt; &lt;dbl&gt;
-1    10     4</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>as.data.frame()</code>: Converts the vector to a data frame.</li>
-<li><code>mutate(group = ceiling(row_number() / chunk_size))</code>: Adds a grouping column.</li>
-<li><code>group_split(group)</code>: Splits the data frame into a list of data frames based on the group column.</li>
-</ul>
-</section>
-</section>
-<section id="using-data.table" class="level2">
-<h2 class="anchored" data-anchor-id="using-data.table">Using <code>data.table</code></h2>
-<p><code>data.table</code> is known for its efficiency with large datasets. Here’s how you can split a vector using <code>data.table</code>.</p>
-<section id="example-4-splitting-a-vector-into-chunks" class="level3">
-<h3 class="anchored" data-anchor-id="example-4-splitting-a-vector-into-chunks">Example 4: Splitting a Vector into Chunks</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(data.table)</span>
-<span id="cb7-2"></span>
-<span id="cb7-3">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span></span>
-<span id="cb7-4">chunk_size <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span></span>
-<span id="cb7-5">dt <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.table</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x)</span>
-<span id="cb7-6">dt[, group <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ceiling</span>(.I <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> chunk_size)]</span>
-<span id="cb7-7">split_vector <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> dt[, .(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">chunk =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">list</span>(x)), by <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">=</span> group]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>chunk</span>
-<span id="cb7-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(split_vector)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 1 2 3
-
-[[2]]
-[1] 4 5 6
-
-[[3]]
-[1] 7 8 9
-
-[[4]]
-[1] 10</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>data.table(x = x)</code>: Converts the vector to a <code>data.table</code>.</li>
-<li><code>group := ceiling(.I / chunk_size)</code>: Creates a group column using the row index <code>.I</code>.</li>
-<li><code>.(chunk = list(x)), by = group</code>: Groups by the group column and creates list columns.</li>
-<li><code>$chunk</code>: Extracts the list column.</li>
-</ul>
-</section>
-</section>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p>These examples illustrate different ways to split vectors into chunks in R using base R, <code>dplyr</code>, and <code>data.table</code>. Each method has its own strengths, and you might prefer one over the others depending on your workflow and dataset size. Try these methods on your own data and see how they work for you. Experimenting with different chunk sizes and vector lengths can also help you understand the mechanics behind each approach better.</p>
-<p>Happy coding!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>operations</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-05-21/</guid>
-  <pubDate>Tue, 21 May 2024 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
