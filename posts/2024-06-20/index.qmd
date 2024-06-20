@@ -1,0 +1,183 @@
+---
+title: ""
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-20"
+categories: [code, rtip, healthyrts]
+toc: TRUE
+---
+
+# Introduction
+
+Today I am going to go over some quick yet practical examples of ways that you can use the `healthyR.ts` package. This package is designed to help you analyze time series data in a more efficient and effective manner.
+
+Let's just jump right into it!
+
+# Load the libraries
+
+```{r message=FALSE, warning=FALSE}
+library(healthyR.ts)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(plotly)
+library(timetk)
+library(modeltime)
+```
+
+# Load the data
+
+We are going to use the timeseries data called `BJSales.lead` that comes with Base R. We will do this to showcase a couple of things like turning a ts object into a tibble and plotting the data.
+
+```{r}
+# Load the data, which has no time series information other than it is
+# a time series object and 150 points in length, so we will go ahead and
+# create a date column for it and name it date_col.
+df <- BJsales.lead |>
+  ts_to_tbl() |>
+  mutate(date_col = seq.Date(from = as.Date("1991-01-01"), 
+                              by = "month", 
+                              length.out = 150)) |>
+  select(date_col, everything())
+
+# Print the first few rows of the data
+head(df)
+```
+
+So far, we have loaded the data and created a date column for it. Now, let's plot the data. We are going to use the `ts_vva_plot` function to do this.
+
+```{r}
+# Plot the data
+plt_data <- ts_vva_plot(df, date_col, value)
+
+head(plt_data[["data"]][["augmented_data_tbl"]])
+
+plt_data[["plots"]][["interactive_plot"]]
+```
+
+Now we have created the augmented data that gets the first order difference of the time series velocity and then the second order difference which gets us the acceleration. The function then creates a `ggplot2` plot and a `plotly` plot of the data. Let's move on to see the growth rate of this data.
+
+```{r}
+# Plot the growth rate of the data
+df_growth_augment_tbl <- ts_growth_rate_augment(
+  df,
+  value
+)
+
+head(df_growth_augment_tbl)
+```
+
+Let's now view the data:
+
+```{r warning=FALSE, message=FALSE}
+plt <- df_growth_augment_tbl |>
+  pivot_longer(cols = -date_col) |>
+  ggplot(aes(x = date_col, y = value, color = name)) +
+  facet_wrap(~ name, ncol = 1, scales = "free") +
+  geom_line() +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Growth Rate of Time Series Data",
+    color = "Variable"
+  )
+
+print(plt)
+
+ggplotly(plt)
+```
+
+# Stationary?
+
+Is the data stationary? Meaning does the joint probability of the distribution change when shifted in time? Let's find out.
+
+```{r}
+ts_adf_test(df[["value"]])
+```
+
+The p-value from this test is `r round(ts_adf_test(df[["value"]])[["p_value"]], 3)`. This means that we can accept the null hypothesis that the data is non-stationary. We can, however, make the data stationary by using a built in function in this package.
+
+```{r warning=FALSE, message=FALSE}
+auto_stationary_df <- auto_stationarize(df[["value"]])
+stationary_vec <- auto_stationary_df[["stationary_ts"]]
+ndiffs <- auto_stationary_df[["ndiffs"]]
+trans_type <- auto_stationary_df[["trans_type"]]
+test_stat <- auto_stationary_df[["adf_stats"]][["test_stat"]]
+p_value <- auto_stationary_df[["adf_stats"]][["p_value"]]
+```
+
+The data is now stationary after `r ndiffs` differencing. The transformation type used was `r trans_type`. The test statistic was `r round(test_stat, 3)` and the p-value was `r p_value`.
+
+Let's now add the stationary data to the df_growth_augment_tbl and plot it. First in order to do this we are going to have to pad the data since it is shorter than the original data. We will simply add an NA to the vector then attach.
+
+```{r warning=FALSE, message=FALSE}
+stationary_vec <- c(rep(NA, ndiffs), stationary_vec)
+df_growth_augment_tbl <- df_growth_augment_tbl |>
+  mutate(stationary = stationary_vec)
+
+df_growth_augment_tbl |>
+  pivot_longer(cols = -date_col) |>
+  ggplot(aes(x = date_col, y = value, color = name)) +
+  facet_wrap(~ name, ncol = 1, scales = "free") +
+  geom_line() +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Growth Rate/Value and Stationary Data of Time Series",
+    color = "Variable"
+  )
+```
+
+It's close to the growth rate as it is the first order difference of the data.
+
+Now, lets see if there is any lags that are present in the data.
+
+```{r}
+output <- ts_lag_correlation(df_growth_augment_tbl,
+                .date_col = date_col,
+                .value_col = value,
+                .lags = c(1,2,3,4,6,12,24))
+
+output[["plots"]][["plotly_lag_plot"]]
+output[["plots"]][["plotly_heatmap"]]
+```
+
+We can tell from the data, and from the automatic stationarization that the data is highly correlated at lag 1. So lags 2, 3, ..., etc are not necessary. We can see the linear correlation fall apart the further the lags 
+
+Let's go ahead and model it and see what happens.
+
+# Model the data
+
+```{r}
+splits <- time_series_split(
+  df_growth_augment_tbl, 
+  date_col, 
+  assess= 12, 
+  skip = 3, 
+  cumulative = TRUE
+  )
+
+ts_aa <- ts_auto_arima(
+  df_growth_augment_tbl,
+  .num_cores = 2,
+  .date_col = date_col,
+  .value_col = value,
+  .rsamp_obj = splits,
+  .formula = value ~ .,
+  .grid_size = 10,
+  .cv_slice_limit = 12,
+  .tune = FALSE
+)
+
+ts_aa[["recipe_info"]]
+ts_aa[["model_info"]]
+ts_aa[["model_calibration"]][["plot"]]
+ts_aa[["model_calibration"]]
+```
+
+# Conclusion
+
+This in short is a very simple practical example of how to use the `healthyR.ts` package. This post was not meant to be a comprehensive guide to time series analysis, but rather a simple example of how to use the package. The package is still in development and will be updated with more features and functions in the future.
+
+Happy Coding!
