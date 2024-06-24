@@ -1,0 +1,294 @@
+---
+title: "An Introduction to healthyR.ai"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-24"
+categories: [code, rtip, healthyrai]
+toc: TRUE
+---
+
+# Introduction
+
+This post will introduction to the `healthyR.ai` package. The `healthyR.ai` package is a collection of functions that I have developed to help me analyze and visualize data. The package is designed to be easy to use and to provide a wide range of functionality for data analysis. The package is also meant to help and provide some easy boilerplate funcationality for machine learning.
+
+It might be best to view this post in light mode to see the tables better.
+
+# Installation
+
+You can install the released version of healthyR.ai from CRAN with:
+
+```r
+install.packages("healthyR.ai")
+```
+
+And the development version from GitHub with:
+
+```r
+# install.packages("devtools")
+devtools::install_github("spsanderson/healthyR.ai")
+```
+
+# Getting Started
+
+## The Goal
+
+---
+
+The ultimate goal really is to make it easier to do data analysis and machine learning in R. The package is designed to be easy to use and to provide a wide range of functionality for data analysis. The package is also meant to help and provide some easy boilerplate functionality for machine learning. This package is in its early stages and will be updated frequently. 
+
+It also keeps with the same framework of all of the `healthyverse` packages in that it is meant for the user to be able to use the package without having to know a lot of R. Many rural hospitals do not have the resources to perform this sort of work, so I am working hard to build these types of things out for them for free.
+
+Let's go through some examples.
+
+```{r message=FALSE, warning=FALSE}
+library(healthyR.ai)
+library(tidyverse)
+library(DT)
+```
+
+Now let's get a list of all the functions that are exposed in the package.
+
+
+```{r message=FALSE, warning=FALSE}
+# Functions and their arguments for healthyR
+
+pat <- c("%>%",":=","as_label","as_name","enquo","enquos","expr",
+         "sym","syms","required_pkgs.step_hai_fourier",
+         "required_pkgs.step_hai_fourier_discrete",
+         "required_pkgs.step_hai_hyperbolic",
+         "required_pkgs.step_hai_scale_zero_one",
+         "required_pkgs.step_hai_scal_zscore",
+         "required_pkgs.step_hai_winsorized_move",
+         "required_pkgs.step_hai_winsorized_truncate")
+
+tibble(fns = ls.str("package:healthyR.ai")) |>
+  filter(!fns %in% pat) |>
+  mutate(params = purrr::map(fns, formalArgs)) |> 
+  group_by(fns) |> 
+  mutate(func_with_params = toString(params)) |>
+  mutate(
+    func_with_params = ifelse(
+      str_detect(
+        func_with_params, "\\("), 
+      paste0(fns, func_with_params), 
+      paste0(fns, "(", func_with_params, ")")
+    )) |>
+  select(fns, func_with_params) |>
+  mutate(fns = as.factor(fns)) |>
+  datatable(
+    #class = 'cell-boarder-stripe',
+    colnames = c("Function", "Full Call"),
+    options = list(
+      autowidth = TRUE,
+      pageLength = 10
+    )
+  )
+```
+
+# Examples
+
+Let's start off going through an example of using the function, `pca_your_repipe`. First, the syntax.
+
+## Example - PCA a recipe
+
+### Syntax
+
+```r
+pca_your_recipe(.recipe_object, .data, .threshold = 0.75, .top_n = 5)
+```
+
+### Arguments
+
+*   `.recipe_object` - 
+*   `.data` - The full data set that is used in the original recipe object passed into .recipe_object in order to obtain the baked data of the transform.
+*   `.threshold` - A number between 0 and 1. A fraction of the total variance that should be covered by the components.
+*   `.top_n` - How many variables loadings should be returned per PC
+
+### Value
+
+A list object with several components.
+
+### Details
+
+This is a simple wrapper around some recipes functions to perform a PCA on a given recipe. This function will output a list and return it invisible. All of the components of the analysis will be returned in a list as their own object that can be selected individually. A scree plot is also included. The items that get returned are:
+
+-   pca_transform - This is the pca recipe.
+-   variable_loadings
+-   variable_variance
+-   pca_estimates
+-   pca_juiced_estimates
+-   pca_baked_data
+-   pca_variance_df
+-   pca_rotattion_df
+-   pca_variance_scree_plt
+-   pca_loadings_plt
+-   pca_loadings_plotly
+-   pca_top_n_loadings_plt
+-   pca_top_n_plotly
+
+### Working Example
+
+```{r message=FALSE, warning=FALSE}
+library(rsample)
+library(recipes)
+
+splits <- initial_split(mtcars, prop = 0.8)
+
+rec_obj <- recipe(mpg ~ ., data = training(splits)) |>
+  step_normalize(all_predictors())
+
+pca_output <- pca_your_recipe(
+  .recipe_object = rec_obj, 
+  .data = mtcars, 
+  .threshold = 0.75, 
+  .top_n = 5
+  )
+```
+
+Now let's check the output:
+
+```{r}
+pca_output
+```
+
+Pretty easy as you can see.
+
+## Example - Histogram Facet Plot
+
+### Syntax
+
+```r
+hai_histogram_facet_plot(
+  .data,
+  .bins = 10,
+  .scale_data = FALSE,
+  .ncol = 5,
+  .fct_reorder = FALSE,
+  .fct_rev = FALSE,
+  .fill = "steelblue",
+  .color = "white",
+  .scale = "free",
+  .interactive = FALSE
+)
+```
+
+### Arguments
+
+*   `.data` - The data you want to pass to the function.
+*   `.bins` - The number of bins for the histograms.
+*   `.scale_data` - This is a boolean set to FALSE. TRUE will use hai_scale_zero_one_vec() to [0, 1] scale the data.
+*   `.ncol` - The number of columns for the facet_warp argument.
+*   `.fct_reorder` - Should the factor column be reordered? TRUE/FALSE, default of FALSE
+*   `.fct_rev` - Should the factor column be reversed? TRUE/FALSE, default of FALSE
+*   `.fill` - Default is steelblue
+*   `.color` - Default is 'white'
+*   `.scale` - Default is 'free'
+*   `.interactive` - Default is FALSE, TRUE will produce a plotly plot.
+
+### Working Example
+
+```{r message=FALSE, warning=FALSE}
+hai_histogram_facet_plot(mtcars, .interactive = FALSE)
+hai_histogram_facet_plot(mtcars, .interactive = FALSE, .scale_data = TRUE)
+```
+
+## Example - Boilerplacte Funcationality
+
+Now we are going to go over some simple boilerplate funcationality. I call it boilerplate because you don't have to change anything if you dont want to. For the boilerplate function there is a corresponding data preprocessor that will get the data into the shape it needs to be in for the algorithm. Let's take a look.
+
+### Working Example
+
+First lets look at the data, then we will look at it after the preprocessor.
+
+```{r}
+head(iris)
+```
+
+```{r message=FALSE, warning=FALSE}
+rec_obj <- hai_earth_data_prepper(iris, Species ~ .)
+
+rec_obj
+```
+
+Now to run it through the boilerplate:
+
+```{r message=FALSE, warning=FALSE}
+auto_earth <- hai_auto_earth(
+  .data = iris,
+  .rec_obj = rec_obj,
+  .best_metric = "f_meas",
+  .model_type = "classification"
+)
+```
+
+Now let's inspect the output:
+
+```{r message=FALSE, warning=FALSE}
+names(auto_earth)
+```
+
+### Recipe Information
+
+```{r message=FALSE, warning=FALSE}
+auto_earth[["recipe_info"]]
+```
+
+### Model Information
+
+```{r message=FALSE, warning=FALSE}
+auto_earth[["model_info"]]
+```
+
+### Tuned Information
+
+```{r message=FALSE, warning=FALSE}
+auto_earth[["tuned_info"]]
+```
+
+# Metric Sets
+
+With this package there comes some metric set's that can be computed using the `yardstick` package. These are the metric sets that are available:
+
+## Classification
+
+```{r}
+hai_default_classification_metric_set()
+```
+
+## Regression
+
+
+```{r}
+hai_default_regression_metric_set()
+```
+
+Here is a list of the items currently on it as of writing this article:
+
+
+1.    **Plotting Functions** - Functions for plotting.
+2.    **Clustering Functions** - Functions for clustering and analysis.
+3.    **Boiler Plate Functions** - Functions for automatic recipes, workflows, and tuned models.
+4.    **Dimensionality Reduction** - Functions for dimension reduction.
+5.    **Data Wrangling** - Functions for data wrangling.
+6.    **Data Preprocessors** - Functions for data preprocessing.
+7.    **Recipe Steps** - Functions to add recipe steps.
+8.    **Table Functions** - Functions that return tibbles.
+9.    **Vectorized Functions** - Vector functions.
+10.   **Augmenting Functions** - Functions for data augmentation.
+11.   **Miscellaneous Functions** - Miscellaneous utility functions.
+12.   **Metric Sets** - Metric sets for evaluation.
+
+For more detailed information, you can visit the [healthyR.ai function reference page](https://www.spsanderson.com/healthyR.ai/reference/).
+
+# Conclusion
+
+I hope this helped a bit with understanding the `healthyR.ai` package. It is a very powerful package that can help you with a lot of different tasks. I will be writing more about this package in the future. If you have any questions or comments, please feel free to reach out to me at any of these:
+
+People can get in touch with you through the following social profiles:
+
+- **LinkedIn**: [linkedin.com/in/spsanderson](https://www.linkedin.com/in/spsanderson)
+- **Mastodon**: [mstdn.social/@stevensanderson](https://mstdn.social/@stevensanderson)
+- **Telegram**: [t.me/steveondata](https://t.me/steveondata)
+
+---
+
+Happy coding!
