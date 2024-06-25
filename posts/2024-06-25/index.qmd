@@ -1,0 +1,145 @@
+---
+title: ""
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-25"
+categories: [code, rtip, operations]
+toc: TRUE
+---
+
+# How to Extract Strings Between Specific Characters in R
+
+Hello, R enthusiasts! Today, we’re jumping into a common text processing task: extracting strings between specific characters. This is a great skill for data cleaning and manipulation, especially when working with raw text data. I'm going to show you how to achieve this using base R, the `stringr` package, and the `stringi` package. Let's go!
+
+## Extracting Strings Using Base R
+
+Base R provides several ways to extract substrings, including `sub` and `gregexpr`. Here, we'll use `sub` and `gsub` for some examples.
+
+### Example 1: Base R with `sub`
+Suppose you have a string and you want to extract the text between two characters, say `[` and `]`.
+
+```{r}
+# Sample string
+text <- "Extract this [text] from the string."
+
+# Using sub to extract text between square brackets
+result <- sub(".*\\[(.*?)\\].*", "\\1", text)
+
+# Print the result
+print(result)
+```
+
+### Example 2: Base R with `gsub`
+Now, let's extract text between parentheses `(` and `)`.
+
+```{r}
+# Example string
+text2 <- "This is a sample (extract this part) string."
+
+# Extract string between parentheses using base R
+extracted_base <- gsub(".*\\((.*)\\).*", "\\1", text2)
+print(extracted_base)
+```
+
+In these examples, `sub` and `gsub` use regular expressions to find the text between the specified characters and replace the entire string with the extracted part. The pattern `.*\\[(.*?)\\].*` and `.*\\((.*)\\).*` break down as follows:
+- `.*` matches any character (except for line terminators) zero or more times.
+- `\\[` matches the literal `[` and `\\(` matches the literal `(`.
+- `(.*?)` and `(.*)` are non-greedy matches for any character (.) zero or more times.
+- `\\]` matches the literal `]` and `\\)` matches the literal `)`.
+- `\\1` in the replacement string refers to the first capture group, i.e., the text between `[ ]` and `( )`.
+
+## Extracting Strings Using `stringr`
+
+The `stringr` package, part of the tidyverse, makes string manipulation more straightforward with consistent functions.
+
+### Example 1: Using `stringr::str_extract`
+
+```{r message = FALSE, warning = FALSE}
+# Load the stringr package
+library(stringr)
+
+# Using str_extract to extract text between square brackets
+result_str_extract <- str_extract(text, "(?<=\\[).*?(?=\\])")
+
+# Print the result
+print(result_str_extract)
+```
+
+### Example 2: Using `stringr` to extract text between parentheses
+
+```{r}
+# Example using stringr
+extracted_str <- str_extract(text2, "\\(.*?\\)")
+extracted_str <- str_sub(extracted_str, 2, -2)
+print(extracted_str)
+```
+
+The `str_extract` function extracts the first substring matching a regex pattern. Here, `(?<=\\[).*?(?=\\])` and `\\(.*?\\)` use lookbehind `(?<=\\[)` and lookahead `(?=\\])` assertions to match text between `[` and `]`, and simple matching for text between `(` and `)`. `str_sub` is then used to remove the enclosing parentheses.
+
+## Extracting Strings Using `stringi`
+
+The `stringi` package provides robust and efficient tools for string manipulation.
+
+### Example 1: Using `stringi::stri_extract`
+
+```{r warning = FALSE, message = FALSE}
+# Load the stringi package
+library(stringi)
+
+# Using stri_extract to extract text between square brackets
+result_stri_extract <- stri_extract(text, regex = "(?<=\\[).*?(?=\\])")
+
+# Print the result
+print(result_stri_extract)
+```
+
+### Example 2: Using `stringi` to extract text between parentheses
+
+```{r message = FALSE, warning = FALSE}
+
+# Example using stringi
+extracted_stri <- stringi::stri_extract_first_regex(text2, "\\(.*?\\)")
+extracted_stri <- stringi::stri_sub(extracted_stri, 2, -2)
+print(extracted_stri)
+```
+
+The `stri_extract` function from `stringi` works similarly to `str_extract`, utilizing regex patterns for text extraction. It’s highly optimized for performance, especially with large datasets. `stri_sub` is used to remove the enclosing parentheses.
+
+## Your Turn!
+
+Experimenting with these functions and patterns on your own datasets will help you understand their nuances. Here are a few additional exercises to solidify your understanding:
+
+*    Extract text between parentheses `(` and `)`.
+*    Extract text between the first and last occurrences of a specific character in a string.
+*    Extract all occurrences of text between two characters in a string.
+
+Feel free to use the examples provided as a template for your own tasks. 
+
+Happy coding!
+
+---
+
+### Bonus: Combining Methods
+
+For more complex scenarios, you might need to combine different methods. Here’s a quick example of how you can handle multiple extractions.
+
+```{r}
+# Sample string with multiple patterns
+text_multiple <- "Here is [text1] and here is (text2)."
+
+# Using gregexpr and regmatches to extract all matches
+matches <- regmatches(
+  text_multiple, 
+  gregexpr("(?<=\\[).*?(?=\\])|(?<=\\().*?(?=\\))", 
+           text_multiple, 
+           perl = TRUE)
+  )
+
+# Print the matches
+print(unlist(matches))
+```
+
+This example uses `gregexpr` to find all matches and `regmatches` to extract them.
+
+---
+
+Until next time, keep exploring and enjoying the power of R!
