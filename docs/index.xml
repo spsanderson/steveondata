@@ -10,7 +10,345 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.4.555</generator>
-<lastBuildDate>Thu, 27 Jun 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 28 Jun 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Execute VBA Code in Excel via R using RDCOMClient</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-06-28/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Hey everyone,</p>
+<p>Today, I want to share a neat way to bridge the gap between R and Excel using VBA. Specifically, we’ll look at how to run VBA code in Excel directly from R. This can be incredibly useful if you’re looking to automate repetitive tasks or leverage the power of VBA while working within the R environment.</p>
+<p>We’ll use the <code>RDCOMClient</code> library, which allows R to control COM (Component Object Model) objects, such as an Excel application. If you’ve ever found yourself toggling between R and Excel, this method will streamline your workflow significantly.</p>
+<section id="what-well-do" class="level2">
+<h2 class="anchored" data-anchor-id="what-well-do">What We’ll Do</h2>
+<p>We’ll write a VBA macro that populates cells A1:A10 with random numbers and then run this macro from R.</p>
+</section>
+<section id="step-by-step-guide" class="level2">
+<h2 class="anchored" data-anchor-id="step-by-step-guide">Step-by-Step Guide</h2>
+<section id="install-and-load-rdcomclient" class="level4">
+<h4 class="anchored" data-anchor-id="install-and-load-rdcomclient">1. Install and Load <code>RDCOMClient</code></h4>
+<p>First, you’ll need to install the <code>RDCOMClient</code> package. It’s not available on CRAN, so you have to install it from the <code>omegahat</code> repository.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"RDCOMClient"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">repos =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.omegahat.net/R"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RDCOMClient)</span></code></pre></div>
+</section>
+<section id="set-up-excel-and-vba-macro" class="level4">
+<h4 class="anchored" data-anchor-id="set-up-excel-and-vba-macro">2. Set Up Excel and VBA Macro</h4>
+<p>Open Excel and press <code>ALT + F11</code> to open the VBA editor. Insert a new module and add the following VBA code:</p>
+<pre class="vba"><code>Sub FillRandomNumbers()
+    Dim i As Integer
+    For i = 1 To 10
+        Cells(i, 1).Value = Rnd()
+    Next i
+End Sub</code></pre>
+<p>This macro fills cells A1 to A10 with random numbers.</p>
+</section>
+<section id="run-the-vba-macro-from-r" class="level4">
+<h4 class="anchored" data-anchor-id="run-the-vba-macro-from-r">3. Run the VBA Macro from R</h4>
+<p>Now, let’s write the R code to open Excel, run the macro, and then close Excel.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load the RDCOMClient library</span></span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RDCOMClient)</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a new instance of Excel application</span></span>
+<span id="cb3-5">excel_app <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">COMCreate</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Excel.Application"</span>)</span>
+<span id="cb3-6"></span>
+<span id="cb3-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Make Excel visible (optional)</span></span>
+<span id="cb3-8">excel_app[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Visible"</span>]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb3-9"></span>
+<span id="cb3-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add a new workbook</span></span>
+<span id="cb3-11">wb_path <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Users</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steve</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Documents</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">GitHub</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steveondata</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">posts</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">2024-06-28</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">vba_rand_from_r.xlsm"</span></span>
+<span id="cb3-12">workbook <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> excel_app[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Workbooks"</span>]]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Open</span>(wb_path)</span>
+<span id="cb3-13"></span>
+<span id="cb3-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Reference the first sheet</span></span>
+<span id="cb3-15">sheet <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> workbook<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Worksheets</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb3-16"></span>
+<span id="cb3-17"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Run the macro</span></span>
+<span id="cb3-18">excel_app<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Run</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"FillRandomNumbers"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Save the workbook (optional)</span></span>
+<span id="cb5-2">workbook<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">SaveAs</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Users</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steve</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Documents</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">GitHub</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steveondata</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">posts</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">2024-06-28</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">random_numbers.xlsm"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Close Excel</span></span>
+<span id="cb7-2">excel_app<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Quit</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Release the COM object</span></span>
+<span id="cb9-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(excel_app)</span>
+<span id="cb9-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(sheet)</span>
+<span id="cb9-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(workbook)</span>
+<span id="cb9-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gc</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          used (Mb) gc trigger (Mb) max used (Mb)
+Ncells  666819 35.7    1477710   79  1122664 60.0
+Vcells 1220653  9.4    8388608   64  1770896 13.6</code></pre>
+</div>
+</div>
+</section>
+<section id="explanation" class="level3">
+<h3 class="anchored" data-anchor-id="explanation">Explanation</h3>
+<ol type="1">
+<li><strong>Initialize Excel Application</strong>: <code>COMCreate("Excel.Application")</code> starts a new instance of Excel.</li>
+<li><strong>Make Excel Visible</strong>: This step is optional but useful for debugging.</li>
+<li><strong>Add Workbook and Reference Worksheet</strong>: We create a new workbook and reference the first sheet.</li>
+<li><strong>Run the Macro</strong>: <code>excel_app$Run("FillRandomNumbers")</code> executes the macro.</li>
+<li><strong>Save Workbook</strong>: Optionally save the workbook with the generated random numbers.</li>
+<li><strong>Close and Clean Up</strong>: Close Excel and clean up the COM object to free up resources.</li>
+</ol>
+</section>
+</section>
+</section>
+<section id="did-it-work" class="level1">
+<h1>Did it work?</h1>
+<p>Let’s make sure this actually worked.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(readxl)</span>
+<span id="cb11-2"></span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">read_excel</span>(</span>
+<span id="cb11-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">path =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Users</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steve</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">Documents</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">GitHub</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">steveondata</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">posts</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">2024-06-28</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">random_numbers.xlsm"</span>,</span>
+<span id="cb11-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col_names =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb11-6">)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 1
+     ...1
+    &lt;dbl&gt;
+ 1 0.706 
+ 2 0.533 
+ 3 0.580 
+ 4 0.290 
+ 5 0.302 
+ 6 0.775 
+ 7 0.0140
+ 8 0.761 
+ 9 0.814 
+10 0.709 </code></pre>
+</div>
+</div>
+</section>
+<section id="try-it-yourself" class="level1">
+<h1>Try It Yourself</h1>
+<p>Give this a try and see how you can extend it to your own needs. Whether it’s automating report generation, data cleaning, or complex calculations, integrating R with VBA can enhance your productivity significantly. The <code>RDCOMClient</code> package opens up a world of possibilities for combining the strengths of R and Excel.</p>
+<p>Feel free to share your experiences or ask questions in the comments.</p>
+<hr>
+<p>Happy coding!</p>
+<p>Steve</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>vba</category>
+  <category>excel</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-06-28/</guid>
+  <pubDate>Fri, 28 Jun 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Exploring Random Walks and Brownian Motions with healthyR.ts</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -7265,142 +7603,6 @@ font-style: inherit;">TRUE</span>)</span></code></pre></div>
   <category>tidydensity</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-06-03/</guid>
   <pubDate>Mon, 03 Jun 2024 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>An Overview of the New AIC Functions in the TidyDensity Package</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-05-31/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>The latest update the the <code>TidyDensity</code> package introduces several new functions that make it easier to work with data in R. In this article, we’ll take a look at the new AIC functions and how they work.</p>
-</section>
-<section id="new-functions" class="level1">
-<h1>New Functions</h1>
-<p>The set of functions that we will go over are the <code>util_dist_aic()</code> functions, where <code>dist</code> is the distribution in question, for example <code>util_negative_binomial_aic()</code>. These functions calculate the Akaike Information Criterion (AIC) for a given distribution and data. The AIC is a measure of the relative quality of a statistical model for a given set of data. The lower the AIC value, the better the model fits the data. Here is a bit about the functions.</p>
-<section id="usage" class="level2">
-<h2 class="anchored" data-anchor-id="usage">Usage</h2>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_negative_binomial_aic</span>()</span></code></pre></div>
-</section>
-<section id="arguments" class="level2">
-<h2 class="anchored" data-anchor-id="arguments">Arguments</h2>
-<ul>
-<li><code>.x</code>: A numeric vector of data values.</li>
-</ul>
-</section>
-<section id="value" class="level2">
-<h2 class="anchored" data-anchor-id="value">Value</h2>
-<p>A numeric value representing the AIC for the given data and distribution.</p>
-</section>
-<section id="details" class="level2">
-<h2 class="anchored" data-anchor-id="details">Details</h2>
-<p>This function calculates the Akaike Information Criterion (AIC) for a distribution fitted to the provided data.</p>
-<p>This function fits a distribution to the provided data. It estimates the parameters of the distribution from the data. Then, it calculates the AIC value based on the fitted distribution.</p>
-<p>Initial parameter estimates: The function uses the param estimate family of functions in order to estimate the starting point of the parameters. For example <code>util_negative_binomial_param_estimate()</code>.</p>
-<p>Optimization method: Since the parameters are directly calculated from the data, no optimization is needed.</p>
-<p>Goodness-of-fit: While AIC is a useful metric for model comparison, it’s recommended to also assess the goodness-of-fit of the chosen model using visualization and other statistical tests.</p>
-</section>
-<section id="examples" class="level2">
-<h2 class="anchored" data-anchor-id="examples">Examples</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(TidyDensity)</span>
-<span id="cb2-2"></span>
-<span id="cb2-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate some data</span></span>
-<span id="cb2-5">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)</span>
-<span id="cb2-6"></span>
-<span id="cb2-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate the AIC for a negative binomial distribution</span></span>
-<span id="cb2-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(</span>
-<span id="cb2-9">  <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">" AIC of rnorm() using TidyDensity: "</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_aic</span>(x), <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>,</span>
-<span id="cb2-10">  <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"AIC of rnorm() using fitdistrplus: "</span>, </span>
-<span id="cb2-11">  fitdistrplus<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">fitdist</span>(x, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"norm"</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>aic</span>
-<span id="cb2-12">)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> AIC of rnorm() using TidyDensity:  268.5385 
- AIC of rnorm() using fitdistrplus:  268.5385</code></pre>
-</div>
-</div>
-</section>
-<section id="new-aic-functions" class="level2">
-<h2 class="anchored" data-anchor-id="new-aic-functions">New AIC Functions</h2>
-<p>Here is a listing of all of the new AIC functions:</p>
-<ul>
-<li><code>util_negative_binomial_aic()</code></li>
-<li><code>util_zero_truncated_negative_binomial_aic()</code></li>
-<li><code>util_zero_truncated_poisson_aic()</code></li>
-<li><code>util_f_aic()</code></li>
-<li><code>util_zero_truncated_geometric_aic()</code></li>
-<li><code>util_t_aic()</code></li>
-<li><code>util_pareto1_aic()</code></li>
-<li><code>util_paralogistic_aic()</code></li>
-<li><code>util_inverse_weibull_aic()</code></li>
-<li><code>util_pareto_aic()</code></li>
-<li><code>util_inverse_burr_aic()</code></li>
-<li><code>util_generalized_pareto_aic()</code></li>
-<li><code>util_generalized_beta_aic()</code></li>
-<li><code>util_zero_truncated_binomial_aic()</code></li>
-</ul>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Thanks for reading. I hope you find these new functions useful in your work. If you have any questions or feedback, please feel free to reach out. I worked hard to ensure where I could that results would come back identical to what would be calculated from the amazing <code>fitdistrplus</code> package.</p>
-<p>Happy Coding!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>tidydensity</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-05-31/</guid>
-  <pubDate>Fri, 31 May 2024 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

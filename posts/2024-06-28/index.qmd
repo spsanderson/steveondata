@@ -1,0 +1,115 @@
+---
+title: "How to Execute VBA Code in Excel via R using RDCOMClient"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-06-28"
+categories: [code, rtip, vba, excel]
+toc: TRUE
+---
+
+# Introduction
+
+Hey everyone,
+
+Today, I want to share a neat way to bridge the gap between R and Excel using VBA. Specifically, we'll look at how to run VBA code in Excel directly from R. This can be incredibly useful if you're looking to automate repetitive tasks or leverage the power of VBA while working within the R environment.
+
+We'll use the `RDCOMClient` library, which allows R to control COM (Component Object Model) objects, such as an Excel application. If you've ever found yourself toggling between R and Excel, this method will streamline your workflow significantly.
+
+## What We'll Do
+
+We'll write a VBA macro that populates cells A1:A10 with random numbers and then run this macro from R.
+
+## Step-by-Step Guide
+
+#### 1. Install and Load `RDCOMClient`
+
+First, you'll need to install the `RDCOMClient` package. It's not available on CRAN, so you have to install it from the `omegahat` repository.
+
+```R
+install.packages("RDCOMClient", repos = "http://www.omegahat.net/R")
+library(RDCOMClient)
+```
+
+#### 2. Set Up Excel and VBA Macro
+
+Open Excel and press `ALT + F11` to open the VBA editor. Insert a new module and add the following VBA code:
+
+```vba
+Sub FillRandomNumbers()
+    Dim i As Integer
+    For i = 1 To 10
+        Cells(i, 1).Value = Rnd()
+    Next i
+End Sub
+```
+
+This macro fills cells A1 to A10 with random numbers.
+
+#### 3. Run the VBA Macro from R
+
+Now, let's write the R code to open Excel, run the macro, and then close Excel.
+
+```{r warning=FALSE, message=FALSE}
+# Load the RDCOMClient library
+library(RDCOMClient)
+
+# Create a new instance of Excel application
+excel_app <- COMCreate("Excel.Application")
+
+# Make Excel visible (optional)
+excel_app[["Visible"]] <- TRUE
+
+# Add a new workbook
+wb_path <- "C:\\Users\\steve\\Documents\\GitHub\\steveondata\\posts\\2024-06-28\\vba_rand_from_r.xlsm"
+workbook <- excel_app[["Workbooks"]]$Open(wb_path)
+
+# Reference the first sheet
+sheet <- workbook$Worksheets(1)
+
+# Run the macro
+excel_app$Run("FillRandomNumbers")
+
+# Save the workbook (optional)
+workbook$SaveAs("C:\\Users\\steve\\Documents\\GitHub\\steveondata\\posts\\2024-06-28\\random_numbers.xlsm")
+
+# Close Excel
+excel_app$Quit()
+
+# Release the COM object
+rm(excel_app)
+rm(sheet)
+rm(workbook)
+gc()
+```
+
+### Explanation
+
+1.    **Initialize Excel Application**: `COMCreate("Excel.Application")` starts a new instance of Excel.
+2.    **Make Excel Visible**: This step is optional but useful for debugging.
+3.    **Add Workbook and Reference Worksheet**: We create a new workbook and reference the first sheet.
+4.    **Run the Macro**: `excel_app$Run("FillRandomNumbers")` executes the macro.
+5.    **Save Workbook**: Optionally save the workbook with the generated random numbers.
+6.    **Close and Clean Up**: Close Excel and clean up the COM object to free up resources.
+
+# Did it work?
+
+Let's make sure this actually worked.
+
+```{r message = FALSE, warning = FALSE}
+library(readxl)
+
+read_excel(
+  path = "C:\\Users\\steve\\Documents\\GitHub\\steveondata\\posts\\2024-06-28\\random_numbers.xlsm",
+  col_names = FALSE
+)
+```
+# Try It Yourself
+
+Give this a try and see how you can extend it to your own needs. Whether it's automating report generation, data cleaning, or complex calculations, integrating R with VBA can enhance your productivity significantly. The `RDCOMClient` package opens up a world of possibilities for combining the strengths of R and Excel.
+
+Feel free to share your experiences or ask questions in the comments. 
+
+---
+
+Happy coding!
+
+Steve
