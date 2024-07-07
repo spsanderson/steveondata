@@ -10,7 +10,475 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.4.555</generator>
-<lastBuildDate>Sat, 06 Jul 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 07 Jul 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Exploring Linear Models with R and Exporting to Excel</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-07-07/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Today, we’re going to walk through an example of fitting a linear model in R, summarizing the results, and exporting the findings to an Excel file. This workflow is useful for documenting and sharing your statistical analysis.</p>
+<p>Let’s break down the code step by step.</p>
+</section>
+<section id="example" class="level1">
+<h1>Example</h1>
+<section id="step-1-loading-the-necessary-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-loading-the-necessary-libraries">Step 1: Loading the Necessary Libraries</h2>
+<p>First, we need to load the <code>openxlsx</code> library, which helps us create and manipulate Excel files. If you don’t have it installed, you can get it using <code>install.packages("openxlsx")</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(openxlsx)</span></code></pre></div>
+</div>
+<p>This line of code loads the <code>openxlsx</code> library into R so we can use its functions later.</p>
+</section>
+<section id="step-2-fitting-the-linear-model" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-fitting-the-linear-model">Step 2: Fitting the Linear Model</h2>
+<p>Next, we fit a linear model using the built-in <code>mtcars</code> dataset. We model <code>mpg</code> (miles per gallon) based on all other available variables in the dataset.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> mtcars)</span></code></pre></div>
+</div>
+<p>Here, <code>lm</code> stands for linear model. The <code>mpg ~ .</code> part means we want to predict <code>mpg</code> using all other variables in the <code>mtcars</code> dataset.</p>
+</section>
+<section id="step-3-summarizing-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-summarizing-the-model">Step 3: Summarizing the Model</h2>
+<p>We obtain a summary of our linear model, which includes details like coefficients, R-squared values, and the F-statistic.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">model_summary <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(model)</span></code></pre></div>
+</div>
+<p>This code generates a summary of the linear model we just created, giving us important statistics about the model’s performance.</p>
+</section>
+<section id="step-4-extracting-key-components" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-extracting-key-components">Step 4: Extracting Key Components</h2>
+<p>We extract essential parts of the summary for easy access and to organize them in our Excel file.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">coefficients <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> model_summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>coefficients</span>
+<span id="cb4-2">r_squared <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> model_summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>r.squared</span>
+<span id="cb4-3">adj_r_squared <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> model_summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>adj.r.squared</span>
+<span id="cb4-4">f_statistic <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> model_summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>fstatistic</span>
+<span id="cb4-5">p_value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pf</span>(</span>
+<span id="cb4-6">  f_statistic[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>], </span>
+<span id="cb4-7">  f_statistic[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>], </span>
+<span id="cb4-8">  f_statistic[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>], </span>
+<span id="cb4-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lower.tail =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb4-10">  )</span>
+<span id="cb4-11">model_formula <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste0</span>(</span>
+<span id="cb4-12">  model_summary[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"terms"</span>]][[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]], <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" "</span>, </span>
+<span id="cb4-13">  model_summary[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"terms"</span>]][[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]], <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" "</span>,</span>
+<span id="cb4-14">  model_summary[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"terms"</span>]])[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>]]</span></code></pre></div>
+</div>
+<ul>
+<li><code>coefficients</code>: The estimated coefficients of the model.</li>
+<li><code>r_squared</code>: How well the model explains the variability of the data.</li>
+<li><code>adj_r_squared</code>: Adjusted version of R-squared for the number of predictors.</li>
+<li><code>f_statistic</code>: Overall significance of the model.</li>
+<li><code>p_value</code>: Probability value indicating the significance of the F-statistic.</li>
+<li><code>model_formula</code>: The formula used to fit the model.</li>
+</ul>
+</section>
+<section id="step-5-creating-and-populating-the-workbook" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-creating-and-populating-the-workbook">Step 5: Creating and Populating the Workbook</h2>
+<p>Now, we create a new Excel workbook and add a worksheet to it. We then write our extracted model summary components to this worksheet.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">wb <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">createWorkbook</span>()</span>
+<span id="cb5-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">addWorksheet</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>)</span>
+<span id="cb5-3"></span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Coefficients"</span>, </span>
+<span id="cb5-5">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, coefficients, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, </span>
+<span id="cb5-7">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rowNames =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb5-8"></span>
+<span id="cb5-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R-Squared"</span>, </span>
+<span id="cb5-10">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, r_squared, </span>
+<span id="cb5-12">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-13"></span>
+<span id="cb5-14"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Adjusted R-Squared"</span>, </span>
+<span id="cb5-15">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-16"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, adj_r_squared, </span>
+<span id="cb5-17">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-18"></span>
+<span id="cb5-19"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F-Statistic"</span>, </span>
+<span id="cb5-20">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-21"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, f_statistic[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>], </span>
+<span id="cb5-22">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-23"></span>
+<span id="cb5-24"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"p-Value"</span>, </span>
+<span id="cb5-25">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-26"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, p_value, </span>
+<span id="cb5-27">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-28"></span>
+<span id="cb5-29"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Formula"</span>, </span>
+<span id="cb5-30">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-31"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeData</span>(wb, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Model Summary"</span>, model_formula, </span>
+<span id="cb5-32">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startRow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(coefficients) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">startCol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+</div>
+<ul>
+<li><code>createWorkbook()</code>: Creates a new Excel workbook.</li>
+<li><code>addWorksheet(wb, "Model Summary")</code>: Adds a new sheet named “Model Summary” to the workbook.</li>
+<li><code>writeData</code>: Writes data to the specified location in the sheet. Here, we write various parts of the model summary in different rows and columns.</li>
+</ul>
+</section>
+<section id="step-6-saving-the-workbook" class="level2">
+<h2 class="anchored" data-anchor-id="step-6-saving-the-workbook">Step 6: Saving the Workbook</h2>
+<p>Finally, we save our workbook to a file named <code>lm_model_summary.xlsx</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">saveWorkbook</span>(</span>
+<span id="cb6-2">  wb, </span>
+<span id="cb6-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste0</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getwd</span>(),<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/lm_model_summary.xlsx"</span>), </span>
+<span id="cb6-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">overwrite =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb6-5">  )</span></code></pre></div>
+</div>
+<p>This line saves the workbook to your working directory with the specified file name.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>This example shows how to fit a linear model in R, extract meaningful summary statistics, and save those results in an Excel file. It’s a simple yet powerful way to document your analyses and share them with others.</p>
+<p>Feel free to modify the code to fit your own datasets and models. Experimenting with different variables and models can provide deeper insights into your data. Happy coding!</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>excel</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-07-07/</guid>
+  <pubDate>Sun, 07 Jul 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Automate Your R Scripts with taskscheduleR</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -7510,252 +7978,6 @@ font-style: inherit;">"healthyverse"</span>)</span></code></pre></div>
   <category>healthyr</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-06-10/</guid>
   <pubDate>Mon, 10 Jun 2024 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Check if a Character is in a String in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-06-07/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>When working with text data in R, one common task is to check if a character or substring is present within a larger string. R offers multiple ways to accomplish this, ranging from base R functions to packages like <code>stringr</code> and <code>stringi</code>. In this post, we’ll explore how to use <code>grepl()</code> from base R, <code>str_detect()</code> from <code>stringr</code>, and <code>stri_detect_fixed()</code> from <code>stringi</code> to achieve this.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="using-grepl-in-base-r" class="level2">
-<h2 class="anchored" data-anchor-id="using-grepl-in-base-r">Using <code>grepl()</code> in Base R</h2>
-<p>The <code>grepl()</code> function in base R is a handy tool for detecting patterns within strings. It returns <code>TRUE</code> if the pattern is found and <code>FALSE</code> otherwise.</p>
-<p><strong>Syntax:</strong></p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">grepl</span>(pattern, x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ignore.case =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fixed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<ul>
-<li><code>pattern</code>: The character string to search for.</li>
-<li><code>x</code>: The character vector where the search is performed.</li>
-<li><code>ignore.case</code>: Logical value indicating whether the search should be case-insensitive.</li>
-<li><code>fixed</code>: Logical value indicating whether to treat the pattern as a fixed string.</li>
-</ul>
-<section id="example" class="level3">
-<h3 class="anchored" data-anchor-id="example">Example:</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, World!"</span></span>
-<span id="cb2-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'World' is in the text</span></span>
-<span id="cb2-3">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"World"</span>, text)</span>
-<span id="cb2-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'world' is in the text, ignoring case</span></span>
-<span id="cb4-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"world"</span>, text, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ignore.case =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="using-str_detect-from-stringr" class="level2">
-<h2 class="anchored" data-anchor-id="using-str_detect-from-stringr">Using <code>str_detect()</code> from <code>stringr</code></h2>
-<p>The <code>stringr</code> package simplifies string operations with a consistent and user-friendly interface. The <code>str_detect()</code> function checks for the presence of a pattern in a string.</p>
-<p><strong>Syntax:</strong></p>
-<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringr)</span>
-<span id="cb6-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_detect</span>(string, pattern)</span></code></pre></div>
-<ul>
-<li><code>string</code>: The character vector to search in.</li>
-<li><code>pattern</code>: The pattern to search for.</li>
-</ul>
-<section id="example-1" class="level3">
-<h3 class="anchored" data-anchor-id="example-1">Example:</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringr)</span>
-<span id="cb7-2"></span>
-<span id="cb7-3">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, World!"</span></span>
-<span id="cb7-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'World' is in the text</span></span>
-<span id="cb7-5">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_detect</span>(text, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"World"</span>)</span>
-<span id="cb7-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'world' is in the text, ignoring case</span></span>
-<span id="cb9-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_detect</span>(text, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">regex</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"world"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ignore_case =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>))</span>
-<span id="cb9-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="using-stri_detect_fixed-from-stringi" class="level2">
-<h2 class="anchored" data-anchor-id="using-stri_detect_fixed-from-stringi">Using <code>stri_detect_fixed()</code> from <code>stringi</code></h2>
-<p>The <code>stringi</code> package is a comprehensive suite for string manipulation. The <code>stri_detect_fixed()</code> function is used for detecting fixed patterns within strings.</p>
-<p><strong>Syntax:</strong></p>
-<div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringi)</span>
-<span id="cb11-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">stri_detect_fixed</span>(str, pattern, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">case_insensitive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<ul>
-<li><code>str</code>: The character vector to search in.</li>
-<li><code>pattern</code>: The pattern to search for.</li>
-<li><code>case_insensitive</code>: Logical value indicating whether the search should be case-insensitive.</li>
-</ul>
-<section id="example-2" class="level3">
-<h3 class="anchored" data-anchor-id="example-2">Example:</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringi)</span>
-<span id="cb12-2"></span>
-<span id="cb12-3">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, World!"</span></span>
-<span id="cb12-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'World' is in the text</span></span>
-<span id="cb12-5">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">stri_detect_fixed</span>(text, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"World"</span>)</span>
-<span id="cb12-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Check if 'world' is in the text, ignoring case</span></span>
-<span id="cb14-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">stri_detect_fixed</span>(text, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"world"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">case_insensitive =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span>
-<span id="cb14-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
-</div>
-</div>
-</section>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Detecting characters or substrings within a string is a common task in data analysis and manipulation. R provides powerful tools for this, whether you use base R’s <code>grepl()</code>, <code>stringr</code>’s <code>str_detect()</code>, or <code>stringi</code>’s <code>stri_detect_fixed()</code>. Each method has its strengths, and you can choose the one that best fits your workflow.</p>
-<p>Try these examples on your own data and see how they can help in your text processing tasks. Happy coding!</p>
-</section>
-<section id="resources" class="level1">
-<h1>Resources</h1>
-<ul>
-<li><a href="https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/grep">R Documentation for <code>grepl()</code></a></li>
-<li><a href="https://cran.r-project.org/web/packages/stringr/stringr.pdf">stringr Package Documentation</a></li>
-<li><a href="https://cran.r-project.org/web/packages/stringi/stringi.pdf">stringi Package Documentation</a></li>
-</ul>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>operations</category>
-  <category>strings</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-06-07/</guid>
-  <pubDate>Fri, 07 Jun 2024 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
