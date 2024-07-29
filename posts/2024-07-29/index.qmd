@@ -1,0 +1,116 @@
+---
+title: "Stratified Sampling in R: A Practical Guide with Base R and `dplyr`"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-07-29"
+categories: [code, rtip, dplyr]
+toc: TRUE
+---
+
+# Introduction
+
+Stratified sampling is a technique used to ensure that different subgroups (strata) within a population are represented in a sample. This method is particularly useful when certain strata are underrepresented in a simple random sample. In this post, we'll explore how to perform stratified sampling in R using both base R and the `dplyr` package. We'll walk through examples and explain the code, so you can try these techniques on your own data.
+
+# What is Stratified Sampling?
+
+In stratified sampling, the population is divided into different strata based on a specific characteristic (e.g., age, gender, income level). A random sample is then taken from each stratum. This method ensures that the sample represents the population accurately, especially when the strata are significantly different in size or characteristics.
+
+## Stratified Sampling with Base R
+
+Let's start with an example using base R. Suppose we have a dataset with information about individuals, including their gender and income. We want to sample a specific number of individuals from each gender group.
+
+Here's how we can do it:
+
+```{r}
+# Sample data
+set.seed(123) # For reproducibility
+data <- data.frame(
+  ID = 1:100,
+  Gender = sample(c("Male", "Female"), 100, replace = TRUE),
+  Income = rnorm(100, mean = 50000, sd = 10000)
+)
+
+# View the first few rows of the data
+head(data)
+```
+
+In this dataset, we have a column for `Gender` and another for `Income`. Let's say we want to sample 10 males and 10 females.
+
+```{r}
+# Stratified sampling function
+stratified_sample <- function(data, strat_column, size_per_stratum) {
+  strata <- unique(data[[strat_column]])
+  sampled_data <- do.call(rbind, lapply(strata, function(stratum) {
+    subset_data <- data[data[[strat_column]] == stratum, ]
+    subset_data[sample(nrow(subset_data), size_per_stratum), ]
+  }))
+  return(sampled_data)
+}
+
+# Perform stratified sampling
+sampled_data <- stratified_sample(data, "Gender", 10)
+
+# View the sampled data
+table(sampled_data$Gender)
+head(sampled_data)
+```
+
+In this example:
+
+-   We first create a function `stratified_sample` that takes the data, the column to stratify by, and the number of samples per stratum.
+-   The function identifies unique strata, then samples the specified number of rows from each stratum.
+-   The result is a combined dataset with samples from each group.
+
+## Stratified Sampling with `dplyr`
+
+### Using `sample_n`
+
+The `dplyr` package makes data manipulation straightforward and efficient. Here's how to do stratified sampling using `dplyr`:
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+
+# Stratified sampling with sample_n()
+sampled_data_n <- data %>%
+  group_by(Gender) %>%
+  sample_n(10)
+
+# View the sampled data
+sampled_data_n %>% count(Gender)
+head(sampled_data_n)
+```
+
+In this approach:
+
+-   We use `group_by()` to group the data by the `Gender` column.
+-   `sample_n()` is used to take 10 samples from each group.
+-   `count()` helps us verify the number of samples from each group.
+
+### Using `sample_frac()` for Proportional Sampling
+
+If you want to sample a proportion of each stratum, you can use the `sample_frac()` function. For example, if you want to sample 20% of each gender group:
+
+```{r}
+# Stratified sampling with sample_frac()
+sampled_data_frac <- data %>%
+  group_by(Gender) %>%
+  sample_frac(0.2)
+
+# View the sampled data
+sampled_data_frac %>% count(Gender)
+head(sampled_data_frac)
+```
+
+In this example:
+
+-   `sample_frac()` is used to take 20% of the rows from each group. 
+-   This is useful when you want the sample size to be proportional to the size of each stratum.
+
+# Conclusion
+
+Stratified sampling is a powerful technique to ensure representation from all subgroups in your sample. Whether you're using base R or `dplyr`, the process is straightforward and allows you to draw balanced samples from your data.
+
+Feel free to try these methods on your data! Experimenting with different sizes and strata can help you understand how stratified sampling affects your analyses. Don't hesitate to dive into the code and see how you can adapt it to your needs. 
+
+---
+
+Happy coding!
