@@ -1,4 +1,5 @@
-create_qmd_file <- function(filename, title = "", date = Sys.Date(), categories = c("code", "rtip")) {
+create_qmd_file <- function(filename, title = "", date = Sys.Date(), 
+                            categories = c("code", "rtip")) {
   # Define the base path
   base_path <- paste0(getwd(),"/posts")
   
