@@ -1,6 +1,6 @@
 create_qmd_file <- function(filename, title = "", date = Sys.Date(), categories = c("code", "rtip")) {
   # Define the base path
-  base_path <- "C:/Users/ssanders/Documents/GitHub/steveondata/posts"
+  base_path <- paste0(getwd(),"/posts")
   
   # Convert date to string and create the full directory path
   date_str <- as.character(date)

@@ -1,1 +1,1 @@
-source("C:/Users/ssanders/Documents/GitHub/steveondata/create_qmd_file.R")
+source(paste0(getwd(),"/create_qmd_file.R"))
