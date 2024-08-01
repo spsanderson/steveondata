@@ -1,0 +1,121 @@
+---
+title: "Automate Your Blog Workflow with a Custom R Function: Creating QMD Files"
+author: "Steven P. Sanderson II, MPH"
+date: "2024-08-01"
+categories: [code, rtip, automation]
+toc: TRUE
+---
+
+# Introduction
+
+As a blogger who uses R for content creation, I've found it incredibly useful to automate some of the repetitive tasks. One such task is creating Quarto Markdown (QMD) files for new blog posts. To simplify this, I've added a custom R function that not only creates the necessary file structure. Let's take a look at this  function and how you can integrate it into your own workflow.
+
+# The Function
+
+Here's the function I've been using:
+
+```r
+create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(), 
+                            categories = c("code", "rtip")) {
+  # Define the base path
+  base_path <- paste0(getwd(),"/posts")
+  
+  # Convert date to string and create the full directory path
+  date_str <- as.character(date)
+  full_path <- file.path(base_path, date_str)
+  
+  # Create the directory if it doesn't exist
+  if (!dir.exists(full_path)) {
+    dir.create(full_path, recursive = TRUE)
+    message("Directory created: ", full_path)
+  }
+  
+  # Define the full file path
+  file_path <- file.path(full_path, filename)
+  
+  # Create the content to be written in the file
+  content <- paste0(
+    "---\n",
+    'title: "', title, '"\n',
+    'author: "Steven P. Sanderson II, MPH"\n',
+    'date: "', date_str, '"\n',
+    "categories: [", paste(categories, collapse = ", "), "]\n",
+    "toc: TRUE\n",
+    "---\n\n",
+    '<script src="https://giscus.app/client.js"\n',
+    '        data-repo="Yours_Here"\n',
+    '        data-repo-id="Yours_Here"\n',
+    '        data-category="Comments"\n',
+    '        data-category-id="Yours_Here"\n',
+    '        data-mapping="url"\n',
+    '        data-strict="0"\n',
+    '        data-reactions-enabled="1"\n',
+    '        data-emit-metadata="0"\n',
+    '        data-input-position="top"\n',
+    '        data-theme="dark"\n',
+    '        data-lang="en"\n',
+    '        data-loading="lazy"\n',
+    '        crossorigin="anonymous"\n',
+    '        async>\n',
+    '</script>\n'
+  )
+  
+  # Write the content to the file
+  writeLines(content, file_path)
+  message("QMD file created: ", file_path)
+}
+```
+
+## How It Works
+
+1.    **Setting the Base Path**:
+   The function starts by defining the base path where blog posts will be stored, appending `"/posts"` to the current working directory. This centralizes all posts in one location.
+
+2.    **Creating Directories**:
+   It then converts the date to a string and uses it to create a directory path. If this directory doesn't exist, the function creates it. This helps in organizing posts by date.
+
+3.    **File Path Definition**:
+   The function then defines the full path for the QMD file, defaulting the filename to "index.qmd" if none is provided.
+
+4.    **Content Creation**:
+   The main content for the QMD file is generated next. This includes a YAML front matter section with metadata like title, author, date, and categories. The function also adds a script for Giscus, which handles the comments section.
+
+5.    **File Writing**:
+   Finally, the function writes the generated content to the specified file path and informs you that the file has been created.
+
+## Automating with .Rprofile
+
+To make this function available every time you start your project, you can use the `.Rprofile` file. This file is sourced whenever you start a new R session, making it perfect for setting up your environment.
+
+Here's the relevant `.Rprofile` setup:
+
+```r
+source(paste0(getwd(),"/create_qmd_file.R"))
+```
+
+By sourcing the `create_qmd_file.R` script, the function is loaded automatically, so you don’t have to manually source it each time.
+
+# Give It a Try!
+
+This function has saved me a lot of time, and I encourage you to try something similar if you're managing content or projects with R. You can customize the function to suit your specific needs, whether that’s adjusting the metadata, changing the file structure, or adding other automated features. It's a great way to streamline your workflow and focus more on the creative aspects of your work.
+
+If you have any questions or run into any issues, feel free to reach out. Happy coding!
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
