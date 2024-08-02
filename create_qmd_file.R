@@ -45,5 +45,6 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
   
   # Write the content to the file
   writeLines(content, file_path)
-  message("QMD file created: ", file_path)
+  message("QMD file created: ", file_path, " - Opening File.")
+  file.edit(file_path)
 }
