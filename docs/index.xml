@@ -10,7 +10,238 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.4.555</generator>
-<lastBuildDate>Thu, 01 Aug 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 02 Aug 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>Cluster Sampling in R: A Simple Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-08-02/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Cluster sampling is a useful technique when dealing with large datasets spread across different groups or clusters. It involves dividing the population into clusters, randomly selecting some clusters, and then sampling all or some members from these selected clusters. This method can save time and resources compared to simple random sampling.</p>
+<p>In this post, we’ll walk through how to perform cluster sampling in R. We’ll use a sample dataset and break down the code step-by-step. By the end, you’ll have a clear understanding of how to implement cluster sampling in your projects.</p>
+<section id="example-scenario" class="level2">
+<h2 class="anchored" data-anchor-id="example-scenario">Example Scenario</h2>
+<p>Let’s say we have a dataset of students from different schools, and we want to estimate the average test score. Sampling every student would be too time-consuming, so we’ll use cluster sampling.</p>
+<section id="step-1-create-a-sample-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-create-a-sample-dataset">Step 1: Create a Sample Dataset</h3>
+<p>First, let’s create a sample dataset to work with.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load necessary libraries</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set seed for reproducibility</span></span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create sample data</span></span>
+<span id="cb1-8">schools <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">student_id =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>,</span>
+<span id="cb1-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">school_id =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">each =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>),</span>
+<span id="cb1-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">test_score =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">75</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb1-12">)</span>
+<span id="cb1-13"></span>
+<span id="cb1-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Display the first few rows of the dataset</span></span>
+<span id="cb1-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(schools)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  student_id school_id test_score
+1          1         1   69.39524
+2          2         1   72.69823
+3          3         1   90.58708
+4          4         1   75.70508
+5          5         1   76.29288
+6          6         1   92.15065</code></pre>
+</div>
+</div>
+</section>
+<section id="step-2-divide-the-population-into-clusters" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-divide-the-population-into-clusters">Step 2: Divide the Population into Clusters</h3>
+<p>Our population is already divided into clusters by <code>school_id</code>. Each school represents a cluster.</p>
+</section>
+<section id="step-3-randomly-select-clusters" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-randomly-select-clusters">Step 3: Randomly Select Clusters</h3>
+<p>Next, we’ll randomly select some clusters. Let’s say we want to select 3 out of the 10 schools.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Number of clusters to select</span></span>
+<span id="cb3-2">num_clusters <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span></span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Randomly select clusters</span></span>
+<span id="cb3-5">selected_clusters <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(schools<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>school_id), num_clusters)</span>
+<span id="cb3-6"></span>
+<span id="cb3-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Display selected clusters</span></span>
+<span id="cb3-8">selected_clusters</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  1 10  2</code></pre>
+</div>
+</div>
+</section>
+<section id="step-4-sample-members-from-selected-clusters" class="level3">
+<h3 class="anchored" data-anchor-id="step-4-sample-members-from-selected-clusters">Step 4: Sample Members from Selected Clusters</h3>
+<p>Now, we’ll sample students from the selected schools.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Filter the dataset to include only the selected clusters</span></span>
+<span id="cb5-2">sampled_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> schools <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(school_id <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%in%</span> selected_clusters)</span>
+<span id="cb5-3"></span>
+<span id="cb5-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Display the first few rows of the sampled data</span></span>
+<span id="cb5-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(sampled_data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  student_id school_id test_score
+1          1         1   69.39524
+2          2         1   72.69823
+3          3         1   90.58708
+4          4         1   75.70508
+5          5         1   76.29288
+6          6         1   92.15065</code></pre>
+</div>
+</div>
+</section>
+<section id="step-5-analyze-the-sampled-data" class="level3">
+<h3 class="anchored" data-anchor-id="step-5-analyze-the-sampled-data">Step 5: Analyze the Sampled Data</h3>
+<p>Finally, we can analyze the sampled data to estimate the average test score.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate the mean test score</span></span>
+<span id="cb7-2">mean_test_score <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(sampled_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>test_score)</span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Display the mean test score</span></span>
+<span id="cb7-5">mean_test_score</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 74.87889</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="explanation-of-code-blocks" class="level2">
+<h2 class="anchored" data-anchor-id="explanation-of-code-blocks">Explanation of Code Blocks</h2>
+<ul>
+<li><strong>Step 1</strong>: We create a sample dataset with 1000 students, each belonging to one of 10 schools. Each student has a test score.</li>
+<li><strong>Step 2</strong>: The <code>school_id</code> column naturally divides our dataset into clusters.</li>
+<li><strong>Step 3</strong>: We randomly select 3 out of the 10 schools using the <code>sample</code> function.</li>
+<li><strong>Step 4</strong>: We filter the dataset to include only students from the selected schools.</li>
+<li><strong>Step 5</strong>: We calculate the mean test score of the sampled students to estimate the overall average.</li>
+</ul>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Cluster sampling is a powerful method for efficiently sampling large populations. By dividing the population into clusters and sampling within those clusters, you can obtain reliable estimates with less effort.</p>
+<p>Feel free to try this method on your own datasets. Experiment with different numbers of clusters and sample sizes to see how it affects your results.</p>
+<hr>
+<p>Happy coding!</p>
+<p>If you have any questions or need further clarification, drop a comment below!</p>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-08-02/</guid>
+  <pubDate>Fri, 02 Aug 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Automate Your Blog Workflow with a Custom R Function: Creating QMD Files</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -4861,111 +5092,6 @@ font-style: inherit;">"0 10 * * *"</span></span>
   <category>automation</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-07-06/</guid>
   <pubDate>Sat, 06 Jul 2024 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mastering Zoom Functionality in Excel with VBA</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-07-03/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>When working with large datasets in Excel, the ability to zoom in and out quickly can significantly enhance your productivity. If you often find yourself adjusting the zoom level manually, why not automate it with VBA? In this blog post, we’ll explore how to use the zoom functionality in VBA to control the zoom level of your worksheets efficiently.</p>
-</section>
-<section id="why-use-zoom-in-excel" class="level1">
-<h1>Why Use Zoom in Excel?</h1>
-<p>Zooming in Excel allows you to get a closer look at your data or see more of your worksheet at once. Whether you’re focusing on a specific section of data or getting an overview of your entire sheet, zooming can help you navigate and analyze your information more effectively.</p>
-</section>
-<section id="getting-started-with-zoom-in-vba" class="level1">
-<h1>Getting Started with Zoom in VBA</h1>
-<p>To control the zoom level in Excel using VBA, you’ll primarily work with the <code>ActiveWindow.Zoom</code> property. This property allows you to set the zoom level to any value between 10% and 400%.</p>
-<section id="basic-zoom-in-and-zoom-out" class="level2">
-<h2 class="anchored" data-anchor-id="basic-zoom-in-and-zoom-out">Basic Zoom In and Zoom Out</h2>
-<p>Let’s start with simple macros to zoom in and zoom out.</p>
-<p><strong>Zoom In:</strong></p>
-<pre class="vba"><code>Sub ZoomIn()
-    Dim currentZoom As Integer
-    currentZoom = ActiveWindow.Zoom
-    If currentZoom &lt; 400 Then
-        ActiveWindow.Zoom = currentZoom + 10
-    End If
-End Sub</code></pre>
-<p><strong>Zoom Out:</strong></p>
-<pre class="vba"><code>Sub ZoomOut()
-    Dim currentZoom As Integer
-    currentZoom = ActiveWindow.Zoom
-    If currentZoom &gt; 10 Then
-        ActiveWindow.Zoom = currentZoom - 10
-    End If
-End Sub</code></pre>
-<p>In these macros, <code>ZoomIn</code> increases the current zoom level by 10%, while <code>ZoomOut</code> decreases it by 10%. The code ensures that the zoom level stays within the permissible range of 10% to 400%.</p>
-</section>
-<section id="setting-a-specific-zoom-level" class="level2">
-<h2 class="anchored" data-anchor-id="setting-a-specific-zoom-level">Setting a Specific Zoom Level</h2>
-<p>Sometimes, you might need to set the zoom level to a specific percentage. You can do this easily with the following macro:</p>
-<pre class="vba"><code>Sub SetZoomLevel(zoomLevel As Integer)
-    If zoomLevel &gt;= 10 And zoomLevel &lt;= 400 Then
-        ActiveWindow.Zoom = zoomLevel
-    Else
-        MsgBox "Please enter a zoom level between 10 and 400."
-    End If
-End Sub</code></pre>
-<p>You can call this macro with any desired zoom level. For example:</p>
-<pre class="vba"><code>Sub ZoomToSpecificLevel()
-    Call SetZoomLevel(150) ' Sets the zoom level to 150%
-End Sub</code></pre>
-</section>
-<section id="resetting-the-zoom-level" class="level2">
-<h2 class="anchored" data-anchor-id="resetting-the-zoom-level">Resetting the Zoom Level</h2>
-<p>If you need to reset the zoom level to its default setting (usually 100%), you can use the following macro:</p>
-<pre class="vba"><code>Sub ResetZoom()
-    ActiveWindow.Zoom = 100
-End Sub</code></pre>
-</section>
-<section id="applying-zoom-to-a-specific-worksheet" class="level2">
-<h2 class="anchored" data-anchor-id="applying-zoom-to-a-specific-worksheet">Applying Zoom to a Specific Worksheet</h2>
-<p>The above examples modify the zoom level of the currently active window. If you want to set the zoom level for a specific worksheet, you can activate that sheet first and then set the zoom level:</p>
-<pre class="vba"><code>Sub ZoomSpecificSheet(sheetName As String, zoomLevel As Integer)
-    Worksheets(sheetName).Activate
-    If zoomLevel &gt;= 10 And zoomLevel &lt;= 400 Then
-        ActiveWindow.Zoom = zoomLevel
-    Else
-        MsgBox "Please enter a zoom level between 10 and 400."
-    End If
-End Sub</code></pre>
-</section>
-<section id="using-zoom-with-user-forms" class="level2">
-<h2 class="anchored" data-anchor-id="using-zoom-with-user-forms">Using Zoom with User Forms</h2>
-<p>Zoom functionality isn’t limited to worksheets. You can also control the zoom level of user forms in VBA. This is especially useful if your user form contains detailed information or numerous controls.</p>
-<pre class="vba"><code>Sub ZoomUserForm(zoomLevel As Double)
-    With UserForm1
-        .Zoom = zoomLevel
-    End With
-End Sub</code></pre>
-<p>Call this macro with a zoom level between 10 and 400 to adjust the user form’s zoom.</p>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Whether you need to zoom in for a closer look, zoom out to see more data, or set a specific zoom level, VBA provides a simple and powerful way to control your view.</p>
-<p>By incorporating these macros into your workflow, you can easily adjust your zoom settings without leaving the keyboard. Experiment with these examples, and you’ll soon find the perfect zoom levels to enhance your productivity in Excel.</p>
-<hr>
-<p>Happy coding!</p>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>vba</category>
-  <category>excel</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-07-03/</guid>
-  <pubDate>Wed, 03 Jul 2024 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
