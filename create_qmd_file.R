@@ -1,5 +1,6 @@
 create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(), 
-                            categories = c("code", "rtip")) {
+                            categories = c("code", "rtip"), 
+                            keywords = c("Programming")) {
   # Define the base path
   base_path <- paste0(getwd(),"/posts")
   
@@ -24,6 +25,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     'date: "', date_str, '"\n',
     "categories: [", paste(categories, collapse = ", "), "]\n",
     "toc: TRUE\n",
+    "keywords: [", paste(keywords, collapse = ", "), "]\n",
     "---\n\n",
     '<script src="https://giscus.app/client.js"\n',
     '        data-repo="spsanderson/steveondata"\n',
