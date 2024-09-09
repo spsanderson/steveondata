@@ -10,7 +10,484 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.4.555</generator>
-<lastBuildDate>Fri, 06 Sep 2024 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 09 Sep 2024 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Use grep() and Return Only Substring in R: A Comprehensive Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2024-09-09/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>When working with text data in R, you often need to search for specific patterns or extract substrings from larger strings. The <code>grep()</code> function is a powerful tool for pattern matching, but it doesn’t directly return only the matched substring. In this guide, we’ll explore how to use <code>grep()</code> effectively and combine it with other functions to return only the desired substrings.</p>
+</section>
+<section id="understanding-grep-in-r" class="level1">
+<h1>Understanding grep() in R</h1>
+<section id="basic-syntax-and-functionality" class="level2">
+<h2 class="anchored" data-anchor-id="basic-syntax-and-functionality">Basic syntax and functionality</h2>
+<p>The <code>grep()</code> function in R is used for pattern matching within character vectors. Its basic syntax is:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span>(pattern, x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ignore.case =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">perl =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fixed =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">useBytes =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div>
+<p>By default, <code>grep()</code> returns the indices of the elements in the input vector that match the specified pattern.</p>
+</section>
+<section id="differences-between-grep-and-grepl" class="level2">
+<h2 class="anchored" data-anchor-id="differences-between-grep-and-grepl">Differences between grep() and grepl()</h2>
+<p>While <code>grep()</code> and <code>grepl()</code> are related functions, they serve different purposes:</p>
+<ul>
+<li><code>grep()</code> returns the indices or values of matching elements.</li>
+<li><code>grepl()</code> returns a logical vector indicating whether a match was found (<code>TRUE</code>) or not (<code>FALSE</code>) for each element.</li>
+</ul>
+<p>For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"apple"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"banana"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cherry"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"an"</span>, x)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Returns: 2</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"an"</span>, x) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Returns: FALSE TRUE FALSE</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] FALSE  TRUE FALSE</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="returning-substrings-with-grep" class="level1">
+<h1>Returning Substrings with grep()</h1>
+<section id="using-regexpr-and-substr" class="level2">
+<h2 class="anchored" data-anchor-id="using-regexpr-and-substr">Using regexpr() and substr()</h2>
+<p>To return only the matched substring, you can combine <code>grep()</code> with <code>regexpr()</code> and <code>substr()</code>. Here’s an example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">text <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"file1.txt"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"file2.csv"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"file3.doc"</span>)</span>
+<span id="cb6-2">pattern <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.[^.]+$"</span></span>
+<span id="cb6-3"></span>
+<span id="cb6-4">matches <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">regexpr</span>(pattern, text)</span>
+<span id="cb6-5">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">substr</span>(text, matches, matches <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(matches, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"match.length"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb6-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] ".txt" ".csv" ".doc"</code></pre>
+</div>
+</div>
+<p>This approach uses <code>regexpr()</code> to find the position of the match, and then <code>substr()</code> to extract the matched portion.</p>
+</section>
+<section id="combining-grep-with-other-functions" class="level2">
+<h2 class="anchored" data-anchor-id="combining-grep-with-other-functions">Combining grep() with other functions</h2>
+<p>Another method to return only substrings is to use <code>grep()</code> in combination with <code>regmatches()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">text <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"abc123"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"def456"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ghi789"</span>)</span>
+<span id="cb8-2">pattern <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">d+"</span></span>
+<span id="cb8-3"></span>
+<span id="cb8-4">matches <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gregexpr</span>(pattern, text)</span>
+<span id="cb8-5">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">regmatches</span>(text, matches)</span>
+<span id="cb8-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] "123"
+
+[[2]]
+[1] "456"
+
+[[3]]
+[1] "789"</code></pre>
+</div>
+</div>
+<p>This method uses <code>gregexpr()</code> to find all matches and <code>regmatches()</code> to extract them.</p>
+</section>
+</section>
+<section id="practical-examples" class="level1">
+<h1>Practical Examples</h1>
+<section id="extracting-specific-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="extracting-specific-patterns">Extracting specific patterns</h2>
+<p>Let’s say you want to extract all email addresses ending with “.edu” from a vector:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">emails <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"john@example.com"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"jane@university.edu"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bob@college.edu"</span>)</span>
+<span id="cb10-2">edu_emails <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> emails[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">.edu$"</span>, emails)]</span>
+<span id="cb10-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(edu_emails)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "jane@university.edu" "bob@college.edu"    </code></pre>
+</div>
+</div>
+<p>This example uses <code>grepl()</code> to create a logical vector for filtering.</p>
+</section>
+<section id="working-with-data-frames" class="level2">
+<h2 class="anchored" data-anchor-id="working-with-data-frames">Working with data frames</h2>
+<p><code>grep()</code> and <code>grepl()</code> are particularly useful when working with data frames. Here’s an example of filtering rows based on a pattern:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb12-2"></span>
+<span id="cb12-3">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb12-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">player =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'P Guard'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'S Guard'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'S Forward'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'P Forward'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Center'</span>),</span>
+<span id="cb12-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">points =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">19</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">22</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>),</span>
+<span id="cb12-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rebounds =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">11</span>)</span>
+<span id="cb12-7">)</span>
+<span id="cb12-8"></span>
+<span id="cb12-9">guards <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Guard'</span>, player))</span>
+<span id="cb12-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(guards)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   player points rebounds
+1 P Guard     12        5
+2 S Guard     15        7</code></pre>
+</div>
+</div>
+<p>This example filters the data frame to include only rows where the ‘player’ column contains “Guard”.</p>
+</section>
+</section>
+<section id="advanced-techniques" class="level1">
+<h1>Advanced Techniques</h1>
+<section id="using-grep-with-multiple-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="using-grep-with-multiple-patterns">Using grep() with multiple patterns</h2>
+<p>To search for multiple patterns simultaneously, you can use the <code>paste()</code> function with <code>collapse='|'</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb14-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">team =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Hawks"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Bulls"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Nets"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Heat"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Lakers"</span>),</span>
+<span id="cb14-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">points =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">115</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">105</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">124</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">120</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">118</span>),</span>
+<span id="cb14-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">status =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Good"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Average"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Excellent"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Great"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Good"</span>)</span>
+<span id="cb14-5">)</span>
+<span id="cb14-6"></span>
+<span id="cb14-7">patterns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Good'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Gre'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Ex'</span>)</span>
+<span id="cb14-8">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(patterns, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">collapse=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'|'</span>), status))</span>
+<span id="cb14-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    team points    status
+1  Hawks    115      Good
+2   Nets    124 Excellent
+3   Heat    120     Great
+4 Lakers    118      Good</code></pre>
+</div>
+</div>
+<p>This technique allows you to filter rows based on multiple patterns in a single column.</p>
+</section>
+<section id="performance-considerations" class="level2">
+<h2 class="anchored" data-anchor-id="performance-considerations">Performance considerations</h2>
+<p>When working with large datasets, consider using <code>fixed = TRUE</code> in <code>grep()</code> or <code>grepl()</code> for exact substring matching, which can be faster than regular expression matching:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1">large_vector <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"apple"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"banana"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cherry"</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000000</span>)</span>
+<span id="cb16-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ana"</span>, large_vector, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fixed =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+   0.09    0.00    0.09 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ana"</span>, large_vector))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+   0.56    0.02    0.59 </code></pre>
+</div>
+</div>
+<p>The <code>fixed = TRUE</code> option can significantly improve performance for simple substring searches.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Mastering the use of <code>grep()</code> and related functions in R allows you to efficiently search for patterns and extract substrings from your data. By combining <code>grep()</code> with other string manipulation functions, you can create powerful and flexible text processing workflows. Remember to consider performance implications when working with large datasets, and choose the most appropriate function (<code>grep()</code>, <code>grepl()</code>, or others) based on your specific needs.</p>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>grep</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2024-09-09/</guid>
+  <pubDate>Mon, 09 Sep 2024 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Navigating Linux with ‘pwd’, ‘cd’, and ‘ls’: A Beginner’s Guide</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -6214,181 +6691,6 @@ font-style: inherit;"># Output: "Hello-World!"</span></span></code></pre></div>
   <category>glue</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2024-08-12/</guid>
   <pubDate>Mon, 12 Aug 2024 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mastering Character Counting in R: Base R, stringr, and stringi</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2024-08-09/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Counting the occurrences of a specific character within a string is a common task in data processing and text manipulation. Whether you’re working with base R or leveraging the power of packages like <code>stringr</code> or <code>stringi</code>, R provides efficient ways to accomplish this. In this post, we’ll explore how to do this using three different methods.</p>
-</section>
-<section id="examples" class="level1">
-<h1>Examples</h1>
-<section id="example-1-counting-characters-with-base-r" class="level2">
-<h2 class="anchored" data-anchor-id="example-1-counting-characters-with-base-r">Example 1: Counting Characters with Base R</h2>
-<p>Base R offers a straightforward way to count occurrences of a character using the <code>gregexpr()</code> function. This function returns the positions of the pattern in the string, which we can then count.</p>
-<p><strong>Example:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Define the string</span></span>
-<span id="cb1-2">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, world!"</span></span>
-<span id="cb1-3"></span>
-<span id="cb1-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Use gregexpr to find occurrences of 'o'</span></span>
-<span id="cb1-5">matches <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">gregexpr</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, text)</span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Count the number of matches</span></span>
-<span id="cb1-8">count <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sum</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unlist</span>(matches) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)</span>
-<span id="cb1-9">count</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>gregexpr()</code> searches for a pattern (in this case, the character <code>"o"</code>) within a string and returns the positions of all matches.</li>
-<li><code>unlist()</code> is used to convert the list of positions into a vector.</li>
-<li><code>sum(unlist(matches) &gt; 0)</code> counts the number of positions where a match was found.</li>
-</ul>
-<p>This method is direct and effective, especially when you need to stick with base R functionality.</p>
-</section>
-<section id="example-2-counting-characters-with-stringr" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-counting-characters-with-stringr">Example 2: Counting Characters with <code>stringr</code></h2>
-<p>The <code>stringr</code> package, part of the tidyverse, provides a more user-friendly syntax for string manipulation. The <code>str_count()</code> function is perfect for counting characters.</p>
-<p><strong>Example:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the stringr package</span></span>
-<span id="cb3-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringr)</span>
-<span id="cb3-3"></span>
-<span id="cb3-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Define the string</span></span>
-<span id="cb3-5">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, world!"</span></span>
-<span id="cb3-6"></span>
-<span id="cb3-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Use str_count to count occurrences of 'o'</span></span>
-<span id="cb3-8">count <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">str_count</span>(text, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>)</span>
-<span id="cb3-9">count</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>str_count()</code> counts the number of times a pattern appears in a string.</li>
-<li>The first argument is the string to search, and the second is the pattern to count.</li>
-</ul>
-<p>This method is concise and integrates well with other tidyverse functions.</p>
-</section>
-<section id="example-3-counting-characters-with-stringi" class="level2">
-<h2 class="anchored" data-anchor-id="example-3-counting-characters-with-stringi">Example 3: Counting Characters with <code>stringi</code></h2>
-<p>The <code>stringi</code> package offers comprehensive and powerful tools for string manipulation, and it’s known for its efficiency. The <code>stri_count_fixed()</code> function allows you to count fixed patterns.</p>
-<p><strong>Example:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Load the stringi package</span></span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(stringi)</span>
-<span id="cb5-3"></span>
-<span id="cb5-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Define the string</span></span>
-<span id="cb5-5">text <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Hello, world!"</span></span>
-<span id="cb5-6"></span>
-<span id="cb5-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Use stri_count_fixed to count occurrences of 'o'</span></span>
-<span id="cb5-8">count <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">stri_count_fixed</span>(text, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>)</span>
-<span id="cb5-9">count</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
-</div>
-</div>
-<p><strong>Explanation:</strong></p>
-<ul>
-<li><code>stri_count_fixed()</code> counts the exact occurrences of a fixed pattern within the string.</li>
-<li>The function is optimized for performance, making it suitable for large-scale text processing tasks.</li>
-</ul>
-</section>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Each method has its strengths, depending on the context in which you’re working. Base R is always available, making it reliable for quick tasks. <code>stringr</code> offers simplicity and integration with tidyverse workflows, while <code>stringi</code> shines in performance and extensive functionality.</p>
-<p>Feel free to try out these methods in your projects. By understanding these different approaches, you’ll be well-equipped to handle text manipulation in R, no matter the scale or complexity.</p>
-<hr>
-<p>Happy Coding! 🚀</p>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <category>strings</category>
-  <category>stringr</category>
-  <category>stringi</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2024-08-09/</guid>
-  <pubDate>Fri, 09 Aug 2024 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
