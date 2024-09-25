@@ -25,6 +25,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     'date: "', date_str, '"\n',
     "categories: [", paste(categories, collapse = ", "), "]\n",
     "toc: TRUE\n",
+    "meta: ''\n",
     "keywords: [", paste(keywords, collapse = ", "), "]\n",
     "---\n\n",
     '<script src="https://giscus.app/client.js"\n',
