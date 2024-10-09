@@ -28,6 +28,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     "description: ''\n",
     "keywords: [", paste(keywords, collapse = ", "), "]\n",
     "---\n\n",
+    'You can view and join my Telegram Channel here: https://t.me/steveondata\n\n',
     '<script src="https://giscus.app/client.js"\n',
     '        data-repo="spsanderson/steveondata"\n',
     '        data-repo-id="R_kgDOIIxnLw"\n',
