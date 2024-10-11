@@ -30,7 +30,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     "---\n\n",
     'You can connect with me at any one of the below:\n\n',
     'Telegram Channel here: [https://t.me/steveondata](https://t.me/steveondata)\n\n',
-    'LinkedIn Network here: [https://www.linkedin.com/in/stevepsanderson/](https://www.linkedin.com/in/stevepsanderson/)\n\n',
+    'LinkedIn Network here: [https://www.linkedin.com/in/spsanderson/](https://www.linkedin.com/in/spsanderson/)\n\n',
     'Mastadon Social here: [https://mstdn.social/@stevensanderson](https://mstdn.social/@stevensanderson)\n\n',
     'RStats Network here: [https://rstats.me/@spsanderson](https://rstats.me/@spsanderson)\n\n',
     '<script src="https://giscus.app/client.js"\n',
