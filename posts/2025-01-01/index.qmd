@@ -1,0 +1,350 @@
+---
+title: "Reflecting on the Past Year: A LinkedIn Year in Review (2024)"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-01-01"
+categories: [code, linkedin]
+toc: TRUE
+description: 'A year in review for LinkedIn in 2024'
+keywords: [Programming, LinkedIn, Year In Review]
+---
+
+# Introduction
+
+As we close the door on another year, it's always a good time to look back and reflect on the past 12 months. And what better way to do that than with a LinkedIn Year in Review?
+
+Whether you're a job seeker, a business owner, or just someone who enjoys staying connected with their professional network, LinkedIn is an invaluable tool for staying up to date with the latest trends and opportunities in your field. And as we wrap up 2024, now is the perfect time to take a look at how you've been using LinkedIn and see where you can improve.
+
+So what did your LinkedIn Year in Review have in store for you? Here are just a few of the things you might have seen:
+
+*   A summary of your activity on LinkedIn, including how many people you've connected with, how many posts you've shared, and how many likes, comments, and shares your content has received.
+*   A breakdown of the industries and job titles of the people you've connected with, which can give you a good idea of the types of people you've been spending the most time interacting with.
+*   A summary of your skills and endorsements, as well as which skills are most in demand in your industry.
+
+All of these insights can be incredibly valuable as you start planning for the year ahead. With this information in hand, you can start looking for new opportunities, strengthening your existing relationships, and building new ones. And with the start of the new year, it’s a perfect time to set new goals and improve your LinkedIn profile.
+
+If you haven’t yet checked out your LinkedIn Year in Review, don’t wait any longer! Log in to your account and take a look. And while you're there, why not make a resolution to be more active on LinkedIn in the coming year? The more you put into your professional network, the more you'll get out of it.
+
+So let’s make the most of this new year, take advantage of the insights from your LinkedIn Year in Review, and make the most of your professional network. Here’s to a successful, connected, and productive 2025!
+
+I have done a lot of work on this already, it is not comprehensive but it is enough to understand what is happening, and I used a lot of functionality from the [`{healthyverse}`](https://www.spsanderson.com/healthyverse/)
+
+Don't forget you can also see my package and GitHub development wrap up [on my year in review 2024](https://www.spsanderson.com/year_review_2024.html)
+
+# Analysis
+
+I will do this in chunks, as it will be easier to digest. First of course you have to get your data. I am not going to go over this process as there are many a great link just a search away.
+
+Let's load in those libraries and read the files in.
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+library(readxl)
+library(lubridate)
+library(timetk)
+library(tidyr)
+library(janitor)
+library(stringr)
+library(ggplot2)
+library(healthyR.ts)
+library(knitr)
+library(kableExtra)
+
+fp <- "linkedin_content.xlsx"
+
+engagement_tbl <- read_excel(fp, sheet = "ENGAGEMENT") %>%
+  clean_names() %>%
+  mutate(date = mdy(date)) %>% 
+  mutate(`Engagement Rate` = (engagements / impressions) * 100) %>%
+  filter_by_time(
+    .date_var = date,
+    .end_date = "2024-12-31"
+  )
+
+top_posts_tbl <- read_excel(fp, sheet = "TOP POSTS", skip = 1) %>%
+  clean_names()
+
+followers_tbl <- read_excel(fp, sheet = "FOLLOWERS", skip = 2) %>%
+  clean_names() %>%
+  mutate(date = mdy(date)) %>%
+  filter_by_time(
+    .date_var = date,
+    .end_date = "2024-12-31"
+  )
+
+demographics_tbl <- read_excel(fp, sheet = "DEMOGRAPHICS") %>%
+  clean_names()
+```
+
+Now let's take a look at that data.
+
+```{r}
+glimpse(engagement_tbl)
+glimpse(top_posts_tbl)
+glimpse(followers_tbl)
+glimpse(demographics_tbl)
+```
+
+We are really only going to focus on the __engagement_tbl__ and the __followers_tbl__ as this is more of a time series analysis.
+
+Ok, so let's see how my __Impressions__, __Engagements__, and __Engagement Rate__ have been.
+
+```{r}
+engagement_tbl %>%
+  pivot_longer(cols = -date) %>%
+  mutate(name = str_to_title(name)) %>%
+  plot_time_series(
+    .facet_vars = name,
+    .value = value,
+    .date_var = date,
+    .interactive = FALSE,
+    .smooth = FALSE,
+    .title = "LinkedIn Stats Time Series Plot"
+  ) +
+  theme_minimal()
+
+followers_tbl %>%
+  plot_time_series(
+    .value = new_followers,
+    .date_var = date,
+    .interactive = FALSE,
+    .smooth = FALSE,
+    .title = "LinkedIn Stats Time Series Plot - New Followers"
+  ) +
+  theme_minimal()
+```
+
+Let's look at a cumulative view of things.
+
+```{r}
+engagement_tbl %>%
+  summarise_by_time(
+    .date_var = date,
+    .by = "month",
+    `Cumulative Impressions` = sum(impressions),
+    `Cumulative Engagements` = sum(engagements)
+  ) %>%
+  mutate(
+    `Cumulative Impressions` = cumsum(`Cumulative Impressions`),
+    `Cumulative Engagements` = cumsum(`Cumulative Engagements`)
+  ) %>%
+  slice(1:12) %>%
+  pivot_longer(cols = -date) %>%
+  mutate(name = str_to_title(name)) %>%
+  ggplot(aes(x = date, y = value)) +
+  geom_col() +
+  facet_wrap(~ name, scales = "free") +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "LinkedIn Stats Time Series Plot"
+  ) +
+  theme_minimal() 
+
+followers_tbl %>%
+    summarise_by_time(
+    .date_var = date,
+    .by = "month",
+    `Cumulative Followers` = sum(new_followers)
+  ) %>%
+  mutate(
+    `Cumulative Followers` = cumsum(`Cumulative Followers`)
+  ) %>%
+  slice(1:12) %>%
+  ggplot(aes(x = date, y = `Cumulative Followers`)) +
+  geom_col() +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "LinkedIn Stats Time Series Plot - New Followers"
+  ) +
+  theme_minimal() 
+```
+
+It seems again that writing blog posts and sharing them daily has a nice effect. Now we are going to look at some __Value__, __Velocity__, and __Acceleration__ plots with the [`ts_vva_plot()`](https://www.spsanderson.com/healthyR.ts/reference/ts_vva_plot.html?q=ts_vva#ref-usage) function from the [`{healthyR.ts`}](https://www.spsanderson.com/healthyR.ts/) package.
+
+```{r message=FALSE, warning=FALSE}
+ts_vva_plot(engagement_tbl, date, engagements)$plots$static_plot
+
+ts_vva_plot(engagement_tbl, date, impressions)$plots$static_plot
+
+ts_vva_plot(engagement_tbl, date, `Engagement Rate`)$plots$static_plot
+
+ts_vva_plot(followers_tbl, date, new_followers)$plots$static_plot
+```
+
+Now some simple moving average plots using the function [`ts_sma_plot()`](https://www.spsanderson.com/healthyR.ts/reference/ts_sma_plot.html?q=ts_sma#null) again from the `{healthyR.ts}` library.
+
+```{r warning=FALSE, message=FALSE}
+ts_sma_plot(engagement_tbl, date, impressions, .sma_order = c(7, 14, 21, 30))$plots$static_plot
+
+ts_sma_plot(engagement_tbl, date, engagements, .sma_order = c(7, 14, 21, 30))$plots$static_plot
+
+ts_sma_plot(engagement_tbl, date, `Engagement Rate`, .sma_order = c(7, 14, 21, 30))$plots$static_plot
+
+ts_sma_plot(followers_tbl, date, new_followers, .sma_order = c(7, 14, 21, 30))$plots$static_plot
+```
+
+Now some calendar heatmaps with [`ts_calendar_heatmap_plot()`](https://www.spsanderson.com/healthyR.ts/reference/ts_calendar_heatmap_plot.html?q=calendar#null)
+
+```{r warning=FALSE, message=FALSE}
+ts_calendar_heatmap_plot(engagement_tbl, date, impressions, .interactive = FALSE) +
+  labs(title = "Calendar Heatmap - Impressions")
+
+ts_calendar_heatmap_plot(engagement_tbl, date, engagements, .interactive = FALSE) +
+  labs(title = "Calendar Heatmap - Engagemets")
+
+ts_calendar_heatmap_plot(engagement_tbl, date, `Engagement Rate`, .interactive = FALSE) +
+  labs(title = "Calendar Heatmap - Engagement Rate")
+
+ts_calendar_heatmap_plot(followers_tbl, date, new_followers, .interactive = FALSE) +
+  labs(title = "Calendar Heatmap - New Followers")
+```
+
+Some seasonal diagnostics using [`{timetk}`](https://business-science.github.io/timetk/)
+
+```{r, warning=FALSE, message=FALSE}
+plot_seasonal_diagnostics(engagement_tbl
+                          , date, engagements, .interactive = FALSE,
+                          .feature_set = c("wday.lbl", "month.lbl"),
+                          .title = "Seasonal Diagnostics - Engagements") +
+  theme_minimal()
+
+plot_seasonal_diagnostics(engagement_tbl
+                          , date, impressions, .interactive = FALSE,
+                          .feature_set = c("wday.lbl", "month.lbl"),
+                          .title = "Seasonal Diagnostics - Impressions") +
+  theme_minimal()
+
+plot_seasonal_diagnostics(engagement_tbl
+                          , date, `Engagement Rate`, .interactive = FALSE,
+                          .feature_set = c("wday.lbl", "month.lbl"),
+                          .title = "Seasonal Diagnostics - Engagement Rate") +
+  theme_minimal()
+
+plot_seasonal_diagnostics(
+  followers_tbl, date, new_followers, .interactive = FALSE, 
+  .feature_set = c("wday.lbl","month.lbl"), 
+  .title = "Seasonal Diagnostics - New Followers") +
+  theme_minimal()
+```
+
+Finally some lag correlation plots with [`ts_lag_correlation()`](https://www.spsanderson.com/healthyR.ts/reference/ts_lag_correlation.html?q=ts_lag#null).
+
+```{r warning=FALSE, message=FALSE}
+ts_lag_correlation(engagement_tbl, date, engagements, .lags = c(7, 14, 21, 28))$plots$lag_plot +
+  labs(title = "Lag Correlation Plot - Engagements") +
+  geom_smooth(se = FALSE, method = "lm", color = "black", linetype = "dashed")
+
+ts_lag_correlation(engagement_tbl, date, impressions, .lags = c(7, 14, 21, 28))$plots$lag_plot +
+  labs(title = "Lag Correlation Plot - Impressions") +
+  geom_smooth(se = FALSE, method = "lm", color = "black", linetype = "dashed")
+
+ts_lag_correlation(engagement_tbl, date, `Engagement Rate`, .lags = c(7, 14, 21, 28))$plots$lag_plot +
+  labs(title = "Lag Correlation Plot - Engagement Rate") +
+  geom_smooth(se = FALSE, method = "lm", color = "black", linetype = "dashed")
+
+ts_lag_correlation(followers_tbl, date, new_followers, .lags = c(7, 14, 21, 28))$plots$lag_plot +
+  labs(title = "Lag Correlation Plot - New Followers") +
+  geom_smooth(se = FALSE, method = "lm", color = "black", linetype = "dashed")
+```
+
+# Key Stats and Tables
+
+Now we are going to look at some key stats and tables. First we will look at the top 10 posts by impressions.
+
+```{r}
+top_posts_tbl %>%
+  select(post_publish_date_2, impressions, post_url_1) %>%
+  arrange(desc(impressions)) %>%
+  head(10) %>%
+  setNames(c("Post Date", "Impressions", "Post URL")) %>%
+  kable(caption = "Top 10 Posts by Impressions", align = "c")
+```
+
+Now we will look at the top 10 posts by engagements.
+
+```{r}
+top_posts_tbl %>%
+  select(post_publish_date_2, engagements, post_url_1) %>%
+  arrange(desc(engagements)) %>%
+  head(10) %>%
+  setNames(c("Post Date", "Engagements", "Post URL")) %>%
+  kable(caption = "Top 10 Posts by Engagements", align = "c")
+```
+
+Now we will look at the top 10 posts by engagement rate.
+
+```{r}
+top_posts_tbl %>%
+  select(post_publish_date_2, engagements, impressions, post_url_1) %>%
+  mutate(engagement_rate = engagements / impressions) %>%
+  arrange(desc(engagement_rate)) %>%
+  select(post_publish_date_2, engagement_rate, post_url_1) %>%
+  head(10) %>%
+  setNames(c("Post Date", "Engagement Rate", "Post URL")) %>%
+  kable(caption = "Top 10 Posts by Engagement Rate", align = "c")
+```
+
+Total Impressions: 1,756788
+
+Total Engagements: 16,15
+
+Mean Engagement Rate: `r mean(sum(engagement_tbl$engagements) / sum(engagement_tbl$impressions))`
+
+New Followers: 3,794
+
+And finally the demographics of people who typically interact with my posts:
+
+```{r}
+demographics_tbl %>%
+  mutate(percentage = substr(percentage, 1, 4)) %>%
+  kable(
+    caption = "Demographics of People Who Interact With My Posts", 
+    align = "c"
+    )
+```
+
+Voila!
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
