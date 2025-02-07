@@ -39,6 +39,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     '*GitHub Network here*: [https://github.com/spsanderson](https://github.com/spsanderson)\n\n',
     '*Bluesky Network here*: [https://bsky.app/profile/spsanderson.com](https://bsky.app/profile/spsanderson.com)\n\n',
     '*My Book: _Extending Excel with Python and R_ here*: [https://packt.link/oTyZJ](https://packt.link/oTyZJ)\n\n',
+    '*You.com Referral Link*: [https://you.com/join/EHSLDTL6](https://you.com/join/EHSLDTL6)\n\n',
     '---\n\n',
     '<script src="https://giscus.app/client.js"\n',
     '        data-repo="spsanderson/steveondata"\n',
