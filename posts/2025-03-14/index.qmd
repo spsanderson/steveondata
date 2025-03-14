@@ -1,0 +1,578 @@
+---
+title: "Flow Control: Branching with if - A Beginner's Guide to Linux Programming"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-03-14"
+categories: [code, linux]
+toc: TRUE
+description: "Learn how to create decision points in your Linux programs with the 'if' statement. This beginner-friendly guide explains branching, conditional expressions, and flow control with clear examples for new programmers. Master the foundation of program logic with our comprehensive tutorial on 'if' statements in bash scripting."
+keywords: [Programming, Flow control, if statement bash, Linux programming, Branching in programming, Bash scripting, Conditional expressions, Test command, Exit status, Shell programming, Boolean logic, How to write if statements in Linux bash scripts, Comparing integers in bash conditional statements, Using regular expressions with if statements in Linux, File existence testing in bash scripts, Logical operators with bash if-else conditions]
+draft: TRUE
+---
+
+*Author's Note: I'm learning alongside you as I write this series. Programming concepts can be challenging at first, but we'll work through them together with clear explanations and practical examples.*
+
+# Introduction
+
+When writing programs, you'll often need your code to make decisions based on certain conditions. Should it perform one action or another? This decision-making ability is called "branching," and it forms the foundation of what programmers call "flow control."
+
+Imagine you're at a fork in the road. Based on certain conditions (maybe it's raining, or perhaps you're in a hurry), you'll choose one path over another. That's exactly what branching in programming allows your code to do!
+
+In this article, we'll explore how the Linux shell uses the `if` statement to create these decision points in your code. By the end, you'll be able to write scripts that can adapt and respond intelligently based on different situations.
+
+# What is Flow Control?
+
+Flow control refers to the order in which statements and instructions are executed in a program. Without flow control, a program would simply run each line of code in sequence from top to bottom. While that works for simple tasks, most useful programs need to:
+
+-   Skip certain code blocks based on conditions
+-   Run specific sections repeatedly
+-   Jump to different parts of the program
+
+The most fundamental type of flow control is branching, which allows a program to choose between different paths of execution. In bash scripting, the primary tool for branching is the `if` statement.
+
+# The Basic Structure of an `if` Statement
+
+In its simplest form, an `if` statement in bash looks like this:
+
+``` bash
+if [condition]; then
+    # Commands to run when condition is true
+fi
+```
+
+Here's a more complete structure that includes alternative paths:
+
+``` bash
+if [condition]; then
+    # Commands to run when condition is true
+elif [another_condition]; then
+    # Commands to run when the first condition is false
+    # but another_condition is true
+else
+    # Commands to run when all conditions are false
+fi
+```
+
+The `if` statement always ends with `fi` (which is "if" spelled backward).
+
+# Your First if Statement
+
+Let's start with a simple example where we check if a number equals 5:
+
+``` bash
+x=5
+if [ $x -eq 5 ]; then
+    echo "x equals 5."
+else
+    echo "x does not equal 5."
+fi
+```
+
+You can try this directly in your terminal:
+
+``` bash
+$ x=5
+$ if [ $x -eq 5 ]; then echo "equals 5"; else echo "does not equal 5"; fi
+equals 5
+$ x=0
+$ if [ $x -eq 5 ]; then echo "equals 5"; else echo "does not equal 5"; fi
+does not equal 5
+```
+
+# Understanding Exit Status
+
+To fully understand how `if` works in bash, you need to know about "exit status." Every command in Linux, including the scripts and functions you write, returns a value between 0 and 255 when it completes. This value is called the exit status:
+
+-   An exit status of 0 means the command succeeded
+-   Any other value (1-255) indicates some type of failure
+
+You can check the exit status of the last command using the special `$?` variable:
+
+``` bash
+$ ls -d /usr/bin
+/usr/bin
+$ echo $?
+0           # Command succeeded
+
+$ ls -d /bin/usr
+ls: cannot access '/bin/usr': No such file or directory
+$ echo $?
+2           # Command failed with exit status 2
+```
+
+## The true and false Commands
+
+Linux provides two simple commands that do nothing but return success or failure: - `true` always returns an exit status of 0 (success) - `false` always returns an exit status of 1 (failure)
+
+``` bash
+$ true
+$ echo $?
+0
+$ false
+$ echo $?
+1
+```
+
+The `if` statement evaluates the exit status of commands. If the command returns 0 (success), the code in the `then` section runs:
+
+``` bash
+$ if true; then echo "It's true."; fi
+It's true.
+$ if false; then echo "It's true."; fi
+# No output because the condition failed
+```
+
+# The test Command
+
+While you can use any command with `if`, the most common one is `test`, which performs various checks and comparisons. The `test` command has two forms:
+
+1.  `test expression`
+2.  `[ expression ]` (This is more popular and readable)
+
+The test command returns success (0) if the expression is true and failure (1) if it's false.
+
+## Common Types of Tests
+
+You can check many things with the test command. Let's look at the most useful categories:
+
+### 1. File Tests
+
+These expressions check properties of files and directories:
+
+``` bash
+[ -e file ]  # True if the file exists
+[ -d file ]  # True if the file exists and is a directory
+[ -f file ]  # True if the file exists and is a regular file
+[ -r file ]  # True if the file exists and is readable
+[ -w file ]  # True if the file exists and is writable
+[ -x file ]  # True if the file exists and is executable
+```
+
+Here's a script that demonstrates some file tests:
+
+``` bash
+#!/bin/bash
+# A script to check file properties
+
+FILE=~/.bashrc  # Your bash configuration file
+
+if [ -e "$FILE" ]; then
+    echo "$FILE exists"
+    
+    if [ -f "$FILE" ]; then
+        echo "$FILE is a regular file"
+    fi
+    
+    if [ -d "$FILE" ]; then
+        echo "$FILE is a directory"
+    fi
+    
+    if [ -r "$FILE" ]; then
+        echo "$FILE is readable"
+    fi
+    
+    if [ -w "$FILE" ]; then
+        echo "$FILE is writable"
+    fi
+    
+    if [ -x "$FILE" ]; then
+        echo "$FILE is executable/searchable"
+    fi
+else
+    echo "$FILE does not exist"
+fi
+```
+
+### 2. String Tests
+
+These expressions check properties of strings:
+
+``` bash
+[ -z string ]          # True if the string is empty
+[ -n string ]          # True if the string is not empty
+[ string1 = string2 ]  # True if the strings are equal
+[ string1 != string2 ] # True if the strings are not equal
+```
+
+Here's a script that evaluates a string:
+
+``` bash
+#!/bin/bash
+# A script to evaluate a string
+
+ANSWER="maybe"
+
+if [ -z "$ANSWER" ]; then
+    echo "There is no answer."
+    exit 1  # Exit with error status
+fi
+
+if [ "$ANSWER" = "yes" ]; then
+    echo "The answer is YES."
+elif [ "$ANSWER" = "no" ]; then
+    echo "The answer is NO."
+elif [ "$ANSWER" = "maybe" ]; then
+    echo "The answer is MAYBE."
+else
+    echo "The answer is UNKNOWN."
+fi
+```
+
+### 3. Integer Comparison Tests
+
+These expressions compare integers:
+
+``` bash
+[ int1 -eq int2 ]  # True if int1 equals int2
+[ int1 -ne int2 ]  # True if int1 is not equal to int2
+[ int1 -lt int2 ]  # True if int1 is less than int2
+[ int1 -le int2 ]  # True if int1 is less than or equal to int2
+[ int1 -gt int2 ]  # True if int1 is greater than int2
+[ int1 -ge int2 ]  # True if int1 is greater than or equal to int2
+```
+
+Here's a script that evaluates an integer:
+
+``` bash
+#!/bin/bash
+# A script to evaluate an integer
+
+INT=7
+
+if [ -z "$INT" ]; then
+    echo "INT is empty." >&2
+    exit 1
+fi
+
+if [ $INT -eq 0 ]; then
+    echo "INT is zero."
+else
+    if [ $INT -lt 0 ]; then
+        echo "INT is negative."
+    else
+        echo "INT is positive."
+    fi
+    
+    if [ $((INT % 2)) -eq 0 ]; then
+        echo "INT is even."
+    else
+        echo "INT is odd."
+    fi
+fi
+```
+
+# The Modern \[\[ \]\] Test Command
+
+Newer versions of bash provide an improved version of the test command using double brackets:
+
+``` bash
+[[ expression ]]
+```
+
+This version supports everything the original test command does, plus additional features:
+
+## 1. Regular Expression Matching
+
+One of the most useful additions is regular expression matching with the `=~` operator:
+
+``` bash
+[[ string =~ regex ]]  # True if string matches the regex pattern
+```
+
+This is extremely helpful for validating user input. For example, to check if a variable contains an integer:
+
+``` bash
+#!/bin/bash
+# Validating that a variable contains an integer
+
+INT="-42"
+
+if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+    echo "$INT is a valid integer."
+else
+    echo "$INT is not a valid integer."
+fi
+```
+
+The regular expression `^-?[0-9]+$` checks that the string: - Begins with an optional minus sign (`-?`) - Followed by one or more digits (`[0-9]+`) - With nothing else before or after (`^` marks the start and `$` marks the end)
+
+## 2. Pattern Matching
+
+The `==` operator in `[[ ]]` supports pattern matching similar to filename globbing:
+
+``` bash
+FILE="document.txt"
+if [[ $FILE == *.txt ]]; then
+    echo "$FILE is a text file."
+fi
+```
+
+# The (( )) Command for Integer Operations
+
+Bash provides yet another compound command specifically for integer arithmetic:
+
+``` bash
+(( expression ))
+```
+
+This command returns true (0) if the result of the arithmetic evaluation is non-zero, and false (1) if the result is zero.
+
+``` bash
+$ if ((1)); then echo "True"; fi
+True
+$ if ((0)); then echo "True"; fi
+# No output because 0 is false
+```
+
+This is particularly useful for arithmetic comparisons:
+
+``` bash
+#!/bin/bash
+# Using (( )) for integer evaluation
+
+INT=42
+
+if (( INT == 0 )); then
+    echo "INT is zero."
+elif (( INT < 0 )); then
+    echo "INT is negative."
+else
+    echo "INT is positive."
+fi
+
+if (( INT % 2 == 0 )); then
+    echo "INT is even."
+else
+    echo "INT is odd."
+fi
+```
+
+Notice how the syntax inside `(( ))` looks more like traditional programming languages with operators like `==`, `<`, `>`, and so on.
+
+# Combining Expressions with Logical Operators
+
+You can create more complex conditions by combining expressions with logical operators:
+
+| Operation | test | \[\[ \]\] and (( )) |
+|-----------|------|---------------------|
+| AND       | -a   | &&                  |
+| OR        | -o   | \|\|                |
+| NOT       | !    | !                   |
+
+## Example: Checking if a Number is Within a Range
+
+``` bash
+#!/bin/bash
+# Check if a number is within a specified range
+
+MIN_VAL=1
+MAX_VAL=100
+INT=50
+
+if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+    if [[ INT -ge MIN_VAL && INT -le MAX_VAL ]]; then
+        echo "$INT is within $MIN_VAL to $MAX_VAL."
+    else
+        echo "$INT is out of range."
+    fi
+else
+    echo "INT is not an integer." >&2
+    exit 1
+fi
+```
+
+With the traditional test command, you'd write:
+
+``` bash
+if [ $INT -ge $MIN_VAL -a $INT -le $MAX_VAL ]; then
+    echo "$INT is within $MIN_VAL to $MAX_VAL."
+else
+    echo "$INT is out of range."
+fi
+```
+
+## Using Negation
+
+The `!` operator reverses the result of an expression. Here's an example that finds values outside a range:
+
+``` bash
+#!/bin/bash
+# Check if a number is outside a specified range
+
+MIN_VAL=1
+MAX_VAL=100
+INT=150
+
+if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
+    if [[ ! (INT -ge MIN_VAL && INT -le MAX_VAL) ]]; then
+        echo "$INT is outside $MIN_VAL to $MAX_VAL."
+    else
+        echo "$INT is in range."
+    fi
+else
+    echo "INT is not an integer." >&2
+    exit 1
+fi
+```
+
+# Control Operators: && and \|\|
+
+Bash provides two more ways to perform simple conditional execution:
+
+## The && (AND) Operator
+
+The AND operator (`&&`) executes the second command only if the first command succeeds:
+
+``` bash
+command1 && command2
+```
+
+This is useful for chaining commands that depend on each other:
+
+``` bash
+mkdir temp && cd temp
+```
+
+This creates a directory named "temp" and changes to that directory only if the directory creation succeeds.
+
+## The \|\| (OR) Operator
+
+The OR operator (`||`) executes the second command only if the first command fails:
+
+``` bash
+command1 || command2
+```
+
+This is perfect for error handling:
+
+``` bash
+[ -d temp ] || mkdir temp
+```
+
+This checks if the "temp" directory exists, and only creates it if the check fails (meaning the directory doesn't exist).
+
+You can use this for error handling in scripts:
+
+``` bash
+[ -d temp ] || exit 1
+```
+
+This exits the script with an error code if the "temp" directory doesn't exist.
+
+# Your Turn!
+
+Let's practice what we've learned with a simple exercise. Try writing a script that: 1. Asks the user for a number 2. Checks if the input is actually a valid number 3. Tells the user if the number is positive, negative, or zero 4. Also tells the user if the number is even or odd
+
+<details>
+
+<summary>See Solution</summary>
+
+``` bash
+#!/bin/bash
+# number-checker.sh - Check properties of a user-provided number
+
+echo "Please enter a number:"
+read USER_INPUT
+
+# Check if input is a valid number
+if [[ ! "$USER_INPUT" =~ ^-?[0-9]+$ ]]; then
+    echo "Error: '$USER_INPUT' is not a valid integer."
+    exit 1
+fi
+
+# Check if positive, negative, or zero
+if (( USER_INPUT > 0 )); then
+    echo "$USER_INPUT is positive."
+elif (( USER_INPUT < 0 )); then
+    echo "$USER_INPUT is negative."
+else
+    echo "$USER_INPUT is zero."
+fi
+
+# Check if even or odd
+if (( USER_INPUT % 2 == 0 )); then
+    echo "$USER_INPUT is even."
+else
+    echo "$USER_INPUT is odd."
+fi
+
+echo "Thanks for using the number checker!"
+```
+
+You can save this as `number-checker.sh`, make it executable with `chmod +x number-checker.sh`, and then run it with `./number-checker.sh`.
+
+</details>
+
+# Key Takeaways
+
+-   **Flow control** allows your scripts to make decisions and take different actions based on conditions.
+-   The **if statement** is the primary tool for branching in bash scripts.
+-   Commands return an **exit status** (0 for success, non-zero for failure) that if statements evaluate.
+-   The **test command** (or `[ ]`) provides various checks for files, strings, and numbers.
+-   Modern bash provides **\[\[ \]\]** with enhanced features like regex matching and pattern matching.
+-   For integer arithmetic, use **(( ))** for a cleaner, more familiar syntax.
+-   **Logical operators** (&& and \|\|) allow you to combine expressions or control command execution based on success/failure.
+
+# Conclusion
+
+Congratulations! You now understand the fundamentals of branching with the `if` statement in bash. This is a powerful concept that forms the foundation of program logic and decision-making. As you continue learning, you'll find that these tools allow you to create increasingly sophisticated scripts that can handle complex tasks and respond intelligently to different conditions.
+
+Remember that programming is a skill that improves with practice. Try writing your own scripts that use if statements to solve problems or automate tasks on your system. Start simple, and gradually increase the complexity as your confidence grows.
+
+In our next article, we'll explore more advanced flow control techniques, including loops that allow you to repeat sections of code multiple times.
+
+# References
+
+Click on these links to learn more about flow control in Linux programming:
+
+-   [Bash Manual: Conditional Expressions](https://www.gnu.org/software/bash/manual/html_node/Conditional-Constructs.html)
+-   [GNU Coreutils: test command](https://www.gnu.org/software/coreutils/manual/html_node/test-invocation.html)
+-   [Bash Manual: Control Operators](https://www.gnu.org/software/bash/manual/html_node/Lists.html)
+-   [Advanced Bash-Scripting Guide: Tests](https://tldp.org/LDP/abs/html/tests.html)
+-   [Linux Documentation Project: Control Structures](https://tldp.org/HOWTO/Bash-Prog-Intro-HOWTO-6.html)
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+![Control Flow](todays_post.png)
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
