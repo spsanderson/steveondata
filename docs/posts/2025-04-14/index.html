@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2025-04-14">
+<meta name="keywords" content="Programming, apply() in R, apply functions in R, R programming, data manipulation in R, R functions, vector operations in R, R data analysis, R programming best practices, functional programming in R, R apply family functions, how to use sapply() for data transformation in R, applying custom functions with sapply() in R, performance comparison of sapply() and lapply() in R, best practices for using sapply() in R programming, understanding the apply family of functions in R">
+<meta name="description" content="Unlock the power of R programming with this comprehensive guide on using sapply() to apply functions over vectors and lists. Discover practical examples, best practices, and performance tips to streamline your data manipulation tasks. Perfect for R programmers looking to enhance their coding efficiency and readability.">
+
+<title>Applying a Function Over a Vector with sapply() in R: A Complete Guide – Steve’s Data Tips and Tricks</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Applying a Function Over a Vector with sapply() in R: A Complete Guide – Steve’s Data Tips and Tricks">
+<meta property="og:description" content="Unlock the power of R programming with this comprehensive guide on using sapply() to apply functions over vectors and lists. Discover practical examples, best practices, and performance tips to streamline your data manipulation tasks. Perfect for R programmers looking to enhance their coding efficiency and readability.">
+<meta property="og:site_name" content="Steve's Data Tips and Tricks">
+<meta name="twitter:title" content="Applying a Function Over a Vector with sapply() in R: A Complete Guide – Steve’s Data Tips and Tricks">
+<meta name="twitter:description" content="Unlock the power of R programming with this comprehensive guide on using sapply() to apply functions over vectors and lists. Discover practical examples, best practices, and performance tips to streamline your data manipulation tasks. Perfect for R programmers looking to enhance their coding efficiency and readability.">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:site" content="@steveondata">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"> <i class="bi bi-telegram" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="http://feeds.feedburner.com/RBloggers"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-bloggers.com/"> <i class="bi bi-book" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-users.com/"> <i class="bi bi-briefcase" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Applying a Function Over a Vector with sapply() in R: A Complete Guide</h1>
+                  <div>
+        <div class="description">
+          Unlock the power of R programming with this comprehensive guide on using sapply() to apply functions over vectors and lists. Discover practical examples, best practices, and performance tips to streamline your data manipulation tasks. Perfect for R programmers looking to enhance their coding efficiency and readability.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 14, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>Programming, apply() in R, apply functions in R, R programming, data manipulation in R, R functions, vector operations in R, R data analysis, R programming best practices, functional programming in R, R apply family functions, how to use sapply() for data transformation in R, applying custom functions with sapply() in R, performance comparison of sapply() and lapply() in R, best practices for using sapply() in R programming, understanding the apply family of functions in R</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#understanding-sapply-basics" id="toc-understanding-sapply-basics" class="nav-link" data-scroll-target="#understanding-sapply-basics">Understanding sapply() Basics</a>
+  <ul class="collapse">
+  <li><a href="#syntax-and-parameters" id="toc-syntax-and-parameters" class="nav-link" data-scroll-target="#syntax-and-parameters">Syntax and Parameters</a></li>
+  <li><a href="#what-makes-sapply-special" id="toc-what-makes-sapply-special" class="nav-link" data-scroll-target="#what-makes-sapply-special">What Makes sapply() Special</a></li>
+  </ul></li>
+  <li><a href="#basic-usage-examples" id="toc-basic-usage-examples" class="nav-link" data-scroll-target="#basic-usage-examples">Basic Usage Examples</a>
+  <ul class="collapse">
+  <li><a href="#example-1-simple-mathematical-operations" id="toc-example-1-simple-mathematical-operations" class="nav-link" data-scroll-target="#example-1-simple-mathematical-operations">Example 1: Simple Mathematical Operations</a></li>
+  <li><a href="#example-2-using-custom-functions" id="toc-example-2-using-custom-functions" class="nav-link" data-scroll-target="#example-2-using-custom-functions">Example 2: Using Custom Functions</a></li>
+  <li><a href="#example-3-string-manipulation" id="toc-example-3-string-manipulation" class="nav-link" data-scroll-target="#example-3-string-manipulation">Example 3: String Manipulation</a></li>
+  </ul></li>
+  <li><a href="#advanced-usage" id="toc-advanced-usage" class="nav-link" data-scroll-target="#advanced-usage">Advanced Usage</a>
+  <ul class="collapse">
+  <li><a href="#passing-additional-arguments" id="toc-passing-additional-arguments" class="nav-link" data-scroll-target="#passing-additional-arguments">Passing Additional Arguments</a></li>
+  <li><a href="#error-handling-in-sapply" id="toc-error-handling-in-sapply" class="nav-link" data-scroll-target="#error-handling-in-sapply">Error Handling in sapply()</a></li>
+  <li><a href="#working-with-lists-and-complex-data-structures" id="toc-working-with-lists-and-complex-data-structures" class="nav-link" data-scroll-target="#working-with-lists-and-complex-data-structures">Working with Lists and Complex Data Structures</a></li>
+  </ul></li>
+  <li><a href="#best-practices" id="toc-best-practices" class="nav-link" data-scroll-target="#best-practices">Best Practices</a>
+  <ul class="collapse">
+  <li><a href="#when-to-use-sapply" id="toc-when-to-use-sapply" class="nav-link" data-scroll-target="#when-to-use-sapply">When to Use sapply()</a></li>
+  <li><a href="#when-to-avoid-sapply" id="toc-when-to-avoid-sapply" class="nav-link" data-scroll-target="#when-to-avoid-sapply">When to Avoid sapply()</a></li>
+  </ul></li>
+  <li><a href="#performance-considerations" id="toc-performance-considerations" class="nav-link" data-scroll-target="#performance-considerations">Performance Considerations</a>
+  <ul class="collapse">
+  <li><a href="#sapply-vs.-loops" id="toc-sapply-vs.-loops" class="nav-link" data-scroll-target="#sapply-vs.-loops">sapply() vs.&nbsp;Loops</a></li>
+  </ul></li>
+  <li><a href="#comparison-with-other-apply-family-functions" id="toc-comparison-with-other-apply-family-functions" class="nav-link" data-scroll-target="#comparison-with-other-apply-family-functions">Comparison with Other Apply Family Functions</a></li>
+  <li><a href="#real-world-applications" id="toc-real-world-applications" class="nav-link" data-scroll-target="#real-world-applications">Real-World Applications</a>
+  <ul class="collapse">
+  <li><a href="#data-transformation" id="toc-data-transformation" class="nav-link" data-scroll-target="#data-transformation">Data Transformation</a></li>
+  <li><a href="#statistical-analysis" id="toc-statistical-analysis" class="nav-link" data-scroll-target="#statistical-analysis">Statistical Analysis</a></li>
+  <li><a href="#text-processing" id="toc-text-processing" class="nav-link" data-scroll-target="#text-processing">Text Processing</a></li>
+  </ul></li>
+  <li><a href="#common-pitfalls-and-solutions" id="toc-common-pitfalls-and-solutions" class="nav-link" data-scroll-target="#common-pitfalls-and-solutions">Common Pitfalls and Solutions</a>
+  <ul class="collapse">
+  <li><a href="#memory-issues-with-large-data" id="toc-memory-issues-with-large-data" class="nav-link" data-scroll-target="#memory-issues-with-large-data">Memory Issues with Large Data</a></li>
+  </ul></li>
+  <li><a href="#your-turn" id="toc-your-turn" class="nav-link" data-scroll-target="#your-turn">Your Turn!</a></li>
+  <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways">Key Takeaways</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#faqs" id="toc-faqs" class="nav-link" data-scroll-target="#faqs">FAQs</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p><em>The <code>sapply()</code> function in R is a powerful tool for applying functions to vectors and lists, simplifying output into vectors or matrices. It streamlines data manipulation tasks while offering better readability and efficiency compared to traditional loops.</em></p>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The <code>sapply()</code> function in R is an essential tool for applying functions over vectors and lists, providing a simplified and more readable alternative to explicit loops. As a member of R’s apply family of functions, <code>sapply()</code> efficiently iterates through elements of data structures, automatically simplifying the output to the most appropriate form—typically a vector or matrix. This functionality makes it invaluable for R programmers looking to write cleaner, more efficient code for data manipulation tasks.</p>
+<p>In this comprehensive guide, we’ll explore how to effectively use <code>sapply()</code>, from basic syntax to advanced applications, providing practical examples along with best practices and performance considerations.</p>
+</section>
+<section id="understanding-sapply-basics" class="level1">
+<h1>Understanding sapply() Basics</h1>
+<section id="syntax-and-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="syntax-and-parameters">Syntax and Parameters</h2>
+<p>The basic syntax of the <code>sapply()</code> function is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(X, FUN, ..., <span class="at">simplify =</span> <span class="cn">TRUE</span>, <span class="at">USE.NAMES =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Where:</p>
+<ul>
+<li><strong>X</strong>: The vector or list to which the function will be applied</li>
+<li><strong>FUN</strong>: The function to apply to each element</li>
+<li><strong>…</strong>: Additional arguments to pass to the function</li>
+<li><strong>simplify</strong>: Logical or character string that determines if the result should be simplified (default is TRUE)</li>
+<li><strong>USE.NAMES</strong>: Logical; if TRUE and X is a character vector, the names of X will be used for the result</li>
+</ul>
+</section>
+<section id="what-makes-sapply-special" class="level2">
+<h2 class="anchored" data-anchor-id="what-makes-sapply-special">What Makes sapply() Special</h2>
+<p>The key feature that distinguishes <code>sapply()</code> from other apply family functions is its automatic simplification of output. While <code>lapply()</code> always returns a list, <code>sapply()</code> attempts to return the simplest possible data structure—converting a list to a vector or matrix when appropriate. This simplification makes your code more readable and the output easier to work with.</p>
+</section>
+</section>
+<section id="basic-usage-examples" class="level1">
+<h1>Basic Usage Examples</h1>
+<section id="example-1-simple-mathematical-operations" class="level2">
+<h2 class="anchored" data-anchor-id="example-1-simple-mathematical-operations">Example 1: Simple Mathematical Operations</h2>
+<p>One of the most common uses for <code>sapply()</code> is to apply mathematical functions to numeric vectors:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply square root to a numeric vector</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>numbers <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">9</span>, <span class="dv">16</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">sapply</span>(numbers, sqrt)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)  <span class="co"># Output: 1 2 3 4</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1 2 3 4</code></pre>
+</div>
+</div>
+<p>In this example, the <code>sqrt</code> function is applied to each element of the <code>numbers</code> vector, returning a vector of the same length with the square roots of the original values.</p>
+</section>
+<section id="example-2-using-custom-functions" class="level2">
+<h2 class="anchored" data-anchor-id="example-2-using-custom-functions">Example 2: Using Custom Functions</h2>
+<p>You can also define and apply your own custom functions with <code>sapply()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a custom function</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>custom_function <span class="ot">&lt;-</span> <span class="cf">function</span>(x) { x<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="dv">3</span> }</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply it to a vector</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>numbers <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">sapply</span>(numbers, custom_function)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)  <span class="co"># Output: 4 7 12 19</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  4  7 12 19</code></pre>
+</div>
+</div>
+<p>This flexibility allows you to perform complex operations on each element of your data structure.</p>
+</section>
+<section id="example-3-string-manipulation" class="level2">
+<h2 class="anchored" data-anchor-id="example-3-string-manipulation">Example 3: String Manipulation</h2>
+<p><code>sapply()</code> works with all types of data, including character strings:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Capitalize words in a vector</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>words <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'apple'</span>, <span class="st">'banana'</span>, <span class="st">'cherry'</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>upper_words <span class="ot">&lt;-</span> <span class="fu">sapply</span>(words, toupper)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(upper_words)  <span class="co"># Output: "APPLE" "BANANA" "CHERRY"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   apple   banana   cherry 
+ "APPLE" "BANANA" "CHERRY" </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="advanced-usage" class="level1">
+<h1>Advanced Usage</h1>
+<section id="passing-additional-arguments" class="level2">
+<h2 class="anchored" data-anchor-id="passing-additional-arguments">Passing Additional Arguments</h2>
+<p>You can pass extra arguments to the function being applied:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Function that requires additional parameters</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>add <span class="ot">&lt;-</span> <span class="cf">function</span>(x, y) { x <span class="sc">+</span> y }</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply with an extra argument</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>numbers <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">sapply</span>(numbers, add, <span class="at">y =</span> <span class="dv">5</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)  <span class="co"># Output: 6 7 8 9</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 6 7 8 9</code></pre>
+</div>
+</div>
+<p>In this example, each element of <code>numbers</code> is passed as the first argument (<code>x</code>) to the <code>add</code> function, while the second argument (<code>y</code>) is consistently set to 5.</p>
+</section>
+<section id="error-handling-in-sapply" class="level2">
+<h2 class="anchored" data-anchor-id="error-handling-in-sapply">Error Handling in sapply()</h2>
+<p>When working with real-world data, you’ll often need to handle potential errors:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Safe function with error handling and type conversion</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>safe_square <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tryCatch</span>({</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    num <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(x)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.na</span>(num)) <span class="fu">stop</span>(<span class="st">"Non-numeric value"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(num<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Mixed data with potential errors</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>mixed_data <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="st">"three"</span>, <span class="dv">4</span>, <span class="dv">5</span>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">sapply</span>(mixed_data, safe_square)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in doTryCatch(return(expr), name, parentenv, handler): NAs introduced
+by coercion</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    1     2 three     4     5 
+    1     4    NA    16    25 </code></pre>
+</div>
+</div>
+<p>This approach ensures your code continues to run even when encountering problematic data.</p>
+</section>
+<section id="working-with-lists-and-complex-data-structures" class="level2">
+<h2 class="anchored" data-anchor-id="working-with-lists-and-complex-data-structures">Working with Lists and Complex Data Structures</h2>
+<p><code>sapply()</code> is particularly useful for extracting specific elements from a list of complex objects:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List of student records</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>students <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"John"</span>, <span class="at">scores =</span> <span class="fu">c</span>(<span class="dv">85</span>, <span class="dv">90</span>, <span class="dv">92</span>)),</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Jane"</span>, <span class="at">scores =</span> <span class="fu">c</span>(<span class="dv">95</span>, <span class="dv">88</span>, <span class="dv">91</span>)),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Bob"</span>, <span class="at">scores =</span> <span class="fu">c</span>(<span class="dv">78</span>, <span class="dv">85</span>, <span class="dv">80</span>))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract names</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>names <span class="ot">&lt;-</span> <span class="fu">sapply</span>(students, <span class="cf">function</span>(x) x<span class="sc">$</span>name)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(names)  <span class="co"># Output: "John" "Jane" "Bob"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "John" "Jane" "Bob" </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate average scores</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>avg_scores <span class="ot">&lt;-</span> <span class="fu">sapply</span>(students, <span class="cf">function</span>(x) <span class="fu">mean</span>(x<span class="sc">$</span>scores))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(avg_scores)  <span class="co"># Output: 89.00000 91.33333 81.00000</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 89.00000 91.33333 81.00000</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="best-practices" class="level1">
+<h1>Best Practices</h1>
+<section id="when-to-use-sapply" class="level2">
+<h2 class="anchored" data-anchor-id="when-to-use-sapply">When to Use sapply()</h2>
+<p><code>sapply()</code> is most appropriate when: - You want the output simplified to a vector or matrix - Your function returns results of consistent types and lengths - You’re working with vectors or lists of moderate size - You prefer readable code over explicit control of output structure</p>
+</section>
+<section id="when-to-avoid-sapply" class="level2">
+<h2 class="anchored" data-anchor-id="when-to-avoid-sapply">When to Avoid sapply()</h2>
+<p>Consider alternatives when: - You need guaranteed output structure (use <code>vapply()</code> instead) - You want to preserve the list structure (use <code>lapply()</code>) - You’re working with very large datasets (vectorized operations might be faster) - You need to handle errors differently for different elements</p>
+</section>
+</section>
+<section id="performance-considerations" class="level1">
+<h1>Performance Considerations</h1>
+<p>While <code>sapply()</code> provides convenience, it’s important to understand its performance characteristics:</p>
+<section id="sapply-vs.-loops" class="level2">
+<h2 class="anchored" data-anchor-id="sapply-vs.-loops">sapply() vs.&nbsp;Loops</h2>
+<p>In most cases, <code>sapply()</code> will be more efficient than traditional for loops in R because: 1. It reduces overhead by optimizing memory allocation 2. It has a cleaner syntax that improves code readability 3. It avoids the pitfalls of manually growing vectors in loops</p>
+<p>However, for very large datasets or when maximum performance is critical, vectorized operations built directly into R (like <code>sqrt()</code>, <code>log()</code>, etc.) will typically outperform <code>sapply()</code>.</p>
+<p>As shown in the performance comparison, vectorized operations (like those in NumPy) typically offer the best performance across different vector sizes. While list comprehensions (Python’s equivalent to <code>sapply()</code>) perform well, they don’t match the efficiency of fully vectorized operations.</p>
+</section>
+</section>
+<section id="comparison-with-other-apply-family-functions" class="level1">
+<h1>Comparison with Other Apply Family Functions</h1>
+<p>Understanding when to use each of the apply family functions is crucial for effective R programming:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 29%">
+<col style="width: 24%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Output Type</th>
+<th>Use Case</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>sapply()</code></td>
+<td>Vector, matrix, or array</td>
+<td>When you want simplified output</td>
+<td><code>sapply(1:5, sqrt)</code></td>
+</tr>
+<tr class="even">
+<td><code>lapply()</code></td>
+<td>Always a list</td>
+<td>When result structure consistency is important</td>
+<td><code>lapply(1:5, sqrt)</code></td>
+</tr>
+<tr class="odd">
+<td><code>vapply()</code></td>
+<td>Predefined output type</td>
+<td>When you need guaranteed type safety</td>
+<td><code>vapply(1:5, sqrt, numeric(1))</code></td>
+</tr>
+<tr class="even">
+<td><code>apply()</code></td>
+<td>Vector, matrix, or array</td>
+<td>For operations on rows or columns of matrices</td>
+<td><code>apply(matrix(1:9, 3), 1, sum)</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Key Finding</strong>: Choose <code>vapply()</code> when type consistency is crucial, <code>lapply()</code> when you need list output, and <code>sapply()</code> when you want the most convenient, simplified output form.</p>
+</blockquote>
+</section>
+<section id="real-world-applications" class="level1">
+<h1>Real-World Applications</h1>
+<section id="data-transformation" class="level2">
+<h2 class="anchored" data-anchor-id="data-transformation">Data Transformation</h2>
+<p><code>sapply()</code> excels at transforming data in data frames or lists:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform multiple columns in a data frame</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">b =</span> <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">c =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">15</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>transformed <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">sapply</span>(df, <span class="cf">function</span>(x) x <span class="sc">*</span> <span class="dv">2</span>))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(transformed)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   a  b  c
+1  2 12 22
+2  4 14 24
+3  6 16 26
+4  8 18 28
+5 10 20 30</code></pre>
+</div>
+</div>
+</section>
+<section id="statistical-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="statistical-analysis">Statistical Analysis</h2>
+<p>Calculate multiple statistics at once:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate multiple statistics for each column</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>data_summary <span class="ot">&lt;-</span> <span class="fu">sapply</span>(mtcars, <span class="cf">function</span>(x) {</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">mean</span>(x), </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">median =</span> <span class="fu">median</span>(x), </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd =</span> <span class="fu">sd</span>(x), </span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">min =</span> <span class="fu">min</span>(x), </span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">max =</span> <span class="fu">max</span>(x))</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(data_summary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             mpg      cyl     disp        hp      drat        wt      qsec
+mean   20.090625 6.187500 230.7219 146.68750 3.5965625 3.2172500 17.848750
+median 19.200000 6.000000 196.3000 123.00000 3.6950000 3.3250000 17.710000
+sd      6.026948 1.785922 123.9387  68.56287 0.5346787 0.9784574  1.786943
+min    10.400000 4.000000  71.1000  52.00000 2.7600000 1.5130000 14.500000
+max    33.900000 8.000000 472.0000 335.00000 4.9300000 5.4240000 22.900000
+              vs        am      gear   carb
+mean   0.4375000 0.4062500 3.6875000 2.8125
+median 0.0000000 0.0000000 4.0000000 2.0000
+sd     0.5040161 0.4989909 0.7378041 1.6152
+min    0.0000000 0.0000000 3.0000000 1.0000
+max    1.0000000 1.0000000 5.0000000 8.0000</code></pre>
+</div>
+</div>
+</section>
+<section id="text-processing" class="level2">
+<h2 class="anchored" data-anchor-id="text-processing">Text Processing</h2>
+<p>Process multiple text elements efficiently:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract word counts from multiple documents</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>documents <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"This is a sample text."</span>, </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Another example with more words."</span>, </span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Short text."</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>               </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>word_counts <span class="ot">&lt;-</span> <span class="fu">sapply</span>(documents, <span class="cf">function</span>(doc) {</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>(<span class="fu">strsplit</span>(doc, <span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>)[[<span class="dv">1</span>]])</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(word_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          This is a sample text. Another example with more words. 
+                               5                                5 
+                     Short text. 
+                               2 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="common-pitfalls-and-solutions" class="level1">
+<h1>Common Pitfalls and Solutions</h1>
+<section id="memory-issues-with-large-data" class="level2">
+<h2 class="anchored" data-anchor-id="memory-issues-with-large-data">Memory Issues with Large Data</h2>
+<p><strong>Problem</strong>: Applying functions to very large vectors can consume excessive memory.</p>
+<p><strong>Solution</strong>: Process data in chunks or use more memory-efficient alternatives:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Process a large vector in chunks</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>large_vector <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000000</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>chunk_size <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="fu">ceiling</span>(<span class="fu">length</span>(large_vector)<span class="sc">/</span>chunk_size))</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_along</span>(results)) {</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  start_idx <span class="ot">&lt;-</span> (i<span class="dv">-1</span>) <span class="sc">*</span> chunk_size <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  end_idx <span class="ot">&lt;-</span> <span class="fu">min</span>(i <span class="sc">*</span> chunk_size, <span class="fu">length</span>(large_vector))</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  chunk <span class="ot">&lt;-</span> large_vector[start_idx<span class="sc">:</span>end_idx]</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  results[[i]] <span class="ot">&lt;-</span> <span class="fu">sapply</span>(chunk, your_function)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>final_result <span class="ot">&lt;-</span> <span class="fu">unlist</span>(results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p>Now that you’ve learned about <code>sapply()</code>, try this exercise to test your understanding:</p>
+<p>Write an R function that uses <code>sapply()</code> to find the number of unique characters in each string of a character vector.</p>
+<details>
+<summary>
+Click To See Solution!
+</summary>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>count_unique_chars <span class="ot">&lt;-</span> <span class="cf">function</span>(strings) {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sapply</span>(strings, <span class="cf">function</span>(s) {</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">strsplit</span>(s, <span class="st">""</span>)[[<span class="dv">1</span>]]))</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Test it</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>texts <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"hello"</span>, <span class="st">"world"</span>, <span class="st">"R programming"</span>, <span class="st">"sapply"</span>)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>unique_counts <span class="ot">&lt;-</span> <span class="fu">count_unique_chars</span>(texts)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(unique_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        hello         world R programming        sapply 
+            4             5            10             5 </code></pre>
+</div>
+</div>
+</details>
+</section>
+<section id="key-takeaways" class="level1">
+<h1>Key Takeaways</h1>
+<ul>
+<li><p><strong>Simplification Power</strong>: <code>sapply()</code> automatically simplifies outputs to vectors or matrices when possible, making your results easier to work with.</p></li>
+<li><p><strong>Flexibility</strong>: It works with various data types and can handle custom functions with additional parameters.</p></li>
+<li><p><strong>Readability</strong>: Using <code>sapply()</code> leads to cleaner, more concise code compared to explicit loops.</p></li>
+<li><p><strong>Performance</strong>: While generally more efficient than loops, vectorized operations may outperform <code>sapply()</code> for simple operations on large datasets.</p></li>
+<li><p><strong>Type Safety</strong>: When guaranteed output types are critical, consider using <code>vapply()</code> instead.</p></li>
+</ul>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>The <code>sapply()</code> function is a versatile tool in the R programmer’s toolkit, offering an elegant way to apply functions over vectors and lists. By automatically simplifying outputs and providing a clean syntax, it helps create more readable and maintainable code.</p>
+<p>Whether you’re performing simple mathematical operations, complex data transformations, or text processing, <code>sapply()</code> can streamline your workflow and make your code more expressive. Remember to consider alternatives like <code>vapply()</code> when type safety is crucial or vectorized operations when maximum performance is needed.</p>
+<p>By mastering <code>sapply()</code> and understanding its place among R’s apply family functions, you’ll be well-equipped to handle a wide range of data manipulation tasks efficiently and elegantly.</p>
+</section>
+<section id="faqs" class="level1">
+<h1>FAQs</h1>
+<p><strong>Q: When should I use sapply() instead of a for loop?</strong> A: Use <code>sapply()</code> when you need to apply the same operation to each element of a vector or list and want cleaner, more concise code. It’s generally more readable and often more efficient than explicit loops.</p>
+<p><strong>Q: What’s the difference between sapply() and lapply()?</strong> A: While both apply a function to each element of a vector or list, <code>lapply()</code> always returns a list, whereas <code>sapply()</code> attempts to simplify the output to a vector or matrix when possible.</p>
+<p><strong>Q: Can sapply() handle different return types?</strong> A: Yes, but with caution. If your function returns inconsistent types, <code>sapply()</code> may produce unexpected results. For guaranteed type consistency, use <code>vapply()</code> instead.</p>
+<p><strong>Q: Is sapply() always faster than loops?</strong> A: Usually, but not always. For very large datasets or simple operations, vectorized functions built directly into R may outperform <code>sapply()</code>.</p>
+<p><strong>Q: Can I use sapply() with data frames?</strong> A: Yes, <code>sapply()</code> can be used with data frames, where it applies the function to each column. This is particularly useful for performing the same transformation on multiple columns.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>Here are the clickable references for the article on applying functions over vectors with <code>sapply()</code> in R:</p>
+<ol type="1">
+<li><p><strong>sapply FUNCTION in R</strong> - Learn how to use the vectorized <code>sapply</code> function in R, the difference between the <code>lapply</code> function, how to use additional arguments, and much more. <a href="https://r-coder.com/sapply-function-r/">Read more here</a>.</p></li>
+<li><p><strong>How to Use Apply Functions</strong> - This guide explains the family of apply functions in R, including practical examples and when to use each function effectively. <a href="https://www.rforecology.com/post/how-to-use-apply-functions/">Explore the details</a>.</p></li>
+</ol>
+<hr>
+<p><em>Have you used <code>sapply()</code> in your R projects? What other apply family functions do you find most useful? Share your experiences or questions in the comments below!</em></p>
+<hr>
+<p>Happy Coding! 🚀</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="todays_post.png" class="img-fluid figure-img"></p>
+<figcaption>sapply() in R</figcaption>
+</figure>
+</div>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = true;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/www\.spsanderson\.com\/steveondata\/");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
