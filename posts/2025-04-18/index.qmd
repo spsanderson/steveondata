@@ -1,0 +1,442 @@
+---
+title: "Mastering Positional Parameters in Linux: A Beginner's Guide"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-04-18"
+categories: [code, linux]
+toc: TRUE
+description: "Learn about positional parameters in Linux shell scripting! This beginner-friendly guide covers how to access command-line arguments using variables like $0, $1, and $@. Discover practical examples, including how to create interactive scripts, manage multiple arguments, and utilize the shift command. Perfect for those new to scripting, this article provides clear explanations and working code snippets to enhance your understanding of Bash scripting."
+keywords: [Programming, Positional parameters, Bash scripting, Command line arguments, Shell scripting, Linux scripting, $0, $1, $2 variables, Shift command in Bash, Special parameters in Bash, Shell functions, Argument counting in scripts, How to use positional parameters in Linux scripts, Examples of command line arguments in shell scripts, Using shift command to process multiple arguments in Bash, Writing interactive shell scripts with positional parameters]
+draft: TRUE
+---
+
+> **Key Takeaway**: Positional parameters in Linux shell scripting allow you to create dynamic scripts that can handle command-line arguments. Understanding how to use $1, $2, $@, and other special parameters will enable you to write more flexible and powerful scripts.
+
+*Author's Note: Hello there! I'm excited to share this article with you as part of my own learning journey in Linux and Bash scripting. As I discover new concepts, I'm documenting them in this series to help fellow beginners understand these sometimes challenging topics. We'll learn together, and I'll explain everything in simple terms without assuming prior knowledge. Let's dive into positional parameters!*
+
+# What Are Positional Parameters?
+
+Positional parameters are special variables in Linux shell scripts that store the individual words or arguments passed to your script when you run it. Think of them as containers that automatically capture whatever you type after the script name.
+
+These parameters are named with numbers:
+- **$0** contains the name of the script itself
+- **$1** contains the first argument you typed
+- **$2** contains the second argument
+- And so on...
+
+## Simple Example
+
+Let's see this in action with a basic example:
+
+```bash
+#!/bin/bash
+# A simple script showing positional parameters
+echo "The script name is: $0"
+echo "The first argument is: $1"
+echo "The second argument is: $2"
+```
+
+If you save this script as `myscript.sh` and run it with:
+
+```
+./myscript.sh hello world
+```
+
+You'll see this output:
+
+```
+The script name is: ./myscript.sh
+The first argument is: hello
+The second argument is: world
+```
+
+This shows how the positional parameters automatically capture the arguments you provide when running the script. No special coding is needed to assign these values - they're available immediately in your script.
+
+# Beyond the Basics: Accessing More Parameters
+
+If your script needs to handle more than 9 arguments, you'll need to use curly braces for numbers 10 and above:
+
+```bash
+#!/bin/bash
+# Showing how to access more than 9 parameters
+echo "The 10th argument is: ${10}"
+echo "The 11th argument is: ${11}"
+```
+
+Without the braces, `$10` would be interpreted as `$1` followed by the character "0", which isn't what you want.
+
+# Checking How Many Arguments Were Provided
+
+Often you'll want to know how many arguments the user provided. The special parameter `$#` gives you exactly that:
+
+```bash
+#!/bin/bash
+# Showing how to count arguments
+echo "You provided $# arguments"
+
+if [ $# -lt 2 ]; then
+    echo "Error: You need to provide at least 2 arguments"
+    echo "Usage: $0 <first_arg> <second_arg>"
+    exit 1
+fi
+
+echo "Great! You provided enough arguments"
+```
+
+This script checks if the user provided at least 2 arguments. If not, it shows an error message and exits.
+
+# Processing All Arguments with $* and $@
+
+Two special parameters let you access all arguments at once:
+
+- **$*** combines all arguments into a single string
+- **$@** keeps all arguments as separate items (better for most uses)
+
+Here's a simple demonstration:
+
+```bash
+#!/bin/bash
+# Showing the difference between $* and $@
+
+echo "Using \$*:"
+for item in "$*"; do
+    echo "  Item: $item"
+done
+
+echo "Using \$@:"
+for item in "$@"; do
+    echo "  Item: $item"
+done
+```
+
+If you run this script with `./myscript.sh apple "orange banana" cherry`, you'll see:
+
+```
+Using $*:
+  Item: apple orange banana cherry
+
+Using $@:
+  Item: apple
+  Item: orange banana
+  Item: cherry
+```
+
+Notice how `$*` combines everything into one item, while `$@` preserves each argument as a separate item, including keeping "orange banana" together because of the quotes.
+
+# The Shift Command: Processing Arguments One by One
+
+The `shift` command lets you process arguments sequentially by moving each argument "to the left". After using `shift`:
+- `$2` becomes `$1`
+- `$3` becomes `$2`
+- And so on...
+
+Here's how it works:
+
+```bash
+#!/bin/bash
+# Demonstration of the shift command
+
+echo "Initial arguments: $@"
+echo "Total count: $#"
+
+while [ $# -gt 0 ]; do
+    echo "Processing: $1"
+    shift
+    echo "Remaining arguments: $@"
+    echo "Remaining count: $#"
+    echo "--------------------"
+done
+```
+
+If you run this with `./myscript.sh apple orange banana`, you'll see how each argument gets processed and then shifted out.
+
+# Practical Example: File Information Tool
+
+Let's create a useful script that tells you information about any file you specify:
+
+```bash
+#!/bin/bash
+# A file information tool
+
+# Check if a filename was provided
+if [ $# -ne 1 ]; then
+    echo "Error: Please provide exactly one filename"
+    echo "Usage: $0 <filename>"
+    exit 1
+fi
+
+filename="$1"
+
+# Check if the file exists
+if [ ! -e "$filename" ]; then
+    echo "Error: File '$filename' does not exist"
+    exit 1
+fi
+
+# Display file information
+echo "Information about $filename:"
+echo "------------------------"
+
+if [ -f "$filename" ]; then
+    echo "Type: Regular file"
+elif [ -d "$filename" ]; then
+    echo "Type: Directory"
+else
+    echo "Type: Special file"
+fi
+
+echo "Size: $(du -h "$filename" | cut -f1)"
+
+if [ -r "$filename" ]; then
+    echo "Readable: Yes"
+else
+    echo "Readable: No"
+fi
+
+if [ -w "$filename" ]; then
+    echo "Writable: Yes"
+else
+    echo "Writable: No"
+fi
+
+if [ -x "$filename" ]; then
+    echo "Executable: Yes"
+else
+    echo "Executable: No"
+fi
+
+echo "Last modified: $(stat -c %y "$filename")"
+```
+
+This script:
+1. Checks if exactly one argument was provided
+2. Stores the argument in a variable called `filename`
+3. Verifies the file exists
+4. Determines if it's a regular file or directory
+5. Shows the file size and permissions
+6. Displays when it was last modified
+
+# Your Turn! Interactive Exercise
+
+Now it's time to practice! Try writing a script that accepts multiple filenames as arguments and reports whether each file exists and its type.
+
+<details>
+<summary>See Solution</summary>
+
+```bash
+#!/bin/bash
+# File checker script
+
+if [ $# -eq 0 ]; then
+    echo "Error: No filenames provided"
+    echo "Usage: $0 <file1> <file2> ..."
+    exit 1
+fi
+
+echo "Checking files..."
+echo "----------------"
+
+for filename in "$@"; do
+    echo "File: $filename"
+    if [ -e "$filename" ]; then
+        echo "  Exists: Yes"
+        if [ -f "$filename" ]; then
+            echo "  Type: Regular file"
+        elif [ -d "$filename" ]; then
+            echo "  Type: Directory"
+        else
+            echo "  Type: Special file"
+        fi
+    else
+        echo "  Exists: No"
+    fi
+    echo "----------------"
+done
+```
+
+This script:
+1. Checks if at least one argument was provided
+2. Loops through all arguments using "$@"
+3. For each filename, checks if it exists and what type it is
+4. Prints the information in a formatted way
+</details>
+
+# Best Practices for Positional Parameters
+
+## 1. Always Quote Your Variables
+
+Always put quotes around your variables when using them, especially when they might contain spaces:
+
+```bash
+# Correct way
+file="$1"
+cp "$file" /backup/
+
+# Incorrect way - will fail if $1 contains spaces
+file=$1
+cp $file /backup/
+```
+
+## 2. Provide Usage Information
+
+Always include usage information to help users if they run your script incorrectly:
+
+```bash
+if [ $# -lt 1 ]; then
+    echo "Error: Missing required arguments"
+    echo "Usage: $0 <input_file>"
+    exit 1
+fi
+```
+
+## 3. Validate Inputs
+
+Check that the arguments provided are valid before proceeding:
+
+```bash
+if [ ! -f "$1" ]; then
+    echo "Error: '$1' is not a valid file"
+    exit 1
+fi
+```
+
+## 4. Use Meaningful Variable Names
+
+Assign positional parameters to descriptive variables early in your script:
+
+```bash
+# Better:
+input_file="$1"
+output_file="$2"
+process_data "$input_file" "$output_file"
+
+# Instead of:
+process_data "$1" "$2"  # Less clear what these parameters mean
+```
+
+# Key Takeaways
+
+- **Positional parameters** ($0, $1, $2) let you access command-line arguments
+- **$#** tells you how many arguments were provided
+- **$@** gives you all arguments as separate items (usually what you want)
+- **$*** combines all arguments into one string
+- Use **${10}** (with braces) for arguments beyond the 9th position
+- The **shift** command lets you process arguments one by one
+- Always **quote your variables** to handle spaces correctly
+- Provide clear **usage instructions** if arguments are missing
+
+# Common Problems and Solutions
+
+## Problem: Script fails when handling filenames with spaces
+
+**Solution**: Always quote your variables
+```bash
+# Correct
+cp "$1" "$2"
+
+# Incorrect
+cp $1 $2
+```
+
+## Problem: Need to check if enough arguments were provided
+
+**Solution**: Use $# to count arguments
+```bash
+if [ $# -lt 3 ]; then
+    echo "Error: Not enough arguments"
+    echo "Usage: $0 <src> <dest> <mode>"
+    exit 1
+fi
+```
+
+## Problem: Need to process many arguments efficiently
+
+**Solution**: Use a for loop with "$@"
+```bash
+for file in "$@"; do
+    process_file "$file"
+done
+```
+
+# Reference Section
+
+Here are some helpful resources to learn more about positional parameters and shell scripting:
+
+1. [Introduction to Positional Parameters](https://tldp.org/LDP/abs/html/othertypesv.html) - The Linux Documentation Project
+2. [Using Arguments in Bash Scripts](https://linuxize.com/post/bash-arguments/) - Linuxize
+3. [Bash Scripting Tutorial for Beginners](https://www.shellscript.sh/variables1.html) - Shell Scripting Tutorial
+4. [Command Line Arguments in Shell Script](https://www.geeksforgeeks.org/command-line-arguments-in-shell-script/) - GeeksforGeeks
+5. [Bash Command Line Arguments](https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script) - Baeldung
+
+# Conclusion
+
+Positional parameters are essential tools for creating flexible, dynamic shell scripts. By mastering the basics of $0, $1, $#, and $@, you can write scripts that adapt to different inputs rather than being limited to hardcoded values.
+
+Start by experimenting with the examples in this article, then try modifying them to solve your own specific problems. Like any programming concept, the best way to learn is by practicing and creating your own scripts.
+
+Remember: always quote your variables, validate your inputs, and provide clear usage information. Following these best practices will help you create robust, user-friendly shell scripts.
+
+# Frequently Asked Questions
+
+## 1. What's the difference between $* and $@?
+Both represent all arguments passed to the script, but `$*` treats them as a single string, while `$@` (especially when quoted as `"$@"`) treats each argument as a separate item, respecting spaces and preserving the original argument structure.
+
+## 2. How do I access arguments beyond $9?
+Use curly braces: ${10}, ${11}, etc. Without braces, $10 would be interpreted as $1 followed by '0'.
+
+## 3. Can I change the values of positional parameters in my script?
+You cannot directly assign values to $1, $2, etc. However, you can use the `set` command to replace all positional parameters: `set -- new1 new2 new3`.
+
+## 4. Why does my script fail when processing filenames with spaces?
+This usually happens when variables are not quoted. Always use quotes: `cp "$source" "$destination"` rather than `cp $source $destination`.
+
+## 5. How can I provide default values for missing arguments?
+Use parameter substitution: `input_file="${1:-default.txt}"` will use "default.txt" if $1 is not provided.
+
+Did this article help you understand positional parameters? Let me know in the comments what topics you'd like me to cover next in my learning journey!
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+![Positional Parameters in Linux](todays_post.png)
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
