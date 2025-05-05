@@ -10,7 +10,2459 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.5.57</generator>
-<lastBuildDate>Mon, 28 Apr 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 05 May 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Return Multiple Values from Function in R: A Complete Guide</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-05-05/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<blockquote class="blockquote">
+<p><strong>Key Takeaway:</strong> R functions can return multiple values through various structures, with named lists being the most flexible and recommended approach. This article covers all techniques with practical examples, best practices, and tips for effective implementation.</p>
+</blockquote>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In R programming, functions are essential building blocks that allow for reusable and modular code. However, unlike some other programming languages, R functions can only return a single object. This limitation presents a challenge when you need to return multiple values or results from a function. Fortunately, R provides several elegant ways to work around this constraint, allowing you to effectively return multiple values by packaging them into a single composite object.</p>
+<p>Whether you’re performing statistical analysis, data preprocessing, or building complex models, knowing how to properly return multiple values from your functions is crucial for writing clean, efficient, and maintainable code. This article explores the various techniques for returning multiple values in R, complete with real-world examples and best practices.</p>
+</section>
+<section id="understanding-function-returns-in-r" class="level1">
+<h1>Understanding Function Returns in R</h1>
+<p>Before diving into specific methods, it’s important to understand how R functions fundamentally handle return values.</p>
+<section id="the-single-return-value-rule" class="level2">
+<h2 class="anchored" data-anchor-id="the-single-return-value-rule">The Single Return Value Rule</h2>
+<p>In R, a function can only return a single object. This is a fundamental aspect of the language. When a function executes, it evaluates all expressions within its body, and the value of the last expression becomes the return value by default.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example of implicit return (last expression)</span></span>
+<span id="cb1-2">add_numbers <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(a, b) {</span>
+<span id="cb1-3">  a <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> b  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># This is implicitly returned</span></span>
+<span id="cb1-4">}</span>
+<span id="cb1-5"></span>
+<span id="cb1-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example of explicit return</span></span>
+<span id="cb1-7">add_numbers_explicit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(a, b) {</span>
+<span id="cb1-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(a <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> b)</span>
+<span id="cb1-9">}</span></code></pre></div>
+<p>Both functions above achieve the same result, but the second one uses the explicit <code>return()</code> statement. While this rule might seem limiting, R’s rich data structures allow us to package multiple values into a single object, effectively working around this constraint.</p>
+</section>
+<section id="implicit-vs.-explicit-returns" class="level2">
+<h2 class="anchored" data-anchor-id="implicit-vs.-explicit-returns">Implicit vs.&nbsp;Explicit Returns</h2>
+<p>R supports two ways of returning values:</p>
+<ol type="1">
+<li><strong>Implicit return</strong>: The value of the last evaluated expression is automatically returned</li>
+<li><strong>Explicit return</strong>: Using the <code>return()</code> function to specify what to return</li>
+</ol>
+<p>For clarity and readability, especially in complex functions, using explicit <code>return()</code> statements is generally recommended .</p>
+</section>
+</section>
+<section id="method-1-using-lists-to-return-multiple-values" class="level1">
+<h1>Method 1: Using Lists to Return Multiple Values</h1>
+<p>Lists are the most common and flexible way to return multiple values from a function in R. A list can contain elements of different types and lengths, making it ideal for returning heterogeneous data.</p>
+<section id="basic-list-example" class="level2">
+<h2 class="anchored" data-anchor-id="basic-list-example">Basic List Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">calculate_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(numbers) {</span>
+<span id="cb2-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.numeric</span>(numbers)) {</span>
+<span id="cb2-3">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Input must be numeric"</span>)</span>
+<span id="cb2-4">  }</span>
+<span id="cb2-5">  </span>
+<span id="cb2-6">  mean_val <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(numbers)</span>
+<span id="cb2-7">  median_val <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(numbers)</span>
+<span id="cb2-8">  std_dev <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(numbers)</span>
+<span id="cb2-9">  </span>
+<span id="cb2-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> mean_val, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> median_val, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> std_dev))</span>
+<span id="cb2-11">}</span>
+<span id="cb2-12"></span>
+<span id="cb2-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using the function</span></span>
+<span id="cb2-14">numbers <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>)</span>
+<span id="cb2-15">results <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">calculate_stats</span>(numbers)</span>
+<span id="cb2-16"></span>
+<span id="cb2-17"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Accessing individual results</span></span>
+<span id="cb2-18"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>mean)    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 20</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 20</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>median)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 20</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 20</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>sd)      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 7.905694</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7.905694</code></pre>
+</div>
+</div>
+<p>In this example, the function <code>calculate_stats()</code> computes three statistical measures and returns them as a named list. The names provide clear labels for each value, making the returned data easy to understand and access.</p>
+</section>
+<section id="why-lists-work-well" class="level2">
+<h2 class="anchored" data-anchor-id="why-lists-work-well">Why Lists Work Well</h2>
+<p>Lists are particularly useful for returning multiple values because:</p>
+<ul>
+<li>They can contain elements of different types (numbers, strings, vectors, even other lists)</li>
+<li>Elements can be named for easy access and clarity</li>
+<li>They can handle varying lengths of data</li>
+<li>They maintain the structure of complex objects</li>
+</ul>
+</section>
+</section>
+<section id="method-2-named-lists-for-enhanced-readability" class="level1">
+<h1>Method 2: Named Lists for Enhanced Readability</h1>
+<p>Building on the basic list approach, using named lists significantly improves code readability and maintenance. Named lists provide clear labels for each returned value, making the function’s output self-documenting.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">line_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(line) {</span>
+<span id="cb8-2">  is_question <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">?"</span>, line)</span>
+<span id="cb8-3">  is_dialogue <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\"</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, line)</span>
+<span id="cb8-4">  word_count <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">strsplit</span>(line, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">s+"</span>)[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]])</span>
+<span id="cb8-5">  </span>
+<span id="cb8-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb8-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">question =</span> is_question,</span>
+<span id="cb8-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dialogue =</span> is_dialogue,</span>
+<span id="cb8-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">wc =</span> word_count</span>
+<span id="cb8-10">  ))</span>
+<span id="cb8-11">}</span>
+<span id="cb8-12"></span>
+<span id="cb8-13">ex1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The Voice said, </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\"</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">This is no place as you understand place.</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\"</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb8-14">ex1_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">line_stats</span>(ex1)</span>
+<span id="cb8-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(ex1_stats)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$question
+[1] FALSE
+
+$dialogue
+[1] TRUE
+
+$wc
+[1] 11</code></pre>
+</div>
+</div>
+<p>The names in the returned list (<code>question</code>, <code>dialogue</code>, and <code>wc</code>) provide immediate context about what each value represents, making your code much more maintainable.</p>
+</section>
+<section id="method-3-vectors-for-simple-return-values" class="level1">
+<h1>Method 3: Vectors for Simple Return Values</h1>
+<p>When all return values are of the same type (e.g., all numeric or all logical), vectors can be a simpler alternative to lists. However, they’re generally less flexible and can be more confusing when returning multiple different values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">calculate_circle_properties <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(radius) {</span>
+<span id="cb10-2">  area <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> pi <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> radius<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span></span>
+<span id="cb10-3">  circumference <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> pi <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> radius</span>
+<span id="cb10-4">  diameter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> radius</span>
+<span id="cb10-5">  </span>
+<span id="cb10-6">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Return named vector</span></span>
+<span id="cb10-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">area =</span> area, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">circumference =</span> circumference, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">diameter =</span> diameter))</span>
+<span id="cb10-8">}</span>
+<span id="cb10-9"></span>
+<span id="cb10-10">circle_props <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">calculate_circle_properties</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>)</span>
+<span id="cb10-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(circle_props)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         area circumference      diameter 
+     78.53982      31.41593      10.00000 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(circle_props[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"area"</span>])  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Access by name</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    area 
+78.53982 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(circle_props[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>])       <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Access by position</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    area 
+78.53982 </code></pre>
+</div>
+</div>
+<p>While vectors can work for simple cases, they have limitations:</p>
+<ul>
+<li>All elements must be of the same type</li>
+<li>They can be less clear than lists for complex return values</li>
+<li>Accessing elements by position is error-prone if the function changes</li>
+</ul>
+</section>
+<section id="method-4-data-frames-for-tabular-results" class="level1">
+<h1>Method 4: Data Frames for Tabular Results</h1>
+<p>When your function processes multiple records or returns data that’s naturally tabular, data frames are an excellent choice. They provide a structured, table-like format that’s ideal for analysis and visualization.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1">analyze_text <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(sentences) {</span>
+<span id="cb16-2">  n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(sentences)</span>
+<span id="cb16-3">  results <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb16-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sentence =</span> sentences,</span>
+<span id="cb16-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">char_count =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">integer</span>(n),</span>
+<span id="cb16-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">word_count =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">integer</span>(n),</span>
+<span id="cb16-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">is_question =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">logical</span>(n),</span>
+<span id="cb16-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">stringsAsFactors =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb16-9">  )</span>
+<span id="cb16-10">  </span>
+<span id="cb16-11">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n) {</span>
+<span id="cb16-12">    results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>char_count[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nchar</span>(sentences[i])</span>
+<span id="cb16-13">    results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>word_count[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unlist</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">strsplit</span>(sentences[i], <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">s+"</span>)))</span>
+<span id="cb16-14">    results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>is_question[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">?$"</span>, sentences[i])</span>
+<span id="cb16-15">  }</span>
+<span id="cb16-16">  </span>
+<span id="cb16-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(results)</span>
+<span id="cb16-18">}</span>
+<span id="cb16-19"></span>
+<span id="cb16-20">sentences <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb16-21">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"How does this function work?"</span>,</span>
+<span id="cb16-22">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R makes data analysis easier."</span>,</span>
+<span id="cb16-23">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Return multiple values efficiently."</span></span>
+<span id="cb16-24">)</span>
+<span id="cb16-25"></span>
+<span id="cb16-26">text_analysis <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">analyze_text</span>(sentences)</span>
+<span id="cb16-27"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(text_analysis)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                             sentence char_count word_count is_question
+1        How does this function work?         28          5        TRUE
+2       R makes data analysis easier.         29          5       FALSE
+3 Return multiple values efficiently.         35          4       FALSE</code></pre>
+</div>
+</div>
+<p>Data frames are particularly useful when:</p>
+<ul>
+<li>You’re processing multiple records</li>
+<li>The output naturally fits a tabular structure</li>
+<li>You plan to use the output for further data analysis or visualization</li>
+<li>You need to maintain row-column relationships in the data</li>
+</ul>
+</section>
+<section id="method-5-using-environments-advanced" class="level1">
+<h1>Method 5: Using Environments (Advanced)</h1>
+<p>For more advanced use cases, environments provide another way to return multiple values. Environments in R are containers that store objects, similar to lists, but with different behavior regarding object references.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1">create_counter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">start =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) {</span>
+<span id="cb18-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a new environment</span></span>
+<span id="cb18-3">  env <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">new.env</span>()</span>
+<span id="cb18-4">  </span>
+<span id="cb18-5">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Initialize counter value</span></span>
+<span id="cb18-6">  env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> start</span>
+<span id="cb18-7">  </span>
+<span id="cb18-8">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define increment function</span></span>
+<span id="cb18-9">  env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>increment <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) {</span>
+<span id="cb18-10">    env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> by</span>
+<span id="cb18-11">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">invisible</span>(env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value)</span>
+<span id="cb18-12">  }</span>
+<span id="cb18-13">  </span>
+<span id="cb18-14">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define get function</span></span>
+<span id="cb18-15">  env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>get <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>() {</span>
+<span id="cb18-16">    env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value</span>
+<span id="cb18-17">  }</span>
+<span id="cb18-18">  </span>
+<span id="cb18-19">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define reset function</span></span>
+<span id="cb18-20">  env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>reset <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) {</span>
+<span id="cb18-21">    env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> value</span>
+<span id="cb18-22">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">invisible</span>(env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value)</span>
+<span id="cb18-23">  }</span>
+<span id="cb18-24">  </span>
+<span id="cb18-25">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(env)</span>
+<span id="cb18-26">}</span>
+<span id="cb18-27"></span>
+<span id="cb18-28"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Usage example</span></span>
+<span id="cb18-29">counter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">create_counter</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb18-30">counter<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">increment</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>)</span>
+<span id="cb18-31"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(counter<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">get</span>())  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 15</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 15</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">counter<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">reset</span>()</span>
+<span id="cb20-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(counter<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">get</span>())  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 0</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0</code></pre>
+</div>
+</div>
+<p>Environments are particularly useful when:</p>
+<ul>
+<li>You need to maintain state across multiple function calls</li>
+<li>You want to implement closures or object-oriented patterns</li>
+<li>You need to return functions that share data</li>
+</ul>
+<p>While powerful, environments are generally considered more advanced and should be used judiciously for specific use cases.</p>
+</section>
+<section id="method-6-s3-and-s4-objects-for-structured-returns" class="level1">
+<h1>Method 6: S3 and S4 Objects for Structured Returns</h1>
+<p>For more complex applications, especially when building larger packages or systems, returning S3 or S4 objects can provide a more formal structure to your function outputs.</p>
+<section id="s3-objects-example" class="level2">
+<h2 class="anchored" data-anchor-id="s3-objects-example">S3 Objects Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1">create_person <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(name, age, occupation) {</span>
+<span id="cb22-2">  new_person <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb22-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">name =</span> name,</span>
+<span id="cb22-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age =</span> age,</span>
+<span id="cb22-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">occupation =</span> occupation</span>
+<span id="cb22-6">  )</span>
+<span id="cb22-7">  </span>
+<span id="cb22-8">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Assign S3 class</span></span>
+<span id="cb22-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">class</span>(new_person) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"new_person"</span></span>
+<span id="cb22-10">  </span>
+<span id="cb22-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(new_person)</span>
+<span id="cb22-12">}</span>
+<span id="cb22-13"></span>
+<span id="cb22-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define a method for printing person objects</span></span>
+<span id="cb22-15">print.new_person <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x, ...) {</span>
+<span id="cb22-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Person:"</span>, x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>name, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb22-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Age:"</span>, x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb22-18">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Occupation:"</span>, x<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>occupation, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb22-19">}</span>
+<span id="cb22-20"></span>
+<span id="cb22-21"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create and print a person</span></span>
+<span id="cb22-22">john <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">create_person</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"John Smith"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Data Scientist"</span>)</span>
+<span id="cb22-23"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(john)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Person: John Smith 
+Age: 35 
+Occupation: Data Scientist </code></pre>
+</div>
+</div>
+<p>S3 and S4 objects allow you to:</p>
+<ul>
+<li>Define specialized behavior through methods</li>
+<li>Enforce more structured data organization</li>
+<li>Create object-oriented interfaces</li>
+<li>Integrate with the broader R ecosystem that uses these systems</li>
+</ul>
+</section>
+</section>
+<section id="method-7-using-attributes-for-additional-information" class="level1">
+<h1>Method 7: Using Attributes for Additional Information</h1>
+<p>Another less conventional way to return additional values from a function is by attaching attributes to the returned object. This method allows you to store extra information with the primary result, although it might not always be as intuitive as the list or data frame approach. Experts on Stack Overflow have noted that setting attributes can be useful in some scenarios.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1">calculate_sqrt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x) {</span>
+<span id="cb24-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) {</span>
+<span id="cb24-3">    result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NaN</span></span>
+<span id="cb24-4">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"error"</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cannot compute square root of negative number"</span></span>
+<span id="cb24-5">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"input"</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> x</span>
+<span id="cb24-6">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(result)</span>
+<span id="cb24-7">  }</span>
+<span id="cb24-8">  </span>
+<span id="cb24-9">  result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(x)</span>
+<span id="cb24-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"original"</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> x</span>
+<span id="cb24-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"computed_on"</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Sys.time</span>()</span>
+<span id="cb24-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(result)</span>
+<span id="cb24-13">}</span>
+<span id="cb24-14"></span>
+<span id="cb24-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using the function with positive input</span></span>
+<span id="cb24-16">pos_result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">calculate_sqrt</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">16</span>)</span>
+<span id="cb24-17"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(pos_result)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output: 4</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4
+attr(,"original")
+[1] 16
+attr(,"computed_on")
+[1] "2025-05-05 08:29:58 EDT"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(pos_result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"original"</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output: 16</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 16</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(pos_result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"computed_on"</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output: Current timestamp</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "2025-05-05 08:29:58 EDT"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using the function with negative input</span></span>
+<span id="cb30-2">neg_result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">calculate_sqrt</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>)</span>
+<span id="cb30-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(neg_result)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output: NaN</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] NaN
+attr(,"error")
+[1] "Cannot compute square root of negative number"
+attr(,"input")
+[1] -4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(neg_result, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"error"</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output: "Cannot compute square root of negative number"</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Cannot compute square root of negative number"</code></pre>
+</div>
+</div>
+<section id="when-to-use-attributes" class="level2">
+<h2 class="anchored" data-anchor-id="when-to-use-attributes">When to Use Attributes</h2>
+<p>Attributes can be particularly useful in these scenarios:</p>
+<ol type="1">
+<li><strong>Adding metadata to results</strong>: When you want to attach information about how or when a result was generated</li>
+<li><strong>Preserving original inputs</strong>: To maintain a reference to the input data along with the processed output</li>
+<li><strong>Error context</strong>: To provide additional information about errors without disrupting the main return value structure</li>
+<li><strong>Extending existing objects</strong>: When you want to add information to an object without changing its base type</li>
+</ol>
+</section>
+<section id="limitations-of-using-attributes" class="level2">
+<h2 class="anchored" data-anchor-id="limitations-of-using-attributes">Limitations of Using Attributes</h2>
+<p>While attributes can be useful, they come with some drawbacks:</p>
+<ol type="1">
+<li><strong>Less discoverable</strong>: Users may not know to look for attributes unless properly documented</li>
+<li><strong>Can be lost in transformations</strong>: Many R functions strip attributes when transforming objects</li>
+<li><strong>Not as standardized</strong>: Unlike lists or data frames, there’s no consistent way to access all attributes at once</li>
+<li><strong>Less obvious in debugging</strong>: Attributes don’t always show up in simple print statements</li>
+</ol>
+<p>If you decide to use attributes, make sure to document them thoroughly so users of your function know to look for them.</p>
+</section>
+</section>
+<section id="best-practices-for-returning-multiple-values" class="level1">
+<h1>Best Practices for Returning Multiple Values</h1>
+<p>Based on the methods discussed, here are some best practices to follow when returning multiple values from R functions:</p>
+<section id="use-named-lists-for-clarity" class="level2">
+<h2 class="anchored" data-anchor-id="use-named-lists-for-clarity">1. Use Named Lists for Clarity</h2>
+<p>Named lists are generally the best practice for returning multiple values, as they provide clear labels and can handle different data types.</p>
+<div class="sourceCode" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Good practice</span></span>
+<span id="cb34-2">analyze_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(dataset) {</span>
+<span id="cb34-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb34-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">summary =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(dataset),</span>
+<span id="cb34-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">missing =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(dataset)),</span>
+<span id="cb34-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dimensions =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dim</span>(dataset)</span>
+<span id="cb34-7">  ))</span>
+<span id="cb34-8">}</span>
+<span id="cb34-9"></span>
+<span id="cb34-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Less clear</span></span>
+<span id="cb34-11">analyze_data_poor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(dataset) {</span>
+<span id="cb34-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb34-13">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(dataset),</span>
+<span id="cb34-14">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(dataset)),</span>
+<span id="cb34-15">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dim</span>(dataset)</span>
+<span id="cb34-16">  ))</span>
+<span id="cb34-17">}</span></code></pre></div>
+</section>
+<section id="document-return-values-thoroughly" class="level2">
+<h2 class="anchored" data-anchor-id="document-return-values-thoroughly">2. Document Return Values Thoroughly</h2>
+<p>Proper documentation is crucial for functions that return multiple values. Use roxygen2-style comments to describe what each element in the return value represents.</p>
+<div class="sourceCode" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' Calculate basic statistics for a numeric vector</span></span>
+<span id="cb35-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'</span></span>
+<span id="cb35-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @param x A numeric vector</span></span>
+<span id="cb35-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @return A list containing:</span></span>
+<span id="cb35-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{mean}{The arithmetic mean}</span></span>
+<span id="cb35-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{median}{The median value}</span></span>
+<span id="cb35-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{sd}{The standard deviation}</span></span>
+<span id="cb35-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{range}{A vector containing the minimum and maximum values}</span></span>
+<span id="cb35-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @examples</span></span>
+<span id="cb35-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' basic_stats(c(1, 2, 3, 4, 5))</span></span>
+<span id="cb35-11">basic_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x) {</span>
+<span id="cb35-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb35-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(x),</span>
+<span id="cb35-14">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(x),</span>
+<span id="cb35-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(x),</span>
+<span id="cb35-16">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">range</span>(x)</span>
+<span id="cb35-17">  ))</span>
+<span id="cb35-18">}</span></code></pre></div>
+</section>
+<section id="use-consistent-return-structures" class="level2">
+<h2 class="anchored" data-anchor-id="use-consistent-return-structures">3. Use Consistent Return Structures</h2>
+<p>Maintain consistency in how your functions return multiple values, especially within the same package or project. If you use named lists in one function, use them throughout.</p>
+</section>
+<section id="match-return-type-to-data-characteristics" class="level2">
+<h2 class="anchored" data-anchor-id="match-return-type-to-data-characteristics">4. Match Return Type to Data Characteristics</h2>
+<p>Choose your return structure based on what makes the most sense for your data:</p>
+<ul>
+<li>Use lists for heterogeneous data (different types)</li>
+<li>Use data frames for tabular data</li>
+<li>Use vectors only when all values are the same type and closely related</li>
+<li>Use S3/S4 objects for complex structures requiring specialized methods</li>
+</ul>
+</section>
+<section id="error-handling-for-robust-functions" class="level2">
+<h2 class="anchored" data-anchor-id="error-handling-for-robust-functions">5. Error Handling for Robust Functions</h2>
+<p>Include proper error handling to ensure your functions fail gracefully and provide meaningful error messages.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1">calculate_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(data) {</span>
+<span id="cb36-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Check if input is valid</span></span>
+<span id="cb36-3">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.numeric</span>(data)) {</span>
+<span id="cb36-4">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Input must be numeric"</span>)</span>
+<span id="cb36-5">  }</span>
+<span id="cb36-6">  </span>
+<span id="cb36-7">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(data) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) {</span>
+<span id="cb36-8">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb36-9">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,</span>
+<span id="cb36-10">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,</span>
+<span id="cb36-11">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,</span>
+<span id="cb36-12">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">message =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Empty input provided"</span></span>
+<span id="cb36-13">    ))</span>
+<span id="cb36-14">  }</span>
+<span id="cb36-15">  </span>
+<span id="cb36-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb36-17">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(data),</span>
+<span id="cb36-18">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(data),</span>
+<span id="cb36-19">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(data)</span>
+<span id="cb36-20">  ))</span>
+<span id="cb36-21">}</span>
+<span id="cb36-22"></span>
+<span id="cb36-23"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">calculate_stats</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$mean
+[1] 0.1894269
+
+$median
+[1] 0.1281316
+
+$sd
+[1] 1.070657</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="performance-comparison-of-return-methods" class="level1">
+<h1>Performance Comparison of Return Methods</h1>
+<p>When choosing a method to return multiple values, performance considerations may come into play, especially for functions that are called frequently or that process large datasets.</p>
+<section id="memory-usage" class="level2">
+<h2 class="anchored" data-anchor-id="memory-usage">Memory Usage</h2>
+<ul>
+<li><strong>Lists</strong>: Generally higher memory overhead, especially for small values</li>
+<li><strong>Vectors</strong>: More memory-efficient for homogeneous data</li>
+<li><strong>Data Frames</strong>: Higher overhead than vectors but optimized for tabular operations</li>
+<li><strong>Environments</strong>: Potentially higher overhead due to their reference semantics</li>
+</ul>
+</section>
+<section id="speed-of-access" class="level2">
+<h2 class="anchored" data-anchor-id="speed-of-access">Speed of Access</h2>
+<ul>
+<li><strong>Lists</strong>: Fast access by name, slower by position</li>
+<li><strong>Named Vectors</strong>: Similar to lists for named access</li>
+<li><strong>Data Frames</strong>: Optimized for column operations, slower for row operations</li>
+<li><strong>Environments</strong>: Generally slower for simple access patterns</li>
+</ul>
+<p>For most cases, the performance differences are negligible compared to the benefits of code clarity and maintainability. Unless you’re working with very large datasets or in performance-critical contexts, prioritize readability and proper design over micro-optimizations.</p>
+</section>
+</section>
+<section id="practical-example-statistical-analysis-function" class="level1">
+<h1>Practical Example: Statistical Analysis Function</h1>
+<p>Let’s build a practical example that demonstrates good practices for returning multiple values. This function will analyze a dataset and return various statistical metrics.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1">analyze_dataset <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">column =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>) {</span>
+<span id="cb38-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Validate inputs</span></span>
+<span id="cb38-3">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.data.frame</span>(data)) {</span>
+<span id="cb38-4">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Input must be a data frame"</span>)</span>
+<span id="cb38-5">  }</span>
+<span id="cb38-6">  </span>
+<span id="cb38-7">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># If column is specified, extract that column</span></span>
+<span id="cb38-8">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.null</span>(column)) {</span>
+<span id="cb38-9">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span>(column <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%in%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(data))) {</span>
+<span id="cb38-10">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Specified column not found in data frame"</span>)</span>
+<span id="cb38-11">    }</span>
+<span id="cb38-12">    data_to_analyze <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> data[[column]]</span>
+<span id="cb38-13">    col_name <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> column</span>
+<span id="cb38-14">  } <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> {</span>
+<span id="cb38-15">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(data) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) {</span>
+<span id="cb38-16">      data_to_analyze <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> data[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span>
+<span id="cb38-17">      col_name <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(data)[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb38-18">    } <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> {</span>
+<span id="cb38-19">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"For multi-column data frames, you must specify a column name"</span>)</span>
+<span id="cb38-20">    }</span>
+<span id="cb38-21">  }</span>
+<span id="cb38-22">  </span>
+<span id="cb38-23">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Check if data is numeric</span></span>
+<span id="cb38-24">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.numeric</span>(data_to_analyze)) {</span>
+<span id="cb38-25">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Data must be numeric for statistical analysis"</span>)</span>
+<span id="cb38-26">  }</span>
+<span id="cb38-27">  </span>
+<span id="cb38-28">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate statistics</span></span>
+<span id="cb38-29">  basic_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb38-30">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">column =</span> col_name,</span>
+<span id="cb38-31">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb38-32">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb38-33">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb38-34">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">range</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb38-35">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">missing =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(data_to_analyze)),</span>
+<span id="cb38-36">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(data_to_analyze)</span>
+<span id="cb38-37">  )</span>
+<span id="cb38-38">  </span>
+<span id="cb38-39">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate quantiles</span></span>
+<span id="cb38-40">  quantiles <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">quantile</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">probs =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.25</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.75</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb38-41">  </span>
+<span id="cb38-42">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create histogram data</span></span>
+<span id="cb38-43">  hist_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(data_to_analyze, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plot =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb38-44">  </span>
+<span id="cb38-45">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Return all results in a structured list</span></span>
+<span id="cb38-46">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb38-47">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">basic_stats =</span> basic_stats,</span>
+<span id="cb38-48">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">quantiles =</span> quantiles,</span>
+<span id="cb38-49">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">histogram =</span> hist_data</span>
+<span id="cb38-50">  ))</span>
+<span id="cb38-51">}</span>
+<span id="cb38-52"></span>
+<span id="cb38-53"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="cb38-54"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb38-55">test_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb38-56">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb38-57">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(LETTERS[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb38-58">)</span>
+<span id="cb38-59"></span>
+<span id="cb38-60">analysis <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">analyze_dataset</span>(test_data, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"value"</span>)</span>
+<span id="cb38-61"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(analysis<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>basic_stats)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$column
+[1] "value"
+
+$mean
+[1] 10.18081
+
+$median
+[1] 10.12351
+
+$sd
+[1] 1.825632
+
+$range
+[1]  5.381662 14.374666
+
+$missing
+[1] 0
+
+$n
+[1] 100</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb40" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(analysis<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>quantiles)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      25%       50%       75% 
+ 9.012292 10.123513 11.383638 </code></pre>
+</div>
+</div>
+<p>This example demonstrates:</p>
+<ul>
+<li>Proper input validation</li>
+<li>Structured return values using nested lists</li>
+<li>Clear naming of return elements</li>
+<li>Inclusion of metadata (column name, sample size)</li>
+<li>Multiple types of analysis in a single function</li>
+</ul>
+</section>
+<section id="practical-example-data-processing-pipeline" class="level1">
+<h1>Practical Example: Data Processing Pipeline</h1>
+<p>Here’s another example showing how to return multiple values in a data processing pipeline:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1">preprocess_text_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(text_vector) {</span>
+<span id="cb42-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.character</span>(text_vector)) {</span>
+<span id="cb42-3">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Input must be a character vector"</span>)</span>
+<span id="cb42-4">  }</span>
+<span id="cb42-5">  </span>
+<span id="cb42-6">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Initialize results</span></span>
+<span id="cb42-7">  n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(text_vector)</span>
+<span id="cb42-8">  processed_text <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">character</span>(n)</span>
+<span id="cb42-9">  word_counts <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">integer</span>(n)</span>
+<span id="cb42-10">  stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>()</span>
+<span id="cb42-11">  skipped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">integer</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb42-12">  </span>
+<span id="cb42-13">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Process each text</span></span>
+<span id="cb42-14">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n) {</span>
+<span id="cb42-15">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nchar</span>(text_vector[i]) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) {</span>
+<span id="cb42-16">      skipped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(skipped, i)</span>
+<span id="cb42-17">      processed_text[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span></span>
+<span id="cb42-18">      word_counts[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span></span>
+<span id="cb42-19">      <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">next</span></span>
+<span id="cb42-20">    }</span>
+<span id="cb42-21">    </span>
+<span id="cb42-22">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to lowercase</span></span>
+<span id="cb42-23">    current <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tolower</span>(text_vector[i])</span>
+<span id="cb42-24">    </span>
+<span id="cb42-25">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Remove punctuation</span></span>
+<span id="cb42-26">    current <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gsub</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"[[:punct:]]"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, current)</span>
+<span id="cb42-27">    </span>
+<span id="cb42-28">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Remove extra whitespace</span></span>
+<span id="cb42-29">    current <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gsub</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">s+"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" "</span>, current)</span>
+<span id="cb42-30">    current <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">trimws</span>(current)</span>
+<span id="cb42-31">    </span>
+<span id="cb42-32">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Store processed text</span></span>
+<span id="cb42-33">    processed_text[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> current</span>
+<span id="cb42-34">    </span>
+<span id="cb42-35">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Count words</span></span>
+<span id="cb42-36">    word_counts[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unlist</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">strsplit</span>(current, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">s+"</span>)))</span>
+<span id="cb42-37">  }</span>
+<span id="cb42-38">  </span>
+<span id="cb42-39">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate summary statistics</span></span>
+<span id="cb42-40">  stats<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>total_documents <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> n</span>
+<span id="cb42-41">  stats<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>skipped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(skipped)</span>
+<span id="cb42-42">  stats<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>total_words <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(word_counts)</span>
+<span id="cb42-43">  stats<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>avg_words_per_doc <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(word_counts)</span>
+<span id="cb42-44">  </span>
+<span id="cb42-45">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create data frame of processed documents with metadata</span></span>
+<span id="cb42-46">  results_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb42-47">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">original =</span> text_vector,</span>
+<span id="cb42-48">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">processed =</span> processed_text,</span>
+<span id="cb42-49">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">word_count =</span> word_counts,</span>
+<span id="cb42-50">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">stringsAsFactors =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb42-51">  )</span>
+<span id="cb42-52">  </span>
+<span id="cb42-53">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Return all results</span></span>
+<span id="cb42-54">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb42-55">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">processed_data =</span> results_df,</span>
+<span id="cb42-56">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">stats =</span> stats,</span>
+<span id="cb42-57">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">skipped_indices =</span> skipped</span>
+<span id="cb42-58">  ))</span>
+<span id="cb42-59">}</span>
+<span id="cb42-60"></span>
+<span id="cb42-61"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="cb42-62">sample_texts <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb42-63">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The quick brown fox jumps over the lazy dog."</span>,</span>
+<span id="cb42-64">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb42-65">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R is a powerful language for data analysis!"</span>,</span>
+<span id="cb42-66">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Multiple return values make functions more useful."</span></span>
+<span id="cb42-67">)</span>
+<span id="cb42-68"></span>
+<span id="cb42-69">results <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">preprocess_text_data</span>(sample_texts)</span>
+<span id="cb42-70"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>stats)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$total_documents
+[1] 4
+
+$skipped
+[1] 1
+
+$total_words
+[1] 24
+
+$avg_words_per_doc
+[1] 6</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>processed_data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                            original
+1       The quick brown fox jumps over the lazy dog.
+2                                                   
+3        R is a powerful language for data analysis!
+4 Multiple return values make functions more useful.
+                                          processed word_count
+1       the quick brown fox jumps over the lazy dog          9
+2                                                            0
+3        r is a powerful language for data analysis          8
+4 multiple return values make functions more useful          7</code></pre>
+</div>
+</div>
+<p>This example shows:</p>
+<ul>
+<li>A pipeline that processes text data</li>
+<li>Returning both the processed data and metadata about the processing</li>
+<li>Using a combination of data frame (for the main results) and list (for statistics)</li>
+<li>Tracking and returning information about skipped items</li>
+</ul>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p>Now it’s your time to practice returning multiple values from R functions. Let’s create a function that analyzes a numeric vector and returns various metrics.</p>
+<section id="exercise-create-a-function-for-financial-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-create-a-function-for-financial-data-analysis">Exercise: Create a Function for Financial Data Analysis</h2>
+<p>Write a function called <code>analyze_returns()</code> that takes a numeric vector representing financial returns (percentages) and returns:</p>
+<ol type="1">
+<li>Basic statistics (mean, median, standard deviation)</li>
+<li>Risk metrics (volatility, maximum drawdown)</li>
+<li>A classification of the investment (low, medium, or high risk)</li>
+</ol>
+<details>
+<summary>
+Click here for Solution!
+</summary>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1">analyze_returns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(returns) {</span>
+<span id="cb46-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Validate input</span></span>
+<span id="cb46-3">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.numeric</span>(returns)) {</span>
+<span id="cb46-4">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Returns must be a numeric vector"</span>)</span>
+<span id="cb46-5">  }</span>
+<span id="cb46-6">  </span>
+<span id="cb46-7">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(returns) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>) {</span>
+<span id="cb46-8">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">stop</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Need at least 3 data points for meaningful analysis"</span>)</span>
+<span id="cb46-9">  }</span>
+<span id="cb46-10">  </span>
+<span id="cb46-11">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate basic statistics</span></span>
+<span id="cb46-12">  basic_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb46-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(returns, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb46-14">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">median =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(returns, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb46-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(returns, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb46-16">  )</span>
+<span id="cb46-17">  </span>
+<span id="cb46-18">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate risk metrics</span></span>
+<span id="cb46-19">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Annual volatility (assuming daily returns)</span></span>
+<span id="cb46-20">  volatility <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sd</span>(returns, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">252</span>)</span>
+<span id="cb46-21">  </span>
+<span id="cb46-22">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Maximum drawdown</span></span>
+<span id="cb46-23">  cumulative_returns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cumprod</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> returns<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb46-24">  max_drawdown <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">min</span>(cumulative_returns <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cummax</span>(cumulative_returns)))</span>
+<span id="cb46-25">  </span>
+<span id="cb46-26">  risk_metrics <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb46-27">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">volatility =</span> volatility,</span>
+<span id="cb46-28">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">max_drawdown =</span> max_drawdown,</span>
+<span id="cb46-29">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sharpe_ratio =</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(volatility <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) basic_stats<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>mean <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> volatility <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span></span>
+<span id="cb46-30">  )</span>
+<span id="cb46-31">  </span>
+<span id="cb46-32">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Classify risk</span></span>
+<span id="cb46-33">  risk_class <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"medium"</span></span>
+<span id="cb46-34">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(volatility <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>) risk_class <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"low"</span></span>
+<span id="cb46-35">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(volatility <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>) risk_class <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"high"</span></span>
+<span id="cb46-36">  </span>
+<span id="cb46-37">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Return all results</span></span>
+<span id="cb46-38">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb46-39">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">statistics =</span> basic_stats,</span>
+<span id="cb46-40">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">risk =</span> risk_metrics,</span>
+<span id="cb46-41">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">classification =</span> risk_class,</span>
+<span id="cb46-42">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n_observations =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(returns)</span>
+<span id="cb46-43">  ))</span>
+<span id="cb46-44">}</span>
+<span id="cb46-45"></span>
+<span id="cb46-46"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Test the function</span></span>
+<span id="cb46-47"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb46-48">daily_returns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.05</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.2</span>)</span>
+<span id="cb46-49">analysis <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">analyze_returns</span>(daily_returns)</span>
+<span id="cb46-50"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(analysis)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$statistics
+$statistics$mean
+[1] 0.08901778
+
+$statistics$median
+[1] 0.1577561
+
+$statistics$sd
+[1] 1.249628
+
+
+$risk
+$risk$volatility
+[1] 19.83724
+
+$risk$max_drawdown
+[1] 12.71379
+
+$risk$sharpe_ratio
+[1] 0.004487409
+
+
+$classification
+[1] "medium"
+
+$n_observations
+[1] 100</code></pre>
+</div>
+</div>
+<p>With this function:</p>
+<ol type="1">
+<li>We validate the input to ensure it’s numeric and has enough data points</li>
+<li>We calculate basic statistics and risk metrics</li>
+<li>We classify the risk level based on volatility</li>
+<li>We return all results in a well-structured list</li>
+</ol>
+<p>The returned list has clear, descriptive names for each component, making it easy to access specific results:</p>
+<pre><code>analysis$statistics$mean      # Mean return
+analysis$risk$max_drawdown    # Maximum drawdown
+analysis$classification       # Risk classification</code></pre>
+</details>
+</section>
+</section>
+<section id="quick-takeaways-and-key-points" class="level1">
+<h1>Quick Takeaways and Key Points</h1>
+<blockquote class="blockquote">
+<p><strong>Key principles for returning multiple values from R functions:</strong></p>
+</blockquote>
+<ol type="1">
+<li><strong>Named lists are the gold standard</strong> for returning multiple heterogeneous values</li>
+<li><strong>Data frames excel for tabular data</strong> and multiple observations</li>
+<li><strong>Document your return structures thoroughly</strong> to improve code usability</li>
+<li><strong>Be consistent in your approach</strong> to returns across related functions</li>
+<li><strong>Match the return structure to the data characteristics</strong> (lists for mixed types, data frames for tables)</li>
+<li><strong>Include proper error handling</strong> for robust function behavior</li>
+<li><strong>Use descriptive names</strong> for all elements in returned objects</li>
+<li><strong>Balance complexity and simplicity</strong> - don’t create overly complex return structures</li>
+<li><strong>Consider performance only after clarity</strong> - prioritize readability first</li>
+<li><strong>Test your functions thoroughly</strong> with edge cases to ensure they behave as expected</li>
+</ol>
+</section>
+<section id="common-pitfalls-when-returning-multiple-values" class="level1">
+<h1>Common Pitfalls When Returning Multiple Values</h1>
+<p>When returning multiple values from functions in R, there are several common pitfalls to avoid:</p>
+<ol type="1">
+<li><p><strong>Using unnamed elements</strong>: Always name the elements in lists, vectors, or data frames that you return. Unnamed elements make code harder to understand and maintain.</p></li>
+<li><p><strong>Inconsistent return types</strong>: Avoid returning different types of objects depending on the function’s execution path. This creates unpredictable behavior for users of your function.</p></li>
+<li><p><strong>Poor documentation</strong>: Failing to document the structure of returned objects makes your functions difficult to use correctly.</p></li>
+<li><p><strong>Return structure mismatch</strong>: Choose return structures that match the natural organization of your data. Don’t force tabular data into lists or heterogeneous data into vectors.</p></li>
+<li><p><strong>Overcomplicating simple cases</strong>: For functions that return just 2-3 closely related values of the same type, a named vector might be simpler than a list.</p></li>
+</ol>
+</section>
+<section id="frequently-asked-questions" class="level1">
+<h1>Frequently Asked Questions</h1>
+<section id="how-do-i-access-individual-values-from-a-function-that-returns-multiple-values" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-i-access-individual-values-from-a-function-that-returns-multiple-values">1. How do I access individual values from a function that returns multiple values?</h2>
+<p>For lists, you can use the <code>$</code> operator or double square brackets:</p>
+<div class="sourceCode" id="cb49" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">my_function</span>()</span>
+<span id="cb49-2">value1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>first_value</span>
+<span id="cb49-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># or</span></span>
+<span id="cb49-4">value1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> result[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"first_value"</span>]]</span></code></pre></div>
+<p>For named vectors:</p>
+<div class="sourceCode" id="cb50" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">my_function</span>()</span>
+<span id="cb50-2">value1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> result[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"first_value"</span>]</span></code></pre></div>
+<p>For data frames:</p>
+<div class="sourceCode" id="cb51" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">my_function</span>()</span>
+<span id="cb51-2">column1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>column_name</span>
+<span id="cb51-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># or</span></span>
+<span id="cb51-4">first_row <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> result[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, ]</span></code></pre></div>
+</section>
+<section id="can-i-return-different-types-of-objects-depending-on-the-functions-logic" class="level2">
+<h2 class="anchored" data-anchor-id="can-i-return-different-types-of-objects-depending-on-the-functions-logic">2. Can I return different types of objects depending on the function’s logic?</h2>
+<p>While technically possible, it’s generally not recommended as it makes your code less predictable. If you need conditional behavior, it’s better to:</p>
+<ul>
+<li>Return a consistent structure with NA or placeholder values</li>
+<li>Use a status field to indicate special conditions</li>
+<li>Split into separate functions for different return types</li>
+</ul>
+</section>
+<section id="whats-the-most-efficient-way-to-return-multiple-values-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="whats-the-most-efficient-way-to-return-multiple-values-in-r">3. What’s the most efficient way to return multiple values in R?</h2>
+<p>For small to medium-sized data:</p>
+<ul>
+<li>Named lists are generally best for heterogeneous data</li>
+<li>Vectors for homogeneous data of the same type</li>
+<li>Data frames for tabular data</li>
+</ul>
+<p>For very large datasets, consider specialized structures like data.table or tibble.</p>
+</section>
+<section id="how-do-i-document-functions-that-return-multiple-values" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-i-document-functions-that-return-multiple-values">4. How do I document functions that return multiple values?</h2>
+<p>Use roxygen2-style comments to describe each component of your return value:</p>
+<div class="sourceCode" id="cb52" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' Calculate statistics for a dataset</span></span>
+<span id="cb52-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'</span></span>
+<span id="cb52-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @param data A numeric vector</span></span>
+<span id="cb52-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @return A list containing:</span></span>
+<span id="cb52-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{mean}{The arithmetic mean of the data}</span></span>
+<span id="cb52-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{median}{The median value of the data}</span></span>
+<span id="cb52-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#'   \item{sd}{The standard deviation of the data}</span></span>
+<span id="cb52-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' @examples</span></span>
+<span id="cb52-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#' calc_stats(c(1, 2, 3, 4, 5))</span></span>
+<span id="cb52-10">calc_stats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(data) {</span>
+<span id="cb52-11">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Function code...</span></span>
+<span id="cb52-12">}</span></code></pre></div>
+</section>
+<section id="when-should-i-use-s3s4-objects-instead-of-simple-lists-for-returns" class="level2">
+<h2 class="anchored" data-anchor-id="when-should-i-use-s3s4-objects-instead-of-simple-lists-for-returns">5. When should I use S3/S4 objects instead of simple lists for returns?</h2>
+<p>Consider using S3/S4 objects when:</p>
+<ul>
+<li>You need specialized behavior (like custom print or plot methods)</li>
+<li>You’re building a package with complex data structures</li>
+<li>You want to enforce a specific object structure</li>
+<li>You’re integrating with other code that expects S3/S4 objects</li>
+</ul>
+<p>For simpler functions or scripts, lists are usually sufficient and more straightforward.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Returning multiple values from functions is a common requirement in R programming. While R functions can only return a single object, the language provides several elegant solutions for packaging multiple values into a single return object.</p>
+<p>Named lists offer the most flexibility and clarity for heterogeneous data, while data frames excel at returning tabular results. For simpler cases with homogeneous data types, named vectors can be a concise option. More advanced applications might benefit from environments or S3/S4 objects.</p>
+<p>When designing functions that return multiple values, prioritize clarity, consistency, and proper documentation. Choose your return structure to match your data characteristics, and ensure your functions fail gracefully with informative error messages.</p>
+<p>By following the best practices outlined in this article, you can create R functions that return multiple values in a clear, consistent, and maintainable way, enhancing the usability and reliability of your code.</p>
+<section id="engage" class="level2">
+<h2 class="anchored" data-anchor-id="engage">Engage!</h2>
+<p>Have you implemented any of these techniques in your R functions? Which method do you find most useful for your specific needs? Share your experiences in the comments below or on social media using the hashtag #RProgramming. Your insights could help other R programmers solve similar challenges!</p>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li><p><a href="https://adv-r.hadley.nz/functions.html">Advanced R: Functions</a> - Hadley Wickham’s comprehensive guide to R functions including return value handling.</p></li>
+<li><p><a href="https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/list">R Documentation: Lists</a> - Official R documentation on lists, the most versatile way to return multiple values.</p></li>
+<li><p><a href="https://www.burns-stat.com/pages/Tutor/R_inferno.pdf">The R Inferno</a> - Patrick Burns’ guide to R programming pitfalls, including function design considerations.</p></li>
+<li><p><a href="https://stackoverflow.com/questions/8936099/returning-multiple-objects-in-an-r-function">Stack Overflow: How to Return Multiple Values in R</a> - Community discussion on multiple return value techniques.</p></li>
+<li><p><a href="https://r-pkgs.org/man.html">R Packages - Documentation</a> - Guide to documenting functions with roxygen2 including return value documentation.</p></li>
+</ol>
+<hr>
+<p>Happy Coding! 🚀</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-05/todays_post.png" class="img-fluid figure-img"></p>
+<figcaption>Returning Multiple Values in R</figcaption>
+</figure>
+</div>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-05-05/</guid>
+  <pubDate>Mon, 05 May 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>How to Write Your First tryCatch() Function in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -15257,610 +17709,6 @@ x
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-01-27/</guid>
   <pubDate>Mon, 27 Jan 2025 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Remove Rows in R: A Comprehensive Guide with Examples</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-01-23/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Data manipulation is a crucial skill in R programming, and knowing how to effectively remove rows from your datasets is fundamental. Whether you’re cleaning data, filtering observations, or preparing your dataset for analysis, understanding different methods to remove rows can significantly improve your workflow.</p>
-<p>In this comprehensive guide, we’ll explore three powerful approaches to remove rows in R:</p>
-<ul>
-<li>Base R methods</li>
-<li>dplyr functions</li>
-<li>data.table operations</li>
-</ul>
-</section>
-<section id="methods-overview" class="level1">
-<h1>Methods Overview</h1>
-<p>Before diving into specific examples, let’s understand our toolkit. R provides several ways to remove rows from a data frame. We’ll cover three main approaches:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Example dataset</span></span>
-<span id="cb1-2">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb1-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">id =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>,</span>
-<span id="cb1-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>),</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">category =</span> letters[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>]</span>
-<span id="cb1-6">)</span>
-<span id="cb1-7">df</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a
-2  2    NA        b
-3  3    30        c
-4  4    NA        d
-5  5    50        e</code></pre>
-</div>
-</div>
-</section>
-<section id="using-base-r-to-remove-rows" class="level1">
-<h1>Using Base R to Remove Rows</h1>
-<section id="remove-rows-by-number" class="level2">
-<h2 class="anchored" data-anchor-id="remove-rows-by-number">Remove Rows by Number</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove first row</span></span>
-<span id="cb3-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, ]</span>
-<span id="cb3-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-2  2    NA        b
-3  3    30        c
-4  4    NA        d
-5  5    50        e</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove multiple rows</span></span>
-<span id="cb5-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>), ]</span>
-<span id="cb5-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-2  2    NA        b
-4  4    NA        d
-5  5    50        e</code></pre>
-</div>
-</div>
-</section>
-<section id="remove-rows-by-condition" class="level2">
-<h2 class="anchored" data-anchor-id="remove-rows-by-condition">Remove Rows by Condition</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows where value &gt; 20</span></span>
-<span id="cb7-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df[df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, ]</span>
-<span id="cb7-3"></span>
-<span id="cb7-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using subset()</span></span>
-<span id="cb7-5">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">subset</span>(df, value <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)</span>
-<span id="cb7-6">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a</code></pre>
-</div>
-</div>
-</section>
-<section id="remove-na-values" class="level2">
-<h2 class="anchored" data-anchor-id="remove-na-values">Remove NA Values</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows with any NA</span></span>
-<span id="cb9-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">na.omit</span>(df)</span>
-<span id="cb9-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a
-3  3    30        c
-5  5    50        e</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="using-dplyr-to-remove-rows" class="level1">
-<h1>Using dplyr to Remove Rows</h1>
-<p>The dplyr package offers a more intuitive and readable syntax for data manipulation.</p>
-<section id="remove-rows-by-number-1" class="level2">
-<h2 class="anchored" data-anchor-id="remove-rows-by-number-1">Remove Rows by Number</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb11-2"></span>
-<span id="cb11-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove first row</span></span>
-<span id="cb11-4">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">slice</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb11-5">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  2    NA        b
-2  3    30        c
-3  4    NA        d
-4  5    50        e</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove multiple rows</span></span>
-<span id="cb13-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">slice</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>))</span>
-<span id="cb13-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  2    NA        b
-2  4    NA        d
-3  5    50        e</code></pre>
-</div>
-</div>
-</section>
-<section id="remove-rows-by-condition-1" class="level2">
-<h2 class="anchored" data-anchor-id="remove-rows-by-condition-1">Remove Rows by Condition</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows where value &gt; 20</span></span>
-<span id="cb15-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">filter</span>(value <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)</span>
-<span id="cb15-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a</code></pre>
-</div>
-</div>
-</section>
-<section id="remove-na-values-1" class="level2">
-<h2 class="anchored" data-anchor-id="remove-na-values-1">Remove NA Values</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tidyr)</span>
-<span id="cb17-2"></span>
-<span id="cb17-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows with any NA</span></span>
-<span id="cb17-4">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">drop_na</span>()</span>
-<span id="cb17-5">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a
-2  3    30        c
-3  5    50        e</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="using-data.table-to-remove-rows" class="level1">
-<h1>Using data.table to Remove Rows</h1>
-<p>data.table is known for its high performance with large datasets.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(data.table)</span>
-<span id="cb19-2">dt <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.data.table</span>(df)</span>
-<span id="cb19-3">dt</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value category
-   &lt;int&gt; &lt;num&gt;   &lt;char&gt;
-1:     1    10        a
-2:     2    NA        b
-3:     3    30        c
-4:     4    NA        d
-5:     5    50        e</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">### Remove Rows by Number</span></span>
-<span id="cb21-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove first row</span></span>
-<span id="cb21-3">dt_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> dt[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]</span>
-<span id="cb21-4">dt_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value category
-   &lt;int&gt; &lt;num&gt;   &lt;char&gt;
-1:     2    NA        b
-2:     3    30        c
-3:     4    NA        d
-4:     5    50        e</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">### Remove Rows by Condition</span></span>
-<span id="cb23-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows where value &gt; 20</span></span>
-<span id="cb23-3">dt_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> dt[value <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>]</span>
-<span id="cb23-4">dt_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value category
-   &lt;int&gt; &lt;num&gt;   &lt;char&gt;
-1:     1    10        a</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">### Remove NA Values</span></span>
-<span id="cb25-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove rows with any NA</span></span>
-<span id="cb25-3">dt_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">na.omit</span>(dt)</span>
-<span id="cb25-4">dt_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value category
-   &lt;int&gt; &lt;num&gt;   &lt;char&gt;
-1:     1    10        a
-2:     3    30        c
-3:     5    50        e</code></pre>
-</div>
-</div>
-</section>
-<section id="performance-considerations" class="level1">
-<h1>Performance Considerations</h1>
-<p>When working with large datasets, performance becomes crucial. Here are some guidelines:</p>
-<ul>
-<li>For small datasets (&lt;10,000 rows), any method works well</li>
-<li>For medium datasets, dplyr offers good performance and readable syntax</li>
-<li>For large datasets (&gt;1M rows), data.table typically provides the best performance</li>
-</ul>
-</section>
-<section id="common-pitfalls-and-solutions" class="level1">
-<h1>Common Pitfalls and Solutions</h1>
-<ol type="1">
-<li>Factor Levels</li>
-</ol>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remember to drop unused levels after removing rows</span></span>
-<span id="cb27-2">df_new <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">droplevels</span>(df_new)</span>
-<span id="cb27-3">df_new</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value category
-1  1    10        a
-2  3    30        c
-3  5    50        e</code></pre>
-</div>
-</div>
-<ol start="2" type="1">
-<li>Memory Management</li>
-</ol>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Use in-place modification when possible</span></span>
-<span id="cb29-2">dt[, row_to_remove <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">=</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>]</span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in `[.data.table`(dt, , `:=`(row_to_remove, NULL)): Tried to assign
-NULL to column 'row_to_remove', but this column does not exist to remove</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1">dt</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value category
-   &lt;int&gt; &lt;num&gt;   &lt;char&gt;
-1:     1    10        a
-2:     2    NA        b
-3:     3    30        c
-4:     4    NA        d
-5:     5    50        e</code></pre>
-</div>
-</div>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p>Try this exercise:</p>
-<p>Problem: Create a data frame with 10 rows, including some NA values, and: 1. Remove rows 3 and 7 2. Remove rows where a numeric column is greater than the mean 3. Remove NA values</p>
-<details>
-<summary>
-Click hre for Solution!
-</summary>
-<p>Solution:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create practice data</span></span>
-<span id="cb33-2">practice_df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb33-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">id =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>,</span>
-<span id="cb33-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)</span>
-<span id="cb33-5">)</span>
-<span id="cb33-6"></span>
-<span id="cb33-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 1. Remove rows 3 and 7</span></span>
-<span id="cb33-8">result1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> practice_df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>), ]</span>
-<span id="cb33-9"></span>
-<span id="cb33-10"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 2. Remove rows &gt; mean</span></span>
-<span id="cb33-11">result2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> practice_df[practice_df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(practice_df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">na.rm=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>), ]</span>
-<span id="cb33-12"></span>
-<span id="cb33-13"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 3. Remove NA values</span></span>
-<span id="cb33-14">result3 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">na.omit</span>(practice_df)</span></code></pre></div>
-</div>
-</details>
-</section>
-<section id="quick-takeaways" class="level1">
-<h1>Quick Takeaways</h1>
-<ul>
-<li>Base R uses indexing and subset() for row removal</li>
-<li>dplyr provides intuitive functions like filter() and drop_na()</li>
-<li>data.table offers high-performance solutions for large datasets</li>
-<li>Always consider factor levels and memory management</li>
-<li>Choose the method based on your dataset size and needs</li>
-</ul>
-</section>
-<section id="faqs" class="level1">
-<h1>FAQs</h1>
-<ol type="1">
-<li><p>Q: Which method is fastest for large datasets? A: data.table typically provides the best performance for large datasets.</p></li>
-<li><p>Q: How do I remove duplicate rows? A: Use distinct() in dplyr or unique() in base R.</p></li>
-<li><p>Q: Can I remove rows based on multiple conditions? A: Yes, use &amp; (and) or | (or) operators in any method.</p></li>
-<li><p>Q: Will removing rows affect my factor levels? A: Yes, use droplevels() to remove unused levels after filtering.</p></li>
-<li><p>Q: How do I remove rows with NA in specific columns only? A: Use drop_na() with column names in dplyr or na.omit() with subset in base R.</p></li>
-</ol>
-</section>
-<section id="engage" class="level1">
-<h1>Engage!</h1>
-<p>Did you find this guide helpful? Share your experiences with row removal in R in the comments below! If you learned something new, consider sharing this guide with your network. For more R programming tips, follow our blog and join our community of R enthusiasts.</p>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li>“How to Delete Rows in R? Explained with Examples” - Spark By Examples
-<ul>
-<li>URL: https://sparkbyexamples.com/r-programming/drop-dataframe-rows-in-r/</li>
-</ul></li>
-<li>“Remove Specific Row in R: How to Examples with dplyr” - Marsja.se
-<ul>
-<li>URL: https://www.marsja.se/remove-specific-row-in-r-how-to-examples-with-dplyr/</li>
-</ul></li>
-<li>“Remove Rows from the data frame in R” - R-bloggers
-<ul>
-<li>URL: https://www.r-bloggers.com/2022/06/remove-rows-from-the-data-frame-in-r/</li>
-<li>URL: https://www.statology.org/dplyr-remove-rows/</li>
-</ul></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-01-23/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>Removing Rows in R</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-01-23/</guid>
-  <pubDate>Thu, 23 Jan 2025 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
