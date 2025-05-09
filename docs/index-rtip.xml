@@ -10,7 +10,1123 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.5.57</generator>
-<lastBuildDate>Wed, 07 May 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 09 May 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>RandomWalker for R 0.3.0: Expanding Dimensions in Random Walk Analysis</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-05-09/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<blockquote class="blockquote">
+<p><strong>Key Updates:</strong> Version 0.3.0 introduces multi-dimensional random walks (up to 3D), subset functionality for targeting specific y-values, and confidence interval calculations for enhanced statistical analysis. This major update significantly expands RandomWalker’s capabilities for R programmers working with stochastic processes.</p>
+</blockquote>
+<section id="introduction-taking-random-walks-to-new-dimensions" class="level1">
+<h1>Introduction: Taking Random Walks to New Dimensions</h1>
+<p>The RandomWalker package for R has been a valuable tool for generating and analyzing random walks compatible with the tidyverse ecosystem. Version 0.3.0 brings three major enhancements that significantly expand its capabilities: multi-dimensional random walks (up to three dimensions), a new subset function for filtering walks based on y-values, and a confidence interval function for statistical analysis. This update addresses several user requests while maintaining the package’s commitment to simplicity and integration with the tidyverse workflow.</p>
+<p>If you’re working with stochastic processes, time series analysis, or simulation in R, these new features offer powerful new options for your analytical toolkit. Let’s explore what’s new and how to leverage these enhancements in your projects.</p>
+</section>
+<section id="breaking-change-alert" class="level1">
+<h1>Breaking Change Alert</h1>
+<p>Before jumping into the new features, there’s an important <strong>breaking change</strong> to note: the <code>x</code> column in the output data frames has been renamed to <code>step_number</code>. This change provides more clarity about what the column represents, but it will require updates to existing code that references the <code>x</code> column if you have the. We’ll provide migration guidance later in this article.</p>
+</section>
+<section id="new-feature-1-multi-dimensional-random-walks" class="level1">
+<h1>New Feature #1: Multi-Dimensional Random Walks</h1>
+<section id="what-are-multi-dimensional-random-walks" class="level2">
+<h2 class="anchored" data-anchor-id="what-are-multi-dimensional-random-walks">What Are Multi-Dimensional Random Walks?</h2>
+<p>Random walks are mathematical models describing paths consisting of random steps. Previously, RandomWalker was limited to one-dimensional walks, where each step moved only forward or backward along a single axis.</p>
+<p>With version 0.3.0, you can now generate random walks in up to three dimensions, allowing for more complex and realistic simulations. This enhancement opens up new possibilities for modeling phenomena in physics (like particle movement), finance (multi-asset price movements), biology (animal movement patterns), and many other fields.</p>
+</section>
+<section id="technical-implementation" class="level2">
+<h2 class="anchored" data-anchor-id="technical-implementation">Technical Implementation</h2>
+<p>The multi-dimensional random walks feature was implemented through Fix 107, which served as the parent task for related fixes (108, 109, 110, 111, and 112). The implementation allows users to specify the number of dimensions (1, 2, or 3) when generating a random walk.</p>
+</section>
+<section id="example-usage" class="level2">
+<h2 class="anchored" data-anchor-id="example-usage">Example Usage</h2>
+<p>Let’s look at how to generate multi-dimensional random walks using the new functionality:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load the RandomWalker package</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RandomWalker)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a 1D random walk (same as before)</span></span>
+<span id="cb1-6">walk_1d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a 2D random walk</span></span>
+<span id="cb1-9">walk_2d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb1-10"></span>
+<span id="cb1-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a 3D random walk</span></span>
+<span id="cb1-12">walk_3d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb1-13"></span>
+<span id="cb1-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Preview the structure of each walk</span></span>
+<span id="cb1-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>(walk_1d)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,000
+Columns: 8
+$ walk_number &lt;fct&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+$ step_number &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,…
+$ y           &lt;dbl&gt; -0.162321110, -0.122323437, 0.116489147, -0.128727711, -0.…
+$ cum_sum_y   &lt;dbl&gt; -0.1623211, -0.2846445, -0.1681554, -0.2968831, -0.3917613…
+$ cum_prod_y  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_min_y   &lt;dbl&gt; -0.1623211, -0.1623211, -0.1623211, -0.1623211, -0.1623211…
+$ cum_max_y   &lt;dbl&gt; -0.1623211, -0.1223234, 0.1164891, 0.1164891, 0.1164891, 0…
+$ cum_mean_y  &lt;dbl&gt; -0.16232111, -0.14232227, -0.05605180, -0.07422078, -0.078…</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>(walk_2d)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,000
+Columns: 14
+$ walk_number &lt;fct&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+$ step_number &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,…
+$ x           &lt;dbl&gt; 0.242145613, -0.133935016, 0.195128642, -0.274061039, -0.0…
+$ y           &lt;dbl&gt; 0.09884026, 0.09560559, -0.01621698, -0.08385851, -0.05142…
+$ cum_sum_x   &lt;dbl&gt; 0.24214561, 0.10821060, 0.30333924, 0.02927820, -0.0161840…
+$ cum_sum_y   &lt;dbl&gt; 0.098840261, 0.194445847, 0.178228865, 0.094370352, 0.0429…
+$ cum_prod_x  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_prod_y  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_min_x   &lt;dbl&gt; 0.2421456, -0.1339350, -0.1339350, -0.2740610, -0.2740610,…
+$ cum_min_y   &lt;dbl&gt; 0.09884026, 0.09560559, -0.01621698, -0.08385851, -0.08385…
+$ cum_max_x   &lt;dbl&gt; 0.2421456, 0.2421456, 0.2421456, 0.2421456, 0.2421456, 0.2…
+$ cum_max_y   &lt;dbl&gt; 0.09884026, 0.09884026, 0.09884026, 0.09884026, 0.09884026…
+$ cum_mean_x  &lt;dbl&gt; 0.242145613, 0.054105298, 0.101113080, 0.007319550, -0.003…
+$ cum_mean_y  &lt;dbl&gt; 0.0988402607, 0.0972229237, 0.0594096218, 0.0235925880, 0.…</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>(walk_3d)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,000
+Columns: 20
+$ walk_number &lt;fct&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+$ step_number &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,…
+$ x           &lt;dbl&gt; -0.01747962, -0.01747962, 0.17788529, -0.03681459, 0.03456…
+$ y           &lt;dbl&gt; 0.071397707, 0.037954071, 0.109013795, -0.051819870, 0.003…
+$ z           &lt;dbl&gt; -0.02407884, -0.12273330, 0.24745096, -0.04891862, 0.03499…
+$ cum_sum_x   &lt;dbl&gt; -0.01747962, -0.03495925, 0.14292604, 0.10611145, 0.140671…
+$ cum_sum_y   &lt;dbl&gt; 0.07139771, 0.10935178, 0.21836557, 0.16654570, 0.16961060…
+$ cum_sum_z   &lt;dbl&gt; -0.02407884, -0.14681214, 0.10063882, 0.05172020, 0.086712…
+$ cum_prod_x  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_prod_y  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_prod_z  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+$ cum_min_x   &lt;dbl&gt; -0.01747962, -0.01747962, -0.01747962, -0.03681459, -0.036…
+$ cum_min_y   &lt;dbl&gt; 0.07139771, 0.03795407, 0.03795407, -0.05181987, -0.051819…
+$ cum_min_z   &lt;dbl&gt; -0.02407884, -0.12273330, -0.12273330, -0.12273330, -0.122…
+$ cum_max_x   &lt;dbl&gt; -0.01747962, -0.01747962, 0.17788529, 0.17788529, 0.177885…
+$ cum_max_y   &lt;dbl&gt; 0.07139771, 0.07139771, 0.10901380, 0.10901380, 0.10901380…
+$ cum_max_z   &lt;dbl&gt; -0.02407884, -0.02407884, 0.24745096, 0.24745096, 0.247450…
+$ cum_mean_x  &lt;dbl&gt; -0.01747962, -0.01747962, 0.04764201, 0.02652786, 0.028134…
+$ cum_mean_y  &lt;dbl&gt; 0.07139771, 0.05467589, 0.07278852, 0.04163643, 0.03392212…
+$ cum_mean_z  &lt;dbl&gt; -0.02407884, -0.07340607, 0.03354627, 0.01293005, 0.017342…</code></pre>
+</div>
+</div>
+<p>The output data frame for multi-dimensional walks includes columns for each dimension (<code>x</code>, <code>y</code>, <code>z</code>), along with the <code>step_number</code> and <code>walk_number</code> columns.</p>
+</section>
+<section id="visualization-of-2d-and-3d-random-walks" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-2d-and-3d-random-walks">Visualization of 2D and 3D Random Walks</h2>
+<p>Random walks are best understood visually. Here’s a comparison of 2D and 3D random walks:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(plotly)</span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rw30</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb7-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(walk_number <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb7-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visualize_walks</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a 2D random walk</span></span>
+<span id="cb8-2">n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span></span>
+<span id="cb8-3">random_walk <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(</span>
+<span id="cb8-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, </span>
+<span id="cb8-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> n, </span>
+<span id="cb8-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_walks =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb8-7">  )</span>
+<span id="cb8-8"></span>
+<span id="cb8-9">random_walk <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb8-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> cum_sum_x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> cum_sum_y)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_path</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> step_number)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> random_walk[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, n), ], </span>
+<span id="cb8-13">             <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> step_number), </span>
+<span id="cb8-14">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_color_viridis_c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">option =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"plasma"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2D Random Walk"</span>,</span>
+<span id="cb8-17">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"X Position"</span>,</span>
+<span id="cb8-18">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y Position"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-19">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-20">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend.position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"none"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-21">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.text.x=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_blank</span>(), <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#remove x axis labels</span></span>
+<span id="cb8-22">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.ticks.x=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_blank</span>(), <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#remove x axis ticks</span></span>
+<span id="cb8-23">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.text.y=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_blank</span>(),  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#remove y axis labels</span></span>
+<span id="cb8-24">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">axis.ticks.y=</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_blank</span>()  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#remove y axis ticks</span></span>
+<span id="cb8-25">  )</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">random_walk_3d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(</span>
+<span id="cb9-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, </span>
+<span id="cb9-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> n, </span>
+<span id="cb9-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_walks =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb9-5">)</span>
+<span id="cb9-6"></span>
+<span id="cb9-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot_ly</span>(</span>
+<span id="cb9-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> random_walk_3d,</span>
+<span id="cb9-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>cum_sum_x,</span>
+<span id="cb9-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>cum_sum_y,</span>
+<span id="cb9-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">z =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>cum_sum_z,</span>
+<span id="cb9-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"scatter3d"</span>,</span>
+<span id="cb9-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mode =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'lines'</span>,</span>
+<span id="cb9-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">opacity =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">line =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">width =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'steelblue'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reverscale =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb9-15">)</span></code></pre></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item" id="htmlwidget-ee3cb06aaa2f181dd40c" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-ee3cb06aaa2f181dd40c">{"x":{"visdat":{"35dc3d373daa":["function () ","plotlyVisDat"]},"cur_data":"35dc3d373daa","attrs":{"35dc3d373daa":{"x":{},"y":{},"z":{},"mode":"lines","opacity":1,"line":{"width":1,"color":"steelblue","reverscale":false},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"xaxis":{"title":"cum_sum_x"},"yaxis":{"title":"cum_sum_y"},"zaxis":{"title":"cum_sum_z"}},"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[0.0036799908359359638,0.035901727804248579,-0.0958274352991067,-0.33022160321353555,-0.35992733002062111,-0.59024633509128155,-0.69765796777087363,-0.75451716192551832,-0.7023623923927198,-0.70243132071947412,-0.80526796298068326,-0.78932446308927573,-0.71415556178668493,-0.76632879183105429,-0.71098693214455599,-0.60859912623691159,-0.44536640112687348,-0.45459445225992778,-0.61566638659655171,-0.55414621241353923,-0.62566761114756664,-0.63372467454192871,-0.50675776129778849,-0.40154533123191427,-0.43977680979637179,-0.42591250539104808,-0.32872458551721051,-0.39492988719883909,-0.36871537252555664,-0.37713580582984341,-0.26335073231615702,-0.16269331968058487,-0.036516416410675316,0.0098779115432267427,-0.099732253631276149,-0.23033932756852335,-0.35191310058413594,-0.2779427436634318,-0.34497695356703523,-0.42261386527325356,-0.50100100827442817,-0.61438358786868397,-0.50197315172459911,-0.7052392120664327,-0.6700102934665163,-0.65634170299058359,-0.61582045182293066,-0.65854317155706166,-0.77255345418435295,-0.64405010469460788,-0.71443509513530257,-0.66809964558060719,-0.81915331916865186,-0.80778872568664661,-0.82226513988297911,-0.69496091557137507,-0.56879098894348534,-0.43671723504498067,-0.33069554343907387,-0.35926178671937381,-0.26605297402064665,-0.13233681261540778,-0.25152370189430251,-0.17805394439414099,-0.17703100756475243,-0.309335002823108,-0.43090877583872061,-0.65734667652012879,-0.62467293740007046,-0.42391864197860946,-0.22713332586487789,-0.37932667162745459,-0.51163066688581016,-0.35527967079571648,-0.38792575820255826,-0.4236197564409459,-0.41669087938194277,-0.4201077038327275,-0.46280947438223169,-0.42572212857694181,-0.23830771415622734,-0.20042400930023677,-0.16362722559476811,-0.19196249964523757,-0.19200524041100545,-0.15587073763473924,-0.071605932146480117,-0.15239872338773769,-0.14159284763316943,-0.068574544976821597,-0.12811871077173659,0.032324429184625206,0.11287974793378271,0.047219034899191326,-0.012795217132989128,-0.029001216521275922,-0.14238379611553165,-0.14212641833860104,-0.080401643621998933,-0.065351288541767277,-0.0094562029622548942,-0.057689858569023492,-0.012638618436280929,-0.043489270654390594,0.0007327698308333267,-0.10353978701618814,0.17478591763735229,0.11477166560517185,0.044471548887853228,0.0092981188754733268,-0.0093793467571446805,-0.085317430814631154,-0.21631615319921838,-0.39899535508665812,-0.29906226611720421,-0.27243785129573878,-0.19681348876679616,-0.20023031321758086,-0.020547347749925116,0.17369303545778059,0.087077684850196971,0.22625085140236817,0.13239084733058237,0.11351651029149147,0.13287426279395995,0.13847054596243782,0.18954686175616403,0.38283292308575761,0.36044877091944005,0.33034960382544937,0.33344526618458414,0.4532663876482082,0.37202878243036164,0.27889919233950167,0.26376234386404346,0.074961405976849541,0.15785124432604389,0.10127361960008716,0.055092405284213976,0.071698440899010535,0.060067848792770294,0.13056153723235656,0.099710885014246894,0.062652237690190044,0.1807017489762755,0.17123592396020423,0.080663853475012537,0.052492929632296216,0.055588591991430993,0.044794339298228028,0.18953983299094584,0.1802829468315898,0.29520437166716729,0.36743346808527955,0.32962963543025092,0.55810756577669884,0.51854657513666436,0.63246964716906018,0.6015369083070059,0.61714433199348651,0.39316741191454574,0.43950286146924111,0.57637959788540116,0.57199902928509483,0.68921855280655875,0.82145287904173314,0.90943206465448279,0.79963918643912424,0.80551548224709701,0.71125875434230756,0.72786478995710413,0.62396151592427218,0.52970478801948284,0.63209259392712724,0.78100769640206502,0.92526157065743975,0.97430397104737065,0.95735462234841806,0.82081976403077006,0.75138578554965374,0.92221143301160025,0.96009513786759082,1.1026140751704609,1.1182214988569414,1.1025726340387938,0.96737931051425385,0.92871056002801133,0.98124116649707838,1.1819954619185393,1.1731178847324089,1.1069298528656917,1.0607486385498186,1.2794006789796859,1.2684342109233886,1.1267786640784483,1.1006546459301036,1.0296020348818435,0.83953894738754076,0.80384494914915305,0.84891367564176023,0.84610071676526966,0.75249624158518125,0.70940136898390138,0.73003201301057741,0.64667888649190175,0.57610238340161579,0.66053405851336877,0.77913006646014338,0.63768894460210701,0.69176817146669112,0.60865764584971283,0.66455273142922522,0.63645307945850682,0.77408838922011292,0.82619243296976785,0.7377568182691322,0.7258857148400627,0.72609462530911606,0.71483775609274669,0.79492967166947937,0.7944311844271813,0.8243499585233417,0.81458889746678853,0.72784128230552037,0.78519735611678931,0.91891351752202821,0.8949204719275754,0.70325053122230741,0.8372725032407905,0.94730649859041716,0.86689715860811156,0.87277345441608423,0.74820775081040025,0.77513103835656627,0.65640118764218058,0.69100626698754775,0.72039768013369632,0.7318310173617415,0.83565598690488918,0.66505007026782792,0.68268533778902807,0.71881984056529424,0.63133596869516762,0.58442294882556667,0.35410394375490617,0.42927284505749697,0.47434157155010415,0.46708520468157394,0.43707586431893863,0.4602554462782662,0.53076816110706981,0.31952051927049641,0.40444120943241973,0.38205705726610212,0.43790722246392971,0.394980741480361,0.44388010660073707,0.46684370503675438,0.58062877855044071,0.57362741383242422,0.61405781612979693,0.7851280088717989,0.8309371674796967,0.88102765286632245,0.96833697945635044,0.96492015500556572,0.98495322717795697,0.98445473993565891,1.0648743689607278,1.2017511053768879,1.2388384511821777,1.2333344491491449,1.3355901770471124,1.4273501826748651,1.5374966188414638,1.5699913779182815,1.6953679594851336,1.7874086331323205,1.875604990217997,1.7986426931008703,1.7558805759688163,1.7318444995379749,1.78626580065873,1.9085454231747228,1.9711848145066642,2.0422117944562452,2.1011129308495624,2.0210100735658392,1.9548220416991222,1.9204969791878008,2.0610349721222825,2.0470181812991313,1.7849469875230759,1.8018850797886998,1.9386342189208372,2.0331323312365308,2.1652060851350354,2.1732160046792166,2.1868564186321664,2.0932382557800557,1.9744496811271319,1.9602309037418979,2.0534397164406251,2.0282670966272018,1.8557542683535619,2.020940689168425,2.1331694750821981,2.2193879151643121,2.1553878784469616,1.9454540415062551,1.9917894910609506,2.1066357899158987,2.1540189422710414,2.1173543308100644,2.2098719627030543,2.2659627322779246,2.2365862875293687,2.0841218276817508,2.0452752257307782,1.9435901140678082,2.0396232556689506,2.0818643863505022,2.0821217641274328,2.0971721192076647,2.2026331834645383,2.0000552644469685,1.9516442005846957,2.0075392861642083,1.9360178874301808,1.9074516441498808,1.6810137434684727,1.7814223952116943,1.5926214573245003,1.6980825215813742,1.5685250261251453,1.5655656176593942,1.5815091175508018,1.7324409532592395,1.8125328688359721,1.5781387009215431,1.7051056141656833,1.6219950885487051,1.6454648563944836,1.7128996694110374,1.5715668509114389,1.5102853056529897,1.7016786595693993,1.6134908988294971,1.6410943620236644,1.656952719209507,1.8526534566240389,1.9064402620150351,1.7966473837996766,1.7395298864422428,1.8752239680220837,1.8760470832514771,1.9493205311236399,2.0298758498727976,2.0015405758223279,1.9384266959481657,1.9820877481119381,1.900331349845088,1.814317382744564,1.7944588487962012,1.7587648505578135,1.9384478160254692,1.8061438207671137,1.8644189632099371,2.0001130447897779,1.9946090427567453,2.1388629170121201,2.1688486847101194,2.0977960736618591,2.220529951381589,2.3381553251096827,2.2299853062715256,2.4806943856111934,2.3853203148436912,2.2771502960055336,2.4089394275353349,2.4016830606668047,2.4316018347629651,2.5307784195239109,2.6426161001065984,2.5942050362443259,2.6192161376138663,2.6897277916485063,2.6226935817449029,2.8098055136641067,2.9837877720289221,3.038890898513221,3.2019813124804286,3.2316487577097708,3.3061395064383969,3.141278909239114,3.0710471673992812,3.0910333031910002,3.0497691798873454,3.0943504452438377,2.9685850965831277,3.1507239595328924,3.2575837100563607,3.3798633325723535,3.3411945820861111,3.2191620387327804,3.4378140791626479,3.3486733871397054,3.5394298948416423,3.5474398143858235,3.4759184156517957,3.536281985203114,3.507737375067439,3.4037802007293507,3.4231379532318189,3.5883243740466821,3.7704632369964468,3.8536741964826673,3.9095243616804947,3.872465714356438,3.8301744768225436,3.7625182875263725,3.8910216370161175,3.9229529026534546,4.1428268458083659,4.1742954038507998,3.9478575031693914,4.0853105417107489,3.9393512312381196,4.0048430836450715,3.9661743331588291,3.8019489183570996,3.8288722059032656,3.9562443201140489,3.8602312014351616,3.8752779995652182,3.9487929329929288,3.9393271079768573,3.9087708511877644,3.9767192486166385,4.0943446223447326,3.9926595106817624,4.0543842853983643,3.9178317270414391,4.1377056701963504,4.0981446795563157,4.2092654702006875,4.3096909593999078,4.2507167543081703,4.4440028156377638,4.3993063675180579,4.4715354639361697,4.5085751154931941,4.6104197851545994,4.5620087212923268,4.6881856245622355,4.631326430407591,4.6564110568022423,4.5728243814568721,4.6353939079205437,4.6724335594775681,4.9231426388172359,5.0507970993585074,4.9317389185594722,4.9739800492410238,5.0452778660432402,5.074669279189389,5.1092743585347558,5.1750482084327318,5.1119343285585703,5.065753114242697,5.124936272036809,5.3120482039560128,5.2955130475676571,5.2920962231168716,5.4182731263867812,5.473666587250591,5.5778984379640884,5.6951179614855523,5.615015104201829,5.655445506499202,5.7536493827034407,5.7987006228361828,5.7894437366768265,5.8405200524705529,5.9237363018096518,6.0042916205588091,5.8701091405982195,5.847724988431902,5.9028281149162014,5.8640020918609732,5.7382367432002637,5.7486870992382118,5.7452702747874271,5.5381978384391966,5.5504974028014811,5.4799208997111952,5.4352429637028079,5.4915595002025457,5.4055455331020212,5.7160170521730951,5.5988313953843818,5.7186525168480058,5.6829585186096185,5.6360454987400175,5.6108691543559308,5.5143635330415472,5.41835041436266,5.4259254444381009,5.4959957583963375,5.3317703435946084,5.4504020781466682,5.4448980761136356,5.3790788087385506,5.2830631716376732,5.4206984813992793,5.4997852025385097,5.5034625870035434,5.4010942450771351,5.5264708266439868,5.4258699207873224,5.3543485220532947,5.4557261967718125,5.427159953491512,5.5652118436286084,5.5419417610209765,5.6325043788378775,5.5962613862511761,5.5806125214330287,5.5248221713524979,5.6964237151649026,5.8169457726715983,5.5364518403115124,5.5081165662610427,5.5621957931256265,5.7006715111707065,5.5956530926881181,5.6182989752251968,5.6646933031790994,5.7409468223046325,5.7299415564034772,5.7804040381574113,5.8377601119686799,5.7267150342985849,5.5241371152810146,5.5687987580720817,5.4507069137490269,5.5780111380606314,5.6230798645532385,5.734917545135926,5.7688422285403576,5.9135877222330757,5.9916793870939262,5.9810300846496425,6.018069736206666,6.0920217740596501,5.9955161527452665,6.1313021648810722,6.1568181362693188,6.2313058939309371,6.2639796330509956,6.392905705051243,6.4603405180677971,6.4245879523750684,6.3677112675468441,6.4174898547405732,6.3608566022394246,6.456979507744669,6.5541674276185065,6.6565552335261513,6.5581944004292883,6.7141865437367043,6.5756535473349507,6.6238771328291746,6.6830602906232874,6.7873998271878664,6.6077590141743618,6.6869041914359926,6.5503516330790665,6.5763577090182483,6.8179708799016643,6.7479927526902745,6.6558693527310497,6.5519121783929615,6.6152492890443693,6.6446407021905181,6.5769845128943469,6.6275692196100602,6.5201876800121239,6.3872787577270564,6.3621193927798503,6.3850340125363116,6.270881061339594,6.3151031018248176,6.1839026369347705,6.2121286240847562,6.2269593756486881,6.3775594945304217,6.4326626210147211,6.5711383390598002,6.4369797234819339,6.4528017488687555,6.1656968695489169,6.0651748387319229,6.0821771321679563,6.1432142005907098,6.242390785351656,6.4028339253080171,6.4099559610340293,6.3268454354170505,6.4386831159997389,6.5648530426276279,6.6231281850704518,6.5873756193777231,6.6374661047643491,6.4486651668771557,6.3901639598216864,6.3650794226994343,6.4924515369102185,6.5032574126647864,6.5202597061008207,6.6320296041905396,6.6545830011142684,6.6439336986699837,6.681041119771046,6.5590085764177148,6.6207333511343176,6.6562212116273223,6.657526211602482,6.620861600141505,6.6654428654979974,6.6991560987361112,6.6639826687237314,6.6482248157280992,6.5344482987979209,6.6036868700951779,6.509826866023392,6.5596054532171211,6.6428164127033416,6.6985215270523408,6.5186169795181463,6.4420244551569388,6.40261713350269,6.3260359015540706,6.3639862497566293,6.499772261892435,6.4900112008358821,6.3861079268030503,6.2877470937061872,6.3847521811468306,6.3385709668309573,6.4450952016923964,6.3565078896008842,6.2373210003219901,6.5412428288277864,6.4636660781049322,6.5284137583543256,6.5857698321655951,6.6661894611906636,6.7452654640515828,6.6492523453726955,6.5918889205805042,6.606187349890293,6.8560297629486877,6.6836196092770912,6.7111985541726176,6.618233229249058,6.5322192621485344,6.5203481587194645,6.6650936524121827,6.64814430371323,6.5370992260431349,6.6060897291184411,6.5665287384784072,6.6312764187278006,6.6525225565172867,6.6000656677906582,6.4950472493080689,6.3808942981113521,6.4272886260652538,6.3135121091350763,6.3175774405832019,6.4972604060508576,6.4051370060916328,6.3872686711593056,6.2543597488742373,6.1499223822453102,6.0686847770274639,6.1668886532317027,6.0486595980849538,5.9508560205039958,6.0933749578068657,6.0362574604494323,5.8192305690566242,5.7249738411518347,5.8343868912208103,5.78845310056629,5.8636066708822607,5.9194012422357902,5.9463245297819567,5.9340648209205833,5.9270634562025668,5.944698723723767,5.9473166698412463,6.0055521242571217,5.953015910227534,5.8462669119364525,5.7693690823183825,5.9553315781375016,5.9733611669094238,5.9738021698582919,5.9668008051402754,6.0142826096947601,5.9507466601567085,5.8002900996763964,5.8232047194328578,5.7189321625858369,5.7568158674418273,5.8586605371032325,5.9084391242969607,6.0303002506524788,6.0734315497448854,6.0779606183157169,6.1700012919629037,6.1850516470431351,6.2324347993982778,6.1442470386583761,6.0756000478498891,5.9616634077552941,5.922816805804322,5.8525850639644892,5.8877858611119773,5.7368312409248947,5.6318986116044583,5.5313765807874642,5.5818405302281082,5.5656345308398212,5.5029689274952291,5.5003873684545983,5.5273106560007648,5.5257702459355196,5.5711429503219279,5.6066308108149334,5.554173922088304,5.4831213110400441,5.2660944196472359,5.3179577725230844,5.1849027094640388,5.2400066122003759,5.3550585575473413,5.2802412357307977,5.3535146836029606,5.3147593428216906,5.1914430666081666,5.0190329129365701,5.3295044320076439,5.2494015747239207,5.0694970271897262,5.0708020271648859,5.1701074647799503,4.9789861419418546,4.9894364979798027,5.1602621454417488,5.1321624934710304,4.9936294970692767,5.0005054763284535,5.0887018334141301,5.0224965317325019,4.9941612576820322,5.0343671204470173,5.1192878106089408,5.1519615497289992,5.1449601850109827,5.237367655153351,5.2777980574507239,5.2057382676683996,5.0994141417659211,5.1856325818480355,5.3125994950921758,5.2755408477681192,5.2326143667845502,5.0683889519828202,5.1389016668116243,5.1439180299434115,5.0228767638760363,5.0633071661734084,5.0994311717721548,4.9321667849879747,5.0658829463932138,4.9893017144445944,4.9393613079172312,5.0133133457702144,4.9724991647523265,5.0430118795811296,5.0729976472791289,5.0169708428773259,5.0932330132026271,5.155703392666247,5.0665627006433045,5.0920786720315512,5.1902825482357899],"y":[-0.17178056363743388,-0.31939720539452365,-0.44459762721372109,-0.41601825844727702,-0.40693236202377453,-0.25973274764047422,-0.44404634974085866,-0.65280119393632163,-0.64858445408214793,-0.49214354608679245,-0.37806522552664812,-0.46172244965926618,-0.63888034103232927,-0.6714964430468352,-0.66567273875853705,-0.73909591411123243,-0.67192208334385184,-0.63745093803819741,-0.5836446531758509,-0.55268793118352866,-0.5207415672142337,-0.37349623210312655,-0.49147357754095933,-0.48702953754847017,-0.4491064803473066,-0.525103570800038,-0.59910958062218711,-0.71607424139721476,-0.76206973495192798,-0.75624603066362983,-0.7767098583047467,-0.84400843015537563,-0.73939831022181102,-0.71330533097853432,-0.82511953910570812,-0.81588275028315194,-0.8067968538596495,-0.81706929874590239,-0.86667172636750633,-1.0356690694905379,-0.98444583749096282,-0.92204760993460588,-0.97261234437727295,-0.94180666108630628,-1.046075432852571,-0.9736100389874951,-1.0708035955606152,-1.0206834588065437,-0.81168777362051803,-0.76254432883805334,-0.84262938840890578,-0.71044055719693722,-0.6740934942291863,-0.63705046168636792,-0.65392508011938799,-0.46636138965336327,-0.49961049441182398,-0.48925742865657229,-0.52119912059475904,-0.59471232188117562,-0.68109540185957373,-0.75510141168172284,-0.7966074905657119,-0.80299484005222022,-0.67067422091469431,-0.71552951643504825,-0.77695563070932205,-0.53368203691971061,-0.36809224769955551,-0.36216888448563445,-0.38452825708244731,-0.50661044714422421,-0.28394597466695831,-0.34990159240630841,-0.2426633736118492,-0.36137182906826054,-0.33811468833753539,-0.3098009348939792,-0.2778545709246843,-0.055190098447418463,0.07940796030686488,0.26826527564408792,0.255787385597817,0.40629790191851056,0.40671348077387454,0.42953223586508199,0.49352626020948859,0.54901526665822575,0.35831761593312095,0.37087497660115792,0.53089140127292711,0.58101153802699856,0.7338879319788244,0.90401226188976314,1.0916141391884771,1.132273628415656,1.0708475141413822,0.98859950393098539,0.99864068623176316,1.0147845796129216,0.9863606423834983,0.87436088100116782,0.8829900494905859,0.87569120402246725,1.0514031407036613,1.1628854375196402,1.108034404883196,1.1157130157524233,0.88116398500684734,0.88388450338545299,0.85574008455502237,0.93200646555853051,1.1244178419391637,1.186070117909364,1.1820727242602398,1.1719110805522139,1.1873130047322444,1.2587678362733903,1.1659284256003433,1.0795453456219453,1.0202662072997291,0.77724176001520195,0.71136693288076325,0.79278829224823089,0.74974695817070558,0.79302734873761394,0.79434446291959615,0.8109538489117728,0.98666578559296669,0.93338009330276639,0.93371827236602145,0.94627563303405837,0.89419400232441915,0.96665939618949503,1.1099226890792744,1.1798870335792819,1.1611034111580816,1.1357355868153365,1.225500962783389,1.2618645596728364,1.3365594921303554,1.3234714320915237,1.2566648034429135,1.1793894145331361,1.3671090820234404,1.2084612676320847,1.2432328544289757,1.3322338511039524,1.3135659263849937,1.189597539401718,1.0040841844289119,0.89525704438200526,0.94395105038155758,1.027942961448328,0.94053994256693874,0.96778068588149613,1.1664944401965252,1.2417972984268688,1.1892838956337557,1.1367704928406428,1.0798718542115953,1.2120606854235638,1.2798927780583853,1.2212457008574957,1.1743582313420942,1.0752202015380627,1.1279691038464192,1.1088987980122891,1.1885825599789368,1.0720206419297607,1.1490284683384444,1.1556015156355026,1.1569429424915905,1.3117677479537937,1.3385340256508489,1.2003458299893304,1.3760577666705245,1.4060654943059487,1.5318002322915607,1.4968253093647852,1.5947809073105743,1.6067831940292003,1.6957841907041771,1.8363770316455632,2.0226669578015888,2.1943537234429971,2.2288248687486516,2.2894434370973276,2.2171818517460746,2.0563416700279356,2.1495838810155976,2.2403503296158997,2.3396467337508873,2.098460373085548,2.0969642337538987,2.2235618107473134,2.2183261415751829,2.2242495047891042,2.2385459941287129,2.2872400001282656,2.3225162803801411,2.2518971884843406,2.1251897360989842,2.1683040194911718,2.2359254612821657,2.1525750084042303,2.0354732381057432,1.9510657203523465,1.9426857889181233,1.7274922238694836,1.8776353096878766,1.6823609392496757,1.847816110466397,1.7355257589656579,1.6478802952471185,1.8235922319283127,1.9476110875490149,2.0583045194568919,2.2673002046429174,2.1828926868895207,2.079337705721068,2.1373668756260935,2.1015998901591746,2.048385431745626,1.9326771173872124,1.9663528234774752,1.7498459351499793,1.7462463409054592,1.636812839028702,1.5176105991090953,1.2890280508023821,1.0949278670615761,1.2368162329175603,1.3367304370819522,1.4195254012307532,1.3411224612632786,1.3474402027421448,1.4192500925617162,1.317861333764599,1.5019035832816923,1.5204062672161047,1.5207444462793598,1.5220615604613419,1.5990693868700256,1.7366132641793861,1.542101499625238,1.6702053038463178,1.532261698219991,1.6085280792234991,1.4386052804761191,1.360586181017172,1.3504245373091461,1.2124809316828193,1.303247380283121,1.1895165551045974,1.3678320774320187,1.4392869089731646,1.812482582545407,1.9529477760919236,1.8794949322516019,1.875971857067904,1.8852265049164807,1.8662629455362871,1.8508396150358775,2.0243435432471655,1.9022613531853887,1.9306671440679661,2.0550857149907902,2.1252449011474237,2.071174149375639,2.0248399425721084,2.0827091278738727,2.1640967241691409,2.148452427247002,2.0555144749900891,1.8700011200172826,1.852298675799666,1.8529364170647697,1.8342416899217968,1.901128461640063,1.8351728439007129,1.6773395531573025,1.7910914457986888,1.6835258809340459,1.6659590511019513,1.7549600477769283,1.5495189035988639,1.4668752432040302,1.5313611325387442,1.5546182732694693,1.7772827457467351,1.6804275725994897,1.8223159384554739,1.7379084207020772,1.6836967889339571,1.6237676932274867,1.6953327839759533,1.7290084900662162,1.6127867500965243,1.7546751159525085,1.6574815593793886,1.6351304138462086,1.5686985965355575,1.4551124037040704,1.3557386889314342,1.4205045127235079,1.1591719079784095,0.91614746069388231,1.0878342263352909,1.194695011641961,1.1769925674243444,1.1979080770100032,1.0727076551908059,0.99262259561995336,0.89783559776235167,0.71623056123248197,0.73251160312260755,0.6962512059325483,0.79233754199853201,0.94716234746073513,1.0120506487599008,0.86218789987037936,0.80931561017768461,0.8316513233559828,0.8004530531747126,0.68666194209955755,0.74134216718930779,0.67991605291503387,0.64274486508755002,0.66219253485358376,0.4669181644153827,0.36477174078726576,0.38230773211665925,0.28511417554353918,0.18183713332867146,0.19158856509592678,0.21003705350586255,0.036774197500505874,0.16142343352865923,0.43558391439611055,0.47742552103374958,0.49370656292387516,0.32963746233203861,0.42985136758460085,0.36369502781273244,0.39737073390299527,0.3750113613061824,0.59437599885369818,0.58798864936718986,0.71669965302328154,0.81789445552020201,0.88945954626866863,0.90490382171447781,0.96655609768467821,0.98500458609461394,0.77624974189915097,0.83173874834788819,0.84177993064866585,0.84770329386258692,0.80598348776099671,0.72654596850092945,0.81386458244932125,0.82801469211896483,0.82356428529204162,0.67326476259315138,0.6476028455456615,0.57132180699189128,0.62328666209755179,0.53256906989954589,0.57853497226384332,0.41446587167200677,0.3888074049580354,0.42582079935854333,0.54490349236745594,0.66006719527596958,0.84635712143199504,0.94704021240724612,0.93687856869922026,0.98743084245989143,0.86945349702205876,0.84331370144859885,0.82225427079742064,0.85008706990574234,0.83139234276276941,0.8906204364479452,0.89523924146363598,1.0312999319978271,1.1552558329328677,1.2114283053425565,1.1476395414000156,1.1492502691110129,1.0637130187665247,1.0947111005005736,0.93671912245685895,0.83245035069059425,0.95377417352286964,0.89414679221421678,0.93598839885185581,0.85158088109845886,1.0080217890938143,1.1156077675215745,1.0457667441976293,1.1004469692873795,1.2927227140546742,1.1764702550874671,1.2365807617570985,1.23870474588478,1.3476967838374176,1.1947561970777938,1.1519272275923962,1.2936367943434746,1.4948747773289526,1.421361576042536,1.411089131156283,1.3543031678346773,1.3579577894317301,1.3392898647127713,1.0962654174282442,0.97828807199041146,0.8644969609152563,0.75566982086834977,0.66678076452941004,0.66467916959021467,0.75982425502664286,0.64411594066822908,0.63742978015843377,0.57815064183621767,0.4591294123555254,0.59372747110980872,0.60235663959922681,0.62425895773036311,0.30177992648207713,0.29566289840611365,0.25222987039890243,0.33622178146567278,0.23821558122037562,0.14278765138233607,0.037278689897693895,0.085972695897246154,0.23829548641956164,0.20387781835855867,0.26501336583811402,0.48437800338562981,0.35896393803075505,0.46821040956824622,0.71554547613981667,0.79796451987918882,0.7728895269099455,0.71867789514182545,0.75893514159514341,0.86634817676081444,0.82573150145334617,0.67543221266329689,0.64741342096660015,0.63529565807468624,0.57515970046904374,0.54299396819160417,0.58752881034252114,0.53696407589985407,0.42359593765807568,0.10165162299078004,-0.018164226229522667,-0.12285527950483917,-0.12749021022078857,-0.044564936465567306,-0.1107212762374357,-0.006111156303871091,0.058732236135756899,-0.029675449304733873,0.34352022426750844,0.29100682147439549,0.32196354346671779,0.30887548342788612,0.32134450513316226,0.37878896734812428,0.3428512677175895,0.2894390510647703,0.32818843772693529,0.33793986949419058,0.43595155816880876,0.40153389010780577,0.4778002711113139,0.4773986952601767,0.56733471019045079,0.52544006864288673,0.48261109915748918,0.47737542998535859,0.57857023248227901,0.6058109757968364,0.62508378466754466,0.7769064532449933,0.63286145930998539,0.57944924265716624,0.70518398064277821,0.76425173138989178,0.60625975334617699,0.66716528172797662,0.66506368678878125,0.6818198331488986,0.65062156296762841,0.64332271749950976,0.7584864204080235,0.67674810526170126,0.65778454588150759,0.59301715375098196,0.55840294243509958,0.51206873563156896,0.55534912619847732,0.62252295696585802,0.55522438511522909,0.41117939118022123,0.23494275697819353,0.24724142703938232,0.29320732940367972,0.28261607635118097,0.43312659267187453,0.25411251106312949,0.22790757791350175,0.17462188562330141,0.13779194890157098,-0.063810511129110542,-0.15509762353389681,-0.24803557579080995,-0.44493247777508316,-0.44242480858588634,-0.35163352364966849,-0.35099578238456475,-0.45314220601268168,-0.52393315839254795,-0.51530398990312987,-0.63080547140685983,-0.44324178094083522,-0.39983786007664684,-0.43196669934890985,-0.45704169231815317,-0.36010961887116838,-0.25506138970480435,-0.33434326936199321,-0.30239690539269831,-0.34897185055834196,-0.47657146991216548,-0.64345723249548792,-0.56876230003796879,-0.61219532804517995,-0.62879279009046585,-0.72306349971507589,-0.65601703469546613,-0.69663371000293439,-0.48296112863113216,-0.51855298428802976,-0.65525277295047457,-0.62439647360389017,-0.69274138881082281,-0.60994642466202187,-0.70964513919400418,-0.80212919896878632,-0.75539858076626776,-0.81218454408787355,-0.78609156484459686,-0.77517402354530163,-0.90037444536449907,-0.70772865640440885,-0.77390612574535411,-0.93508656465785023,-0.8004885059035669,-0.71559605656652092,-0.57927936891724063,-0.51462901288514917,-0.56344854755912599,-0.42018525466934664,-0.39690704004784494,-0.28337701886586297,-0.17331926681841731,-0.22761281310827133,-0.38797191963624145,-0.50668037509265285,-0.45290207101792329,-0.51669083496046408,-0.53223131109641053,-0.77525575838093774,-0.82485818600254157,-0.91769759667558859,-0.923064722587842,-0.98461088055203527,-1.0090053692176366,-0.92658632547826447,-1.0094235307991744,-0.97198134309589623,-0.87886563595719369,-1.0368576140009085,-1.2150824526091923,-1.0547366839457271,-0.99729222173076493,-1.0495733705927204,-0.88937343122227785,-0.84911618476895978,-0.91054229904323369,-1.0437461416829268,-0.95885369234588091,-0.84368998943736728,-0.78307142108869143,-0.77303023878791377,-0.87103643903321093,-0.8606833732779593,-0.6056410681429909,-0.63809546511139137,-0.48521907115956547,-0.49857636929651006,-0.7476015255361057,-0.81798259443828725,-0.69889990142937475,-0.63293428386408479,-0.62902231320524948,-0.73304523343697237,-0.72380844461441629,-0.72055907033703237,-0.65459345277174252,-0.57179848862294147,-0.58972783338865808,-0.47377342147542068,-0.46329278520767109,-0.16668407961660267,-0.2822405532672258,-0.44857814032993854,-0.33751340559181459,-0.2405813321448298,-0.2186790140136935,-0.34686428033629335,-0.56337116866378922,-0.44984114748180731,-0.42053702033575285,-0.1756064801326272,-0.18896377826957181,-0.16055798738699439,-0.18124305047708397,-0.281750071889937,-0.32660536741029089,-0.40944257273120077,-0.2828449957377861,-0.21049691370163728,-0.021312489897760648,0.17096325486953412,0.23813708563691477,0.23877482690201851,0.23349844034506134,0.22207212810660051,0.33355442492257964,0.3846325517942818,0.28135550957941413,0.39060198111690531,0.42804416882018331,0.31553652231573931,0.34230280001279467,0.28087668573852081,0.2629919815124071,0.18414929651227471,0.26707457026749598,0.41995096421932188,0.59241438773051158,0.64574177046334713,0.63170933420054109,0.56553186485959572,0.52650350991980677,0.40253512293653104,0.52767478701364656,0.46839564869143041,0.45809920917059677,0.53659867351300949,0.60108456284772349,0.5418054245255074,0.6383948502067549,0.31220268825159181,0.32881207424376846,0.22742331544665134,0.29551781580170045,0.28009448530129089,0.434919290763494,0.51181949434257301,0.46454068636868939,0.38726136920901172,0.4132198876700961,0.43266755743612989,0.49799764720410417,0.26326492416545028,0.34027275057413403,0.32473227443818758,0.14992301136571287,0.15967444313296816,-0.069029876152782679,-0.051493884823389242,0.072150099589093381,0.25971379005511802,0.13904012211792124,0.20404787837288152,0.1861185336071649,0.3293818264969442,0.32414615732481356,0.32584288371293951,0.23843986483155041,0.31313479728906962,0.37334696047932237,0.34768504343183254,0.37058972702194426,0.27539660880623856,0.29773232198453675,0.21888963698440433,0.36059920373548282,0.54464145325257618,0.53716644417504067,0.58028072756722837,0.508463354265831,0.38449496728255528,0.46150279369123903,0.41224239447363459,0.34999444603077029,0.34269560056265164,0.22367437108195942,0.47353856242740844,0.50721426851767126,0.63067995924507614,0.68854914454684046,0.62927000622462426,0.54753169107830202,0.45210376124026247,0.43374948916503897,0.58011310018204731,0.47460413869740509,0.41595706149651546,0.32466994909172919,0.39713534295680508,0.34657060851413801,0.48242757564100935,0.48845791470783106,0.51776204185388552,0.618956844350806,0.63571299071092335,0.70640827851367372,0.76849083957441777,0.73939347557520518,0.52955687582757038,0.51059331644737671,0.44834536800451236,0.63046936028678358,0.598303628009344,0.27635931334204838,0.10155005026957366,-0.092084967354562161,-0.098472316841070426,-0.086173646779881624,-0.1717108971243699,-0.139764533155075,-0.18202288702274685,-0.24932145887337573,-0.33215866419428558,-0.29688238394240984,-0.35378102257145755,-0.52556158620889137,-0.48854819180838344,-0.57220541594100149,-0.52892502537409314,-0.58757210257498282,-0.36051043815499328,-0.3706720818630192,-0.31834834339699408,-0.31443637273815883,-0.33131099117117885,-0.22061755926330198,-0.237492177696322,-0.161157073587504,-0.16788457629348957,-0.13747950676994591,-0.23041745902685906,-0.24877173110208262,-0.36788342390837697,-0.22729058296699081,-0.089667468575352169,-0.13271817878711711,-0.15150180120831758,-0.015185113559037275,-0.078904351771998754,-0.13893890237905765,-0.24362995565437415,-0.10787233876961375,-0.10936847810126282,0.068947044226158605,0.12552827421455226,0.048248957054874579,0.15367846522199616,0.20282191000446079,0.18973384996562911,0.39069298669630442,0.23474302824580076,0.16141577212127226,0.23834981757633372,0.036747357545652184,-0.16485510248502933,-0.054797350437583658,-0.038516308547458092,-0.012557790086373741,-0.24126210937212461],"z":[0.12414756884958833,0.16524893972048299,0.025818006412690428,0.16392145403132924,0.22026686843818793,0.24404236323073225,0.10811427098796447,0.15142036056684677,-0.0030581708515570738,-0.20359175692077486,-0.25660678200982112,-0.2601419310692093,-0.31922465313803794,-0.34501821042647718,-0.20947247592879256,-0.086989196641660729,0.062546805489093318,0.072902169933163383,0.093355368723716137,0.31871098294106986,0.35596100661022056,0.19878670153607764,0.17427482088243063,0.0086801934888301614,0.032623109632421904,0.15451022585306215,0.13452711522214744,0.11339966432751815,0.15097385117249329,0.24644089686430498,0.13321373969271136,0.11460813472224293,0.064672526847579168,0.029677910773580889,-0.20367356582381518,-0.4131060157003843,-0.22816841410970692,-0.3934997618994534,-0.2671364185079273,-0.38378423629965769,-0.31420213850975309,-0.1763961264299303,-0.12354046061101762,-0.10709515240132758,-0.10428784277182396,-0.12177875681715522,-0.18531647688648129,-0.2231754205719047,-0.20936375410039948,-0.13132137845599981,-0.055435332487567296,0.040031713204244396,0.12788676129798282,0.16192558886738476,0.10712466294749902,0.014351198899778702,0.19920298466593417,0.17921987403501946,0.17893711326731476,0.15760904477563417,0.28009232406276602,0.17006395405557806,0.20273526246855533,0.1822484695985862,-0.00020425907691325721,-0.026656362851403569,-0.00053974895249313802,0.050017492905672443,-0.16921386178789949,-0.22401478770778524,-0.13807085188076765,-0.15972230268126486,-0.19546313866873621,-0.14302069526157274,0.077156963657888378,-0.043241600707082162,-0.16584534990621871,-0.14912271284726467,-0.2006487385467971,-0.16126858739470787,-0.082714448773517663,-0.13099222114451606,-0.11722637458171867,-0.057490090947811948,-0.023833667702221388,-0.25359136570328589,-0.14336131342806327,-0.11987390106234563,-0.17798142874734932,-0.30042141815515433,-0.096492290766632668,-0.25097082218503652,-0.36102977328952068,-0.31529258691846057,-0.27155283035521499,-0.42809838190608623,-0.48087764782186782,-0.40735708163102852,-0.4994897661110787,-0.49412872491451426,-0.51992228220295356,-0.57375253667799542,-0.75718967286450911,-0.66172262717269748,-0.69109060293431412,-0.80114955403879828,-0.96990253421885331,-0.99829218330826619,-0.92938355161140973,-0.99734958637638804,-1.0207287517135517,-0.94085216418074868,-1.0020091119136783,-1.1670144059573788,-1.1881418568520081,-1.17258756031779,-1.1259939550252647,-1.067129745826106,-0.82093348493229312,-1.0506911829333576,-1.0216844107980001,-0.98789062928018934,-1.0338825908641704,-1.0815331356997187,-1.1144868753985124,-0.91360742909261949,-0.84198973523206244,-0.901518626319049,-0.79678802818203054,-0.61780684775541173,-0.57396136963739941,-0.39429762348028868,-0.38122303732190821,-0.32213404048097988,-0.40350242567795452,-0.33713172122537577,-0.32066940864152049,-0.21772168080382467,-0.26010986632054062,-0.28150950875177472,-0.30316095955227196,-0.35309656742693574,-0.45236417329966983,-0.44857139518179806,-0.3552017018539228,-0.39483399445103295,-0.47084327824343342,-0.21338650752542057,-0.24021655958199822,-0.10430626081428947,0.045229741316464581,-0.072735994994733488,0.00078457119610579455,0.017507208255059852,-0.018928090380137153,0.02332063998719161,0.063555608680636311,0.010700714273236557,0.08743475415941869,0.052819891044889239,0.0013314561513996361,-0.2029458655814928,-0.05340986345073874,-0.10587140890652592,-0.063608045932366214,-0.18308973185248015,-0.21191139750659729,-0.38368213420361003,-0.2711490895146989,-0.41246166211820445,-0.39869581555540706,-0.35791254189038652,-0.30204829136340444,-0.25274307952392516,-0.14335148306852516,-0.03081843837961401,0.11871756375114004,-0.0075050270125608387,0.080836296099918006,0.1795917715272318,0.41847067585987796,0.27355095515918304,0.45321470131629382,0.3530137068506084,0.42329772576756303,0.4973453501612482,0.43883755317339573,0.47578885900581619,0.40570407347833581,0.46914440022340231,0.5119174400721529,0.34014670337514019,0.59760347409315295,0.48437631692155936,0.48113284855989669,0.36870680652938337,0.33586333906216098,0.29849407502851638,0.1613012644050846,0.28779516145973244,0.3975167469457232,0.37702995407575407,0.33546082749112732,0.233991249322474,0.30560894318303106,0.2596756179337838,0.39920407709843969,0.39526412118200632,0.53377269276334327,0.49706648753857469,0.45518332862755462,0.39696428398265243,0.52869043176670005,0.62030217704338608,0.61404920615558256,0.45810498848218384,0.25837279067195557,0.31471820507881426,0.35626536299192091,0.50766784977291413,0.46648115218697089,0.47248177150991444,0.31066687226459527,0.30672691634816185,0.33666931211532392,0.42951879974727153,0.42203037749326688,0.44274648367693886,0.28454419202948955,0.30878418841478089,0.32375335150397166,0.27924679775236533,0.20916201222488498,0.38882575838199573,0.39605330703892366,0.16233794407162502,0.25570763739950025,0.21120108364789394,0.25243231459714777,0.22193254691300507,0.086004454670237304,0.057182789016120159,0.039691874970788896,0.060407981154460888,0.17012956664045165,0.022362749580704083,-0.065037336223431663,-0.11187988549331788,-0.10503793582725099,-0.081262441034706673,-0.1886600287637766,-0.22488547917694499,-0.3720652387957642,-0.47545302492437252,-0.33442765860632906,-0.45629131162832315,-0.38040526565989063,-0.3639429530760353,-0.20229953979302354,-0.068546580989388123,-0.10640552467481153,-0.092593858203306303,-0.14642411267834826,-0.24985416724892512,-0.23974140390848173,-0.35551476392682796,-0.21960446515911924,-0.24943197974000106,-0.049551958520704688,-0.26649376138888992,-0.24738204761937918,-0.32523513797795167,-0.27973592815237025,-0.38316598272294711,-0.40961808649743742,-0.39807309014302933,-0.34521742432411662,-0.46476703649262491,-0.45586902782059185,-0.41088041186809415,-0.39375989477770451,-0.45649813291990871,-0.58077558746742808,-0.69550948937897838,-0.65909647655341574,-0.6661199717167674,-0.75352005752090323,-0.7215503973259817,-0.56934509211967377,-0.67602048186264141,-0.77018528713587286,-0.66598201106614874,-0.5942655586761646,-0.56022673110676258,-0.61171516600025222,-0.49032477893480442,-0.53855261649767805,-0.5182755513804328,-0.75692735327388116,-0.66848926113599427,-0.64041250612088407,-0.5800783144427788,-0.48923451707468191,-0.60193079870894151,-0.62160586520003425,-0.5071272211329666,-0.40417949329527075,-0.2378685838671562,-0.19220206083052455,-0.2271966769045228,-0.20729876053740792,-0.20397906775617963,-0.16853001511964924,-0.33386136290939572,-0.31155131321042911,-0.38565685527175708,-0.38333014355491996,-0.40540358820293065,-0.3678294013579555,-0.35401773488645027,-0.337555422302595,-0.40646987086081587,-0.4078583223118642,-0.26777529132240202,-0.1655789122771095,-0.2873248524544364,-0.37550753635289569,-0.43817938647522531,-0.54499948984798097,-0.53345449349357288,-0.50378761625722523,-0.57312197853125868,-0.54934648373871431,-0.50893334511557009,-0.45300349274433277,-0.24907436535581109,-0.4019423638686821,-0.29608650782526036,-0.28000670027281827,-0.28792795452167891,-0.31348639652931559,-0.2781080986829278,-0.31543585405700175,-0.216680378629688,-0.46063591764659412,-0.46208931415315496,-0.39092496791606285,-0.39416843627772558,-0.22553898343535414,-0.18338578191692104,-0.13764859554586092,-0.006271042039503405,-0.010210997955936787,0.080922415666739619,0.063431501621408357,0.32498803384781166,0.43042325255623298,0.41227084603984948,0.4363506847003531,0.36876389878680071,0.32283057353755346,0.4540294577394991,0.50287137655670611,0.3186882926140403,0.32911074114144978,0.30969118934634821,0.29754016384723248,0.23480192570502828,0.18567705384135449,0.33541046381190542,0.29897516517670841,0.26178698906013331,0.31557014286291096,0.42810318755182208,0.42989783898910955,0.52150958426579552,0.65770529185701487,0.82556194954696538,1.0015885001749012,0.94912695471911412,0.87106329669012161,0.9524057305777528,0.96290912020874575,0.84968196303715215,0.9708169133829192,0.96232128936955397,1.0151769551884666,1.0004533482922988,0.96829497695326527,0.94690594204739054,0.76346880586087684,0.78695621822659445,0.70753433336191929,0.55466633484904837,0.65653623661419247,0.62800678974553947,0.39465531314814334,0.44946220565859546,0.55463151795025689,0.53755548331913983,0.46154619952673936,0.57320879672613601,0.64022779592010637,0.73188321800628864,0.78438332246033526,0.87381823377975332,0.81428934269276665,0.88705984019976758,0.84447423440572156,0.87644389460064309,0.70467315790363028,0.70442092097156195,0.68430530277416368,0.9066225511354693,0.84709366004848274,0.82656580223755016,0.82511240573098943,0.83076931758535455,0.7892001910007278,0.76921708036981307,0.7195887889315673,0.64501922674630896,0.41523317143403915,0.42266537058914072,0.58056409737520909,0.64758309656917945,0.76947021278981964,0.64703022338201466,0.5875013322950281,0.3669367257595646,0.43722074467651922,0.39556727862428176,0.37306070241573741,0.36160381829169375,0.45321556356837972,0.59131901118701846,0.61976476325873964,0.62272322135108937,0.58698238536361802,0.76595187778146423,0.98110857302279231,0.82257285373117184,0.66996229576451216,0.72589214813574943,0.75396890315085963,0.90461527709627976,0.87478776251539792,0.89135505008036697,0.98248846370304332,1.0154627197786035,1.155071211780623,1.066092563573511,1.157704308850197,1.1101881587703268,1.1869221986565091,1.0994027657165608,1.0988381942974892,0.97623444509835255,1.0353234419392809,0.98538783406461716,0.84046811336392224,0.78745308827487592,0.73004637606646083,0.70864673363522679,0.77053499781846957,0.69816638389420582,0.73354468174059362,0.63358309087484943,0.64734893743764677,0.61895928834823399,0.49468183380071457,0.46734490069605739,0.38529690847271342,0.43103409484377353,0.52978957027108731,0.53011159145045528,0.53908228486740217,0.43551299312971631,0.58691547991070958,0.46495396726702592,0.6171592724733338,0.48292566646753748,0.44530976567316388,0.48685692358627053,0.59708697586149317,0.49126208699485391,0.50280708334926205,0.50239308839767771,0.49045337273420125,0.46489493072656457,0.4660205802731166,0.428651316239472,0.38342668839806671,0.25863544276104444,0.20710941706151198,0.267070917657314,0.24765136586221245,0.3030104225880903,0.37329444150504493,0.35276658369411235,0.39608993094120276,0.40506062435814977,0.53553377069888519,0.60901764108302869,0.58635026253947575,0.68244686112600117,0.74486071332847192,0.67896651498262262,0.89763244645818197,0.87764933582726723,0.88776209916771065,0.85923265229905754,0.92192826123493454,0.7678872640124581,0.76428477848156828,0.64519798238780335,0.64632363193435538,0.74931941221483767,0.78022010518375262,0.60781096868142015,0.67952742107140429,0.62803898617791476,0.55578417078008768,0.6714540462733386,0.64306439718392572,0.5344015317393922,0.77328043607203834,0.71857444485954958,0.78973879109664169,0.89394206716636571,0.94243526897673713,1.1433147152826302,1.2482655383299848,1.2575019970812327,1.2531644986127806,1.111851926009275,1.1184303686715347,1.1895960298989003,1.0277811306535811,0.89453580773763952,0.82060083414391194,0.69799708494477541,0.75705701983636453,0.77362430740133359,0.75890070050516567,0.71324159742464222,0.8687213512278299,0.74675983858414641,0.96542577005970576,1.1402071626644703,1.0828738849706498,1.0965351576088405,0.93833286596139109,0.70461750299409243,0.77218772861049967,0.77238537843364263,0.79817683575959608,0.79013416162332273,0.5778825040516995,0.68373836009512112,0.63828324822554516,0.72531941573307079,0.5524629861036372,0.71956553293896763,0.8420488122260994,0.76927831665044522,0.85833294362256718,0.88257294000785858,0.95170198330936484,0.73247062861579282,0.63250903775004863,0.48474222069030104,0.33213166272364136,0.34869895028861037,0.25814265541863124,0.47405654079453385,0.50250229286625503,0.51147298628320192,0.60893116609626297,0.53897318689435503,0.58970820625951115,0.51401837281807872,0.52767964545626922,0.50602819465577198,0.61019258613950578,0.60521051307421714,0.75579470758666989,0.57395344146407201,0.58292413488101902,0.36369278018744711,0.43282182348895337,0.41142218105771922,0.5146253327573429,0.66416133488809692,0.71346654672757615,0.67088094093353012,0.55557911976462893,0.73454861218247514,0.56895398478887471,0.753891586379552,0.86796014662847087,0.66742656055925309,0.50922426891180383,0.59923501506176347,0.6862711825692891,0.7278183404823958,0.74150189527697519,0.68228890487881455,0.51353592469875953,0.49461193114780827,0.52793443543493357,0.45999577210100012,0.27815450597840224,0.39997138121681625,0.61820186231211327,0.59566830186538211,0.73377174948402091,0.5132071429485574,0.51934168052184082,0.39673793132270424,0.41233158764726963,0.31233563536063164,0.22399088010374743,0.20318490085831953,0.17379768666420253,0.19610773636316911,0.19372209308277949,0.081296051052266199,0.19382909574117735,0.22377149150833942,0.34847801323919492,0.43424379991682083,0.3635972825173891,0.40522842853365137,0.35244916261786985,0.36552374877625027,0.31318299795390914,0.2858460648492519,0.12622336757085797,0.093379900103635588,0.047446574854388336,-0.039153751650238093,-0.0060762125740899042,0.0094780839601283084,0.015478703283071858,-0.057476220316776745,-0.067951886797663535,-0.25138902298417726,-0.24249101431214418,-0.33001044725209233,-0.3302626841841606,-0.32342073451809372,-0.43024083789084944,-0.27934486587821528,-0.32173305139493119,-0.34735385548714726,-0.27690997636887282,-0.29098320419596274,-0.32399598583029449,-0.18487869924179001,-0.12414756225773448,-0.1709877633556792,-0.17948338736904443,-0.21249616900337617,-0.45645170802028229,-0.53336373075976795,-0.48411662268509953,-0.34098216058367969,-0.28189316374275136,-0.29319471352052179,-0.28044861594354242,-0.25630732906556652,-0.2229848247784412,-0.11978167307881757,-0.086182246054301095,-0.055647379503368413,-0.16583357533778265,-0.28531526125789658,-0.15882136420324874,-0.22678739896822706,-0.26917558448494294,-0.29168011286548823,-0.26109856469599185,-0.19415732965781807,-0.20451663541005424,-0.23097263421467717,-0.13639177001315758,-0.032227378529423756,-0.092285296124074379,-0.14102608978476017,-0.2484236775138301,-0.27890959644736757,-0.21033823845898036,-0.22475845277746839,-0.1292914070856567,-0.18399739829814551,-0.21278511225675459,-0.32982825989942038,-0.3226007112424924,-0.11240710515627592,-0.083961353084554782,0.084668099757816653,-0.035638124804292792,-0.07515743144189968,-0.06720665747649833,0.11177452295012048,0.18068315464697687,0.18819778221940328,0.19355882341596772,0.027438067588062297,-0.044816747809764711,-0.054178005132872666,-0.11804412097916873,-0.046936939005761395,-0.18636787231355398,-0.30687663442092977,-0.32699225261832804,-0.32937789589871769,-0.26468647710313564,-0.26136678432190735,-0.26030544549979245,-0.30195891155202992,-0.28108243928883858,-0.48161602535805637,-0.63476184762738497,-0.66121395140187533,-0.47090847521184909,-0.25575177997052101,-0.076770599543902224,-0.12589547140757601,-0.020039615364154287,0.040691521619901264,0.05628517794446667,0.024648544306129356,-0.10976166089542601,-0.19716174669956174,-0.22361385047405205,-0.31685693242222096,0.010101184850152701,0.085987230818585211,0.10626429593583044,0.10828988410740037,0.050956606413580081,0.12257430027413713,0.034391616375677843,0.0060019672862649739,-0.018619381415106724,-0.12126918680462005,-0.11794949402339175,-0.15886170966680221,-0.52055998099563994,-0.35345743416030956,-0.3523960953381946,-0.43045975336718711,-0.39288556652221202,-0.36624565132741882,-0.44430930935641133,-0.42822950180396924,-0.55019101444765284,-0.4288131881366436,-0.530490557939997,-0.65088912230496754,-0.67137591517493667,-0.55689727110786891,-0.36594787031290066,-0.52776276955821988,-0.54051822199119126,-0.40914066848483377,-0.5282274645785987,-0.49181445175303617,-0.47932646964759429,-0.43047424291455794,-0.31551858795021465,-0.27652657514886703,-0.46070965909153283,-0.46863091334039347,-0.59188350659792321,-0.70511066376951681,-0.52880556883939267,-0.45989693714253621,-0.59833857040596794,-0.64821630198704328,-0.79099863708700424,-0.77828825672332058,-0.8313032818123669,-1.0505346365059387,-1.1637617936775324,-1.1398188775339406,-1.5015171488627785,-1.4426529396636196,-1.5442033778330073,-1.6476334324035842,-1.6044675452529007,-1.7768766817552331,-1.7693620541828068,-1.6550474855443471,-1.4640980847493787,-1.3021564207769587,-1.3661280001129632,-1.3679422649393154],"mode":"lines","opacity":1,"line":{"color":"steelblue","width":1,"reverscale":false},"type":"scatter3d","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>The first plot shows a 1D random walk with th Y values plotted over step_number, while the second the X-Y projection of a 2D random walk. Notice how the 2D walk creates more complex patterns as it moves through two-dimensional space. Lastly the third plot shows a 3D random walk, which adds depth to the visualization. The 3D plot allows you to see how the walk moves through three-dimensional space, providing a more comprehensive view of the random walk’s path.</p>
+</section>
+</section>
+<section id="new-feature-2-subset-walks-function" class="level1">
+<h1>New Feature #2: Subset Walks Function</h1>
+<section id="purpose-and-functionality" class="level2">
+<h2 class="anchored" data-anchor-id="purpose-and-functionality">Purpose and Functionality</h2>
+<p>The new <code>subset_walks</code> function allows you to filter random walks based on maximum or minimum y-values. This feature in it’s current state will grab the walk that has either the highest or lowest y value. This can be useful if you only want to see the maximum ending value.</p>
+<p>Fix 105 introduced this functionality in response to user requests for more targeted analysis capabilities.</p>
+</section>
+<section id="example-usage-1" class="level2">
+<h2 class="anchored" data-anchor-id="example-usage-1">Example Usage</h2>
+<p>Here’s how you can use the new <code>subset_walks</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a random walk</span></span>
+<span id="cb10-2">walk <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rw30</span>()</span>
+<span id="cb10-3"></span>
+<span id="cb10-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Subset the walk to include only steps where y is between -10 and 10</span></span>
+<span id="cb10-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">subset_walks</span>(walk, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"min"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visualize_walks</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">subset_walks</span>(walk, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"max"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visualize_walks</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-3-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">subset_walks</span>(walk, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"both"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visualize_walks</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-3-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The function returns a new data frame containing only the walk with either the max or minimum y value.</p>
+</section>
+</section>
+<section id="new-feature-3-confidence-interval-function" class="level1">
+<h1>New Feature #3: Confidence Interval Function</h1>
+<section id="understanding-confidence-intervals-for-random-walks" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-confidence-intervals-for-random-walks">Understanding Confidence Intervals for Random Walks</h2>
+<p>Confidence intervals provide a range of values that are likely to contain the true value of an unknown parameter with a specified level of confidence. In the context of random walks, confidence intervals can help quantify the uncertainty in the walk’s path and provide statistical bounds for analysis.</p>
+<p>Fix 142 introduced the <code>confidence_interval</code> function, allowing users to calculate these statistical boundaries for their random walks.</p>
+</section>
+<section id="example-usage-2" class="level2">
+<h2 class="anchored" data-anchor-id="example-usage-2">Example Usage</h2>
+<p>Here’s how to use the new <code>confidence_interval</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a random walk</span></span>
+<span id="cb13-2">walk <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">500</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.num_walks =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb13-3"></span>
+<span id="cb13-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate 95% confidence interval for the y values</span></span>
+<span id="cb13-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">confidence_interval</span>(walk<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.interval =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+    lower   upper
+    &lt;dbl&gt;   &lt;dbl&gt;
+1 -0.0120 0.00640</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">confidence_interval</span>(walk<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.interval =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.99</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+    lower   upper
+    &lt;dbl&gt;   &lt;dbl&gt;
+1 -0.0150 0.00932</code></pre>
+</div>
+</div>
+<p>The function returns a tibble containing the lower and upper bounds of the confidence interval at the specified confidence level.</p>
+</section>
+</section>
+<section id="migration-guide-updating-your-code-for-version-0.3.0" class="level1">
+<h1>Migration Guide: Updating Your Code for Version 0.3.0</h1>
+<section id="breaking-change-from-x-to-step_number" class="level2">
+<h2 class="anchored" data-anchor-id="breaking-change-from-x-to-step_number">Breaking Change: From <code>x</code> to <code>step_number</code></h2>
+<p>As mentioned earlier, version 0.3.0 introduces a breaking change: the <code>x</code> column in output data frames has been renamed to <code>step_number</code>. This change makes the column name more descriptive of what it actually represents (the step number in the walk), but it requires updating existing code that references the <code>x</code> column.</p>
+</section>
+<section id="before-and-after-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="before-and-after-comparison">Before and After Comparison</h2>
+<p>Let’s compare the data structure and common operations before and after the update:</p>
+<section id="data-structure-before-pre-0.3.0" class="level3">
+<h3 class="anchored" data-anchor-id="data-structure-before-pre-0.3.0">Data Structure Before (pre 0.3.0):</h3>
+<pre><code>   walk_number  x  y
+1            1  1 -1
+2            1  2  0
+3            1  3 -1</code></pre>
+</section>
+<section id="data-structure-after-version-0.3.0" class="level3">
+<h3 class="anchored" data-anchor-id="data-structure-after-version-0.3.0">Data Structure After (version 0.3.0+):</h3>
+<pre><code>   walk_number  step_number  y
+1            1            1 -1
+2            1            2  0
+3            1            3 -1</code></pre>
+</section>
+</section>
+<section id="code-migration-examples" class="level2">
+<h2 class="anchored" data-anchor-id="code-migration-examples">Code Migration Examples</h2>
+<p>Here are some common code patterns and how to update them:</p>
+<section id="plotting" class="level3">
+<h3 class="anchored" data-anchor-id="plotting">1. Plotting:</h3>
+<div class="sourceCode" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Old code</span></span>
+<span id="cb19-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> y)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>()</span>
+<span id="cb19-3"></span>
+<span id="cb19-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># New code</span></span>
+<span id="cb19-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> step_number, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> y)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>()</span></code></pre></div>
+</section>
+<section id="summarizing-by-steps" class="level3">
+<h3 class="anchored" data-anchor-id="summarizing-by-steps">2. Summarizing by steps:</h3>
+<div class="sourceCode" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Old code</span></span>
+<span id="cb20-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(x) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarize</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean_y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(y))</span>
+<span id="cb20-3"></span>
+<span id="cb20-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># New code</span></span>
+<span id="cb20-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(step_number) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarize</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean_y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(y))</span></code></pre></div>
+</section>
+<section id="filtering-specific-steps" class="level3">
+<h3 class="anchored" data-anchor-id="filtering-specific-steps">3. Filtering specific steps:</h3>
+<div class="sourceCode" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Old code</span></span>
+<span id="cb21-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> x <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>)</span>
+<span id="cb21-3"></span>
+<span id="cb21-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># New code</span></span>
+<span id="cb21-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(step_number <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> step_number <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>)</span></code></pre></div>
+</section>
+</section>
+<section id="quick-migration-script" class="level2">
+<h2 class="anchored" data-anchor-id="quick-migration-script">Quick Migration Script</h2>
+<p>If you have many scripts that need updating, consider using this find-and-replace approach <strong>USE AT YOUR OWN RISK</strong>:</p>
+<div class="sourceCode" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Find all scripts in a directory that use RandomWalker</span></span>
+<span id="cb22-2">scripts <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list.files</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">path =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"your_scripts_directory"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pattern =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"*.R"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">full.names =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb22-3"></span>
+<span id="cb22-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># For each script, replace 'x' column references with 'step_number'</span></span>
+<span id="cb22-5"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (script <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> scripts) {</span>
+<span id="cb22-6">  content <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">readLines</span>(script)</span>
+<span id="cb22-7">  updated_content <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gsub</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">bx</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">b"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"step_number"</span>, content)</span>
+<span id="cb22-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">writeLines</span>(updated_content, script)</span>
+<span id="cb22-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Updated:"</span>, script, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb22-10">}</span></code></pre></div>
+<p><strong>Note:</strong> This is a simplified example and may need adjustment based on your specific code patterns. Always back up your scripts before applying automated changes.</p>
+</section>
+</section>
+<section id="practical-applications-of-the-new-features" class="level1">
+<h1>Practical Applications of the New Features</h1>
+<section id="multi-dimensional-random-walks" class="level2">
+<h2 class="anchored" data-anchor-id="multi-dimensional-random-walks">Multi-Dimensional Random Walks</h2>
+<ol type="1">
+<li><strong>Financial Modeling</strong>: Simulate price movements of multiple correlated assets simultaneously.</li>
+<li><strong>Ecological Studies</strong>: Model animal movement patterns in 2D or 3D space.</li>
+<li><strong>Physics Simulations</strong>: Represent particle movements in fluids (Brownian motion).</li>
+<li><strong>Network Analysis</strong>: Analyze how information or diseases spread through multi-dimensional networks.</li>
+</ol>
+</section>
+<section id="subset-walks-function" class="level2">
+<h2 class="anchored" data-anchor-id="subset-walks-function">Subset Walks Function</h2>
+<ol type="1">
+<li><strong>Risk Management</strong>: Focus on periods when a financial asset exceeds certain price boundaries.</li>
+<li><strong>Anomaly Detection</strong>: Identify and analyze outlier behavior in time series data.</li>
+<li><strong>Threshold Analysis</strong>: Study system behavior when it crosses specific thresholds.</li>
+<li><strong>Boundary Testing</strong>: Analyze how often and when random processes exceed certain limits.</li>
+</ol>
+</section>
+<section id="confidence-interval-function" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-interval-function">Confidence Interval Function</h2>
+<ol type="1">
+<li><strong>Statistical Inference</strong>: Make probabilistic statements about random walk behavior.</li>
+<li><strong>Hypothesis Testing</strong>: Test assumptions about random walk properties.</li>
+<li><strong>Forecasting</strong>: Create prediction intervals for future values.</li>
+<li><strong>Quality Control</strong>: Establish control limits for process monitoring.</li>
+</ol>
+</section>
+</section>
+<section id="your-turn-implementing-random-walker-0.3.0" class="level1">
+<h1>Your Turn! Implementing Random Walker 0.3.0</h1>
+<p>Let’s put what you’ve learned into practice with a short exercise. Try implementing a multi-dimensional random walk analysis that uses all three new features.</p>
+<section id="exercise" class="level2">
+<h2 class="anchored" data-anchor-id="exercise">Exercise:</h2>
+<ol type="1">
+<li>Generate a 2D random walk with 500 steps.</li>
+<li>Calculate the 95% confidence interval for the y values.</li>
+<li>Subset the walk to include only the walk with the maximum y value.</li>
+<li>Visualize the original walk and the subsetted walk.</li>
+</ol>
+<details>
+<summary>
+Click here for Solution!
+</summary>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RandomWalker)</span>
+<span id="cb23-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb23-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb23-4"></span>
+<span id="cb23-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 1. Generate a 2D random walk with 500 steps</span></span>
+<span id="cb23-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># For reproducibility</span></span>
+<span id="cb23-7">walk_2d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">random_normal_walk</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.dimensions =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">500</span>)</span>
+<span id="cb23-8"></span>
+<span id="cb23-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 2. Subset the walk to include only points where y is within the confidence interval</span></span>
+<span id="cb23-10">subsetted_walk <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">subset_walks</span>(walk_2d, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"max"</span>)</span>
+<span id="cb23-11"></span>
+<span id="cb23-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 3. Calculate the 95% confidence interval for the y values</span></span>
+<span id="cb23-13">ci <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">confidence_interval</span>(walk_2d<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.interval =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span>)</span>
+<span id="cb23-14"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"95% Confidence Interval:"</span>, ci[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]], <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"to"</span>, ci[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]], <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>95% Confidence Interval: 0.000643959 to 0.004598803 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 4. Visualize the original and subsetted walks</span></span>
+<span id="cb25-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_path</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> walk_2d, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> cum_sum_x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> cum_sum_y),</span>
+<span id="cb25-4">            <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lightgrey"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">alpha =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.75</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_path</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> subsetted_walk, </span>
+<span id="cb25-6">            <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> cum_sum_x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> cum_sum_y), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb25-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2D Random Walk with Confidence Interval Subsetting"</span>,</span>
+<span id="cb25-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">subtitle =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste0</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"95% CI: ["</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(ci[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>), </span>
+<span id="cb25-10">                         <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">", "</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(ci[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"]"</span>),</span>
+<span id="cb25-11">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"X Position"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y Position"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</details>
+</section>
+</section>
+<section id="quick-takeaways" class="level1">
+<h1>Quick Takeaways</h1>
+<ul>
+<li><strong>Multi-Dimensional Random Walks</strong>: RandomWalker now supports random walks in up to 3 dimensions, greatly expanding simulation possibilities.</li>
+<li><strong>Breaking Change Alert</strong>: The <code>x</code> column is now called <code>step_number</code> – update your code accordingly.</li>
+<li><strong>Subset Walks Function</strong>: Filter random walks based on y-values to focus analysis on specific regions.</li>
+<li><strong>Confidence Interval Function</strong>: Calculate statistical boundaries to quantify uncertainty in random walks.</li>
+<li><strong>Migration Path</strong>: Simple find-and-replace operations can update most existing code to work with version 0.3.0.</li>
+<li><strong>Diverse Applications</strong>: The new features enable more sophisticated analyses across fields like finance, biology, physics, and more.</li>
+</ul>
+</section>
+<section id="conclusion-a-major-leap-forward-for-randomwalker" class="level1">
+<h1>Conclusion: A Major Leap Forward for RandomWalker</h1>
+<p>The update to RandomWalker version 0.3.0 represents a significant expansion of the package’s capabilities. By adding support for multi-dimensional random walks, subset functionality, and confidence interval calculations, this update enables more sophisticated analyses and broadens the package’s applicability across various domains.</p>
+<p>While the breaking change from <code>x</code> to <code>step_number</code> requires some code updates, the improved clarity and expanded functionality more than compensate for this minor inconvenience. The migration path is straightforward, and the examples provided should make the transition smooth.</p>
+<p>Whether you’re modeling financial markets, analyzing ecological data, or simulating physical processes, RandomWalker 0.3.0 provides powerful tools to generate, visualize, and analyze random walks in a tidyverse-compatible framework.</p>
+<p>We encourage you to update to version 0.3.0 and explore how these new capabilities can enhance your stochastic process analyses. As always, we welcome feedback and suggestions for future improvements!</p>
+</section>
+<section id="frequently-asked-questions" class="level1">
+<h1>Frequently Asked Questions</h1>
+<section id="will-my-existing-code-still-work-with-randomwalker-0.3.0" class="level2">
+<h2 class="anchored" data-anchor-id="will-my-existing-code-still-work-with-randomwalker-0.3.0">1. Will my existing code still work with RandomWalker 0.3.0?</h2>
+<p>Not without changes. Version 0.3.0 includes a breaking change where the <code>x</code> column is renamed to <code>step_number</code>. You’ll need to update your code accordingly. See the Migration Guide section for details.</p>
+</section>
+<section id="how-do-i-install-or-update-to-randomwalker-0.3.0" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-i-install-or-update-to-randomwalker-0.3.0">2. How do I install or update to RandomWalker 0.3.0?</h2>
+<p>You can install or update using the standard R package installation method:</p>
+<div class="sourceCode" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"RandomWalker"</span>)</span>
+<span id="cb26-2"></span>
+<span id="cb26-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Or for the development version:</span></span>
+<span id="cb26-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># devtools::install_github("spsanderson/RandomWalker")</span></span></code></pre></div>
+</section>
+<section id="can-i-generate-random-walks-with-more-than-3-dimensions" class="level2">
+<h2 class="anchored" data-anchor-id="can-i-generate-random-walks-with-more-than-3-dimensions">3. Can I generate random walks with more than 3 dimensions?</h2>
+<p>No, version 0.3.0 supports up to 3 dimensions (x, y, z). If you need higher-dimensional random walks, you might need to use multiple 3D walks or explore other packages.</p>
+</section>
+<section id="how-do-confidence-intervals-work-with-random-walks" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-confidence-intervals-work-with-random-walks">4. How do confidence intervals work with random walks?</h2>
+<p>The confidence intervals in RandomWalker 0.3.0 provide statistical boundaries within which we expect the true mean to fall with a specified level of confidence. This helps quantify the uncertainty in the random walk’s path.</p>
+</section>
+<section id="is-randomwalker-compatible-with-the-tidyverse" class="level2">
+<h2 class="anchored" data-anchor-id="is-randomwalker-compatible-with-the-tidyverse">5. Is RandomWalker compatible with the tidyverse?</h2>
+<p>Yes, RandomWalker is designed to be fully compatible with the tidyverse suite of packages. Its output data frames work seamlessly with dplyr, ggplot2, and other tidyverse tools.</p>
+</section>
+</section>
+<section id="share-your-experience" class="level1">
+<h1>Share Your Experience!</h1>
+<p>Have you tried RandomWalker 0.3.0? We’d love to hear about your experience and how you’re using these new features in your projects. Share your thoughts and examples on Bluesky, Mastadon or LinkedIn using #RandomWalkerR or join the discussion on GitHub.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li>RandomWalker GitHub repository: <a href="https://github.com/spsanderson/RandomWalker" class="uri">https://github.com/spsanderson/RandomWalker</a></li>
+<li>Fix 107 - Multi-dimensional random walks: <a href="https://github.com/spsanderson/RandomWalker/issues/107" class="uri">https://github.com/spsanderson/RandomWalker/issues/107</a></li>
+<li>Fix 105 - Subset walks function: <a href="https://github.com/spsanderson/RandomWalker/issues/71" class="uri">https://github.com/spsanderson/RandomWalker/issues/71</a></li>
+<li>Fix 142 - Confidence interval function: <a href="https://github.com/spsanderson/RandomWalker/issues/142" class="uri">https://github.com/spsanderson/RandomWalker/issues/142</a></li>
+<li>R Documentation on confidence intervals: <a href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/confint.html" class="uri">https://stat.ethz.ch/R-manual/R-devel/library/stats/html/confint.html</a></li>
+</ol>
+<hr>
+<p>Happy Coding! 🚀</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-09/todays_post.png" class="img-fluid figure-img"></p>
+<figcaption>RandomWalker 0.3.0</figcaption>
+</figure>
+</div>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-05-09/</guid>
+  <pubDate>Fri, 09 May 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>How to Exit a Function in R: Complete Guide with Working Examples</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -18585,456 +19701,6 @@ font-style: inherit;">distinct</span>()</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-01-30/</guid>
   <pubDate>Thu, 30 Jan 2025 05:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Remove Duplicate Rows in R: A Comprehensive Guide</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-01-28/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Dealing with duplicate rows is a common challenge in data analysis and cleaning. This comprehensive guide will show you how to effectively remove duplicate rows in R using multiple approaches, including base R, dplyr, and data.table methods.</p>
-</section>
-<section id="understanding-duplicate-rows" class="level1">
-<h1>Understanding Duplicate Rows</h1>
-<p>Duplicate rows are identical observations that appear multiple times in your dataset. They can arise from various sources, such as:</p>
-<ul>
-<li>Data entry errors</li>
-<li>Multiple data imports</li>
-<li>System-generated duplicates</li>
-<li>Merged datasets</li>
-</ul>
-</section>
-<section id="method-1-base-r-approach" class="level1">
-<h1>Method 1: Base R Approach</h1>
-<section id="using-unique" class="level2">
-<h2 class="anchored" data-anchor-id="using-unique">Using unique()</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb1-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">id =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>),</span>
-<span id="cb1-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">40</span>)</span>
-<span id="cb1-4">)</span>
-<span id="cb1-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove all duplicate rows</span></span>
-<span id="cb1-6">df_unique <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unique</span>(df)</span>
-<span id="cb1-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df_unique)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-3  2    20
-4  2    30
-5  3    40</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove duplicates based on specific columns</span></span>
-<span id="cb3-2">df_unique <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">duplicated</span>(df[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"id"</span>,<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"value"</span>)]), ]</span>
-<span id="cb3-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df_unique)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-3  2    20
-4  2    30
-5  3    40</code></pre>
-</div>
-</div>
-<p>The base R approach uses the <code>duplicated()</code> function, which returns a logical vector identifying duplicated rows with TRUE or FALSE. This method is straightforward but may not be the most efficient for large datasets.</p>
-</section>
-</section>
-<section id="method-2-dplyr-solution" class="level1">
-<h1>Method 2: dplyr Solution</h1>
-<section id="using-distinct" class="level2">
-<h2 class="anchored" data-anchor-id="using-distinct">Using distinct()</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb5-2"></span>
-<span id="cb5-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove all duplicate rows</span></span>
-<span id="cb5-4">df_unique <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">distinct</span>()</span>
-<span id="cb5-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df_unique)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-2  2    20
-3  2    30
-4  3    40</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove duplicates based on specific columns</span></span>
-<span id="cb7-2">df_unique <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">distinct</span>(id, value, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.keep_all =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span>
-<span id="cb7-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(df_unique)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-2  2    20
-3  2    30
-4  3    40</code></pre>
-</div>
-</div>
-<p>The dplyr package’s <code>distinct()</code> function is highly recommended for its efficiency and clarity. For larger datasets, dplyr methods perform approximately 30% faster than base R approaches, as they utilize C++ code for evaluation.</p>
-</section>
-</section>
-<section id="method-3-data.table-approach" class="level1">
-<h1>Method 3: data.table Approach</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(data.table)</span>
-<span id="cb9-2"></span>
-<span id="cb9-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Convert to data.table</span></span>
-<span id="cb9-4">dt <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.data.table</span>(df)</span>
-<span id="cb9-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(dt)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value
-   &lt;num&gt; &lt;num&gt;
-1:     1    10
-2:     1    10
-3:     2    20
-4:     2    30
-5:     3    40</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Remove duplicates</span></span>
-<span id="cb11-2">dt_unique <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unique</span>(dt)</span>
-<span id="cb11-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(dt_unique)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>      id value
-   &lt;num&gt; &lt;num&gt;
-1:     1    10
-2:     2    20
-3:     2    30
-4:     3    40</code></pre>
-</div>
-</div>
-</section>
-<section id="working-with-multiple-columns" class="level1">
-<h1>Working with Multiple Columns</h1>
-<p>To remove duplicates based on specific columns:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using dplyr</span></span>
-<span id="cb13-2">df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> </span>
-<span id="cb13-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">distinct</span>(id, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.keep_all =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-2  2    20
-3  3    40</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using base R</span></span>
-<span id="cb15-2">df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">duplicated</span>(df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>id), ]</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-3  2    20
-5  3    40</code></pre>
-</div>
-</div>
-</section>
-<section id="best-practices" class="level1">
-<h1>Best Practices</h1>
-<ol type="1">
-<li>Choose the right method:
-<ul>
-<li>For small datasets: Base R is sufficient</li>
-<li>For large datasets: Use dplyr or data.table</li>
-<li>For complex operations: Consider dplyr for readability</li>
-</ul></li>
-<li>Consider performance:
-<ul>
-<li>Group operations before removing duplicates</li>
-<li>Index your data when using data.table</li>
-<li>Monitor memory usage for large datasets</li>
-</ul></li>
-</ol>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p>Try this exercise:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a sample dataset</span></span>
-<span id="cb17-2">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(</span>
-<span id="cb17-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">id =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>),</span>
-<span id="cb17-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">40</span>)</span>
-<span id="cb17-5">)</span>
-<span id="cb17-6"></span>
-<span id="cb17-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Your task: Remove duplicates based on both id and value</span></span>
-<span id="cb17-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Write your solution below</span></span></code></pre></div>
-</div>
-<details>
-<summary>
-Click here for Solution!
-</summary>
-<p>Solution:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb18-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using dplyr</span></span>
-<span id="cb18-3">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">distinct</span>(id, value)</span>
-<span id="cb18-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-2  2    20
-3  2    30
-4  3    40</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using base R</span></span>
-<span id="cb20-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> df[<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">duplicated</span>(df[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"id"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"value"</span>)]),]</span>
-<span id="cb20-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  id value
-1  1    10
-3  2    20
-4  2    30
-5  3    40</code></pre>
-</div>
-</div>
-</details>
-</section>
-<section id="quick-takeaways" class="level1">
-<h1>Quick Takeaways</h1>
-<ul>
-<li>Use <code>distinct()</code> from dplyr for most scenarios</li>
-<li>Consider performance implications for large datasets</li>
-<li>Always verify results after deduplication</li>
-<li>Keep all columns with <code>.keep_all = TRUE</code> when needed</li>
-</ul>
-</section>
-<section id="faqs" class="level1">
-<h1>FAQs</h1>
-<ol type="1">
-<li><p>Q: Which method is fastest for large datasets? A: The dplyr package methods are typically 30% faster for larger datasets.</p></li>
-<li><p>Q: Can I remove duplicates based on specific columns? A: Yes, all methods (base R, dplyr, and data.table) support column-specific deduplication.</p></li>
-<li><p>Q: Will removing duplicates affect my row order? A: It might, depending on the method used. Consider adding row numbers if order is important.</p></li>
-<li><p>Q: How do I keep only the first occurrence of duplicates? A: Use <code>duplicated()</code> with <code>!</code> operator in base R or <code>distinct()</code> with appropriate arguments in dplyr.</p></li>
-<li><p>Q: What happens to missing values (NA) during deduplication? A: NAs are treated as equal to other NAs by default in most R functions.</p></li>
-</ol>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Removing duplicate rows is an essential skill for data cleaning in R. While there are multiple approaches available, the dplyr <code>distinct()</code> function offers the best balance of performance and readability for most use cases. Remember to consider your specific needs regarding performance, readability, and functionality when choosing a method.</p>
-</section>
-<section id="engage" class="level1">
-<h1>Engage!</h1>
-<p>Share your experiences with these methods in the comments below! Have you found other efficient ways to handle duplicates in R? Let’s discuss!</p>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li><a href="https://www.statology.org/remove-duplicate-rows-in-r/">How to Remove Duplicate Rows in R</a></li>
-<li><a href="https://sparkbyexamples.com/r-programming/remove-duplicate-rows-in-r/">Remove Duplicate Rows in R - Spark By Examples</a></li>
-<li><a href="https://www.geeksforgeeks.org/remove-duplicate-rows-in-r-using-dplyr/">Remove Duplicate Rows in R using dplyr - GeeksforGeeks</a></li>
-<li><a href="https://www.datanovia.com/en/lessons/identify-and-remove-duplicate-data-in-r/">Identify and Remove Duplicate Data in R - Datanovia</a></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-01-28/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>Remove Duplicates</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-01-28/</guid>
-  <pubDate>Tue, 28 Jan 2025 05:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
