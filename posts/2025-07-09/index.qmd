@@ -1,0 +1,436 @@
+---
+title: "Pattern Matching with Regular Expressions in Python: A Beginner's Guide"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-07-09"
+categories: [code, python]
+toc: TRUE
+description: ''
+keywords: [Programming]
+---
+
+> **Author's Note:** I'm learning about regular expressions alongside you as I write this series. While I've done my research and tested the examples, there might be mistakes or oversights. If you spot any errors or have suggestions for improvement, please let me know! We're all learning together. 🌱
+
+# **Introduction**
+
+Ever wished you could find all phone numbers in a document with just one line of code? Or validate email addresses without writing dozens of if-statements? That's where **regular expressions** (regex) come in handy!
+
+Think of regex as a super-powered search tool. Instead of looking for exact text like "cat", you can search for patterns like "any three-letter word ending in 'at'". In Python, the `re` module gives you access to this powerful pattern-matching capability .
+
+In this guide, we'll explore how to use **Python regex** to solve real-world text processing problems. You'll learn the basics, see practical examples, and even try your hand at writing your own patterns.
+
+# **What Are Regular Expressions?**
+
+Regular expressions are special text patterns that describe how to search for text. They're like wildcards on steroids. While a simple search finds exact matches, regex can find patterns like:
+
+- All words starting with "Python"
+- Phone numbers in any format
+- Email addresses
+- Dates in MM/DD/YYYY format
+
+Here's a simple example:
+
+```{r echo=FALSE, warnins=FALSE, message=FALSE}
+reticulate::use_python("C:/Users/ssanders/AppData/Local/Programs/Python/Python313/python.exe")
+reticulate::repl_python()
+```
+
+```python
+import re
+
+text = "My phone number is 415-555-1234"
+pattern = r'\d{3}-\d{3}-\d{4}'
+match = re.search(pattern, text)
+if match:
+    print(f"Found: {match.group()}")  # Output: Found: 415-555-1234
+```
+
+The pattern `\d{3}-\d{3}-\d{4}` means "three digits, dash, three digits, dash, four digits" .
+
+# **Setting Up: The re Module**
+
+Before using regex in Python, you need to import the `re` module:
+
+```python
+import re
+```
+
+Python's `re` module provides several functions for pattern matching :
+
+| Function | What It Does |
+|----------|--------------|
+| `re.search()` | Finds the first match anywhere in the string |
+| `re.match()` | Checks if the pattern matches at the start of the string |
+| `re.findall()` | Returns all matches as a list |
+| `re.sub()` | Replaces matches with new text |
+
+# **Basic Pattern Elements**
+
+Let's start with the building blocks of regex patterns:
+
+## **Character Classes**
+
+These are shortcuts for common character types:
+
+- `\d` - Any digit (0-9)
+- `\w` - Any word character (letters, digits, underscore)
+- `\s` - Any whitespace (space, tab, newline)
+- `.` - Any character except newline
+
+```python
+# Finding all digits in a string
+text = "I have 2 cats and 3 dogs"
+digits = re.findall(r'\d', text)
+print(digits)  # Output: ['2', '3']
+```
+
+## **Quantifiers**
+
+These specify how many times a pattern should repeat:
+
+- `*` - Zero or more times
+- `+` - One or more times
+- `?` - Zero or one time
+- `{n}` - Exactly n times
+- `{n,m}` - Between n and m times
+
+```python
+# Finding words with 3 or more letters
+text = "I am learning Python"
+long_words = re.findall(r'\w{3,}', text)
+print(long_words)  # Output: ['learning', 'Python']
+```
+
+# **Common Regex Patterns for Beginners**
+
+## **1. Email Validation**
+
+```python
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+# Test it
+print(is_valid_email("user@example.com"))  # True
+print(is_valid_email("invalid.email"))     # False
+```
+
+## **2. Phone Number Extraction**
+
+```python
+text = "Call me at 415-555-1234 or (555) 987-6543"
+pattern = r'(\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})'
+phones = re.findall(pattern, text)
+print(phones)  # ['415-555-1234', '(555) 987-6543']
+```
+
+## **3. Password Strength Check**
+
+```python
+def check_password(password):
+    # At least 8 chars, one uppercase, one lowercase, one digit
+    if len(password) < 8:
+        return False
+    if not re.search(r'[A-Z]', password):
+        return False
+    if not re.search(r'[a-z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    return True
+
+print(check_password("Pass123!"))  # True
+print(check_password("weak"))      # False
+```
+
+# **Groups: Extracting Parts of Matches**
+
+Groups let you extract specific parts of a match using parentheses:
+
+```python
+# Extract area code and number separately
+phone = "415-555-1234"
+pattern = r'(\d{3})-(\d{3}-\d{4})'
+match = re.search(pattern, phone)
+if match:
+    print(f"Area code: {match.group(1)}")  # 415
+    print(f"Number: {match.group(2)}")     # 555-1234
+    print(f"Full match: {match.group(0)}")  # 415-555-1234
+```
+
+> **Remember:** `group(0)` is the entire match, `group(1)` is the first set of parentheses, and so on .
+
+# **Special Characters and Escaping**
+
+Some characters have special meanings in regex. To match them literally, you need to escape them with a backslash:
+
+| Character | Special Meaning | To Match Literally |
+|-----------|----------------|-------------------|
+| `.` | Any character | `\.` |
+| `*` | Zero or more | `\*` |
+| `+` | One or more | `\+` |
+| `?` | Zero or one | `\?` |
+| `^` | Start of string | `\^` |
+| `$` | End of string | `\$` |
+
+```python
+# Matching a literal period
+text = "The price is $19.99"
+pattern = r'\$\d+\.\d{2}'
+match = re.search(pattern, text)
+print(match.group())  # $19.99
+```
+
+# **Using Raw Strings (Important!)**
+
+Always use raw strings (prefix with `r`) for regex patterns :
+
+```python
+# Good - raw string
+pattern = r'\d+'
+
+# Bad - regular string (backslash might be interpreted)
+pattern = '\d+'
+```
+
+Raw strings prevent Python from interpreting backslashes as escape characters.
+
+# **Common Mistakes to Avoid**
+
+## **1. Greedy vs. Non-Greedy Matching**
+
+By default, quantifiers are "greedy" - they match as much as possible:
+
+```python
+text = '<b>Bold</b> and <i>Italic</i>'
+# Greedy - matches too much!
+greedy = re.findall(r'<.*>', text)
+print(greedy)  # ['<b>Bold</b> and <i>Italic</i>']
+
+# Non-greedy - add ? after quantifier
+non_greedy = re.findall(r'<.*?>', text)
+print(non_greedy)  # ['<b>', '</b>', '<i>', '</i>']
+```
+
+## **2. Forgetting Anchors**
+
+Use `^` and `$` to match the entire string:
+
+```python
+# Without anchors - matches partial string
+pattern = r'\d{3}'
+print(re.search(pattern, "abc123def"))  # Matches!
+
+# With anchors - must be entire string
+pattern = r'^\d{3}$'
+print(re.search(pattern, "abc123def"))  # No match
+print(re.search(pattern, "123"))        # Matches!
+```
+
+## **3. Case Sensitivity**
+
+Regex is case-sensitive by default. Use the `re.IGNORECASE` flag for case-insensitive matching :
+
+```python
+text = "Python PYTHON python"
+# Case-sensitive
+print(re.findall(r'python', text))  # ['python']
+
+# Case-insensitive
+print(re.findall(r'python', text, re.IGNORECASE))  # ['Python', 'PYTHON', 'python']
+```
+
+# **Your Turn!**
+
+Here's a practical exercise to test your new regex skills:
+
+**Challenge:** Write a regex pattern to find all dates in the format MM/DD/YYYY in the following text:
+
+```python
+text = """
+Important dates:
+- Project starts on 01/15/2025
+- First deadline: 02/28/2025
+- Final submission: 12/31/2025
+- Invalid date: 13/45/2025
+"""
+
+# Write your pattern here
+pattern = r'___'  # Fill in the blank!
+
+dates = re.findall(pattern, text)
+print(dates)
+```
+
+<details><summary>Click here for Solution!</summary>
+
+```python
+text = """
+Important dates:
+- Project starts on 01/15/2025
+- First deadline: 02/28/2025
+- Final submission: 12/31/2025
+- Invalid date: 13/45/2025
+"""
+
+# Solution
+pattern = r'\b(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/\d{4}\b'
+
+dates = re.findall(pattern, text)
+print(dates)  # [('01', '15'), ('02', '28'), ('12', '31')]
+
+# To get full dates as strings:
+pattern = r'\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])/\d{4}\b'
+dates = re.findall(pattern, text)
+print(dates)  # ['01/15/2025', '02/28/2025', '12/31/2025']
+```
+
+The pattern breaks down as:
+- `\b` - Word boundary
+- `(?:0[1-9]|1[0-2])` - Month: 01-09 or 10-12
+- `/` - Literal forward slash
+- `(?:0[1-9]|[12][0-9]|3[01])` - Day: 01-09, 10-29, or 30-31
+- `/` - Another forward slash
+- `\d{4}` - Four-digit year
+- `\b` - Word boundary
+
+Note: This pattern doesn't validate if dates are real (like February 30th).
+</details>
+
+# **Quick Reference Guide**
+
+## **Common Patterns**
+
+```python
+# Email
+email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+# Phone (US format)
+phone_pattern = r'(\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})'
+
+# URL
+url_pattern = r'https?://(?:www\.)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&\'\(\)\*\+,;=.]+'
+
+# Date (MM/DD/YYYY)
+date_pattern = r'\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])/\d{4}\b'
+```
+
+## **Most Used Functions**
+
+```python
+# Search for first match
+match = re.search(pattern, text)
+if match:
+    result = match.group()
+
+# Find all matches
+matches = re.findall(pattern, text)
+
+# Replace matches
+new_text = re.sub(pattern, replacement, text)
+
+# Split by pattern
+parts = re.split(pattern, text)
+```
+
+# **Key Takeaways**
+
+- **Always use raw strings** (r'pattern') for regex patterns
+- **Start simple** - build complex patterns step by step
+- **Test your patterns** with online tools like regex101.com
+- **Remember the difference** between search(), match(), and findall() 
+- **Escape special characters** when you want to match them literally
+- **Use groups** to extract parts of your matches
+- **Be careful with greedy matching** - add ? to make quantifiers non-greedy
+
+# **Conclusion**
+
+Regular expressions might seem intimidating at first, but they're just patterns made up of simple building blocks. Start with basic patterns like `\d+` for numbers or `\w+` for words, then gradually combine them to solve more complex problems.
+
+The key is practice! Try modifying the examples in this guide, experiment with your own patterns, and don't be afraid to make mistakes. Every Python programmer started exactly where you are now.
+
+**Ready to level up your text processing skills?** Pick a real problem you're facing - maybe cleaning up messy data or validating user input - and try solving it with regex. You'll be surprised how much time it can save!
+
+# **Frequently Asked Questions**
+
+**Q: When should I use regex instead of regular string methods?**
+A: Use regex when you need pattern matching, not exact matching. For simple tasks like checking if a string starts with something, use `str.startswith()`. For complex patterns like "find all email addresses," use regex.
+
+**Q: Why do my patterns sometimes not work?**
+A: Common issues include forgetting to use raw strings, not escaping special characters, or using greedy matching when you need non-greedy. Test your patterns piece by piece to find the problem.
+
+**Q: Are Python regex patterns the same as in other languages?**
+A: The basics are similar, but there are differences. Python uses Perl-compatible syntax with some variations. Always check Python-specific documentation .
+
+**Q: How can I make my regex patterns more readable?**
+A: Use the `re.VERBOSE` flag to write patterns across multiple lines with comments :
+```python
+pattern = re.compile(r'''
+    \d{3}  # Area code
+    -      # Separator
+    \d{4}  # Number
+''', re.VERBOSE)
+```
+
+**Q: Is there a performance impact with complex regex?**
+A: Yes, poorly written patterns can be slow. The `re` module caches the last 512 compiled patterns for efficiency. For frequently used patterns, compile them once and reuse.
+
+# **Share Your Experience!**
+
+Found this guide helpful? Have questions or suggestions? I'd love to hear from you! Drop a comment below or share this article with fellow Python learners. Remember, we're all learning together, and your feedback helps make these guides better for everyone.
+
+Follow me for more beginner-friendly Python tutorials, and don't forget to bookmark this page for quick reference!
+
+# **References**
+
+ Python Software Foundation. "re — Regular expression operations." Python Documentation. https://docs.python.org/3/library/re.html
+
+ Python Software Foundation. "Regular Expression HOWTO." Python Documentation. https://docs.python.org/3/howto/regex.html
+
+ Real Python. "Regular Expressions: Regexes in Python." https://realpython.com/regex-python/
+
+ Sweigart, Al. "Automate the Boring Stuff with Python." Chapter 7: Pattern Matching with Regular Expressions. https://automatetheboringstuff.com/2e/chapter7/
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
