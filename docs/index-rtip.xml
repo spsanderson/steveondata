@@ -10,7 +10,1268 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.6.42</generator>
-<lastBuildDate>Wed, 16 Jul 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 21 Jul 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Calculate Odds Ratios in R With Examples Using epitools</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-07-21/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>If you’re an R programmer working with categorical data, you’ll often need to measure the association between two binary variables. That’s where <strong>odds ratios</strong> come in handy! The <code>epitools</code> package in R makes calculating odds ratios simple with its <code>oddsratio()</code> function .</p>
+<p>In this guide, we’ll walk through everything you need to know about calculating odds ratios in R. You’ll learn the function syntax, see practical examples, and understand how to interpret the results. Whether you’re analyzing medical data, conducting epidemiological research, or exploring any binary relationships, this tutorial has you covered.</p>
+</section>
+<section id="what-are-odds-ratios" class="level1">
+<h1>What Are Odds Ratios?</h1>
+<p>An <strong>odds ratio (OR)</strong> compares the odds of an event happening in one group versus another group. It’s especially useful when you have two binary variables (yes/no, exposed/unexposed, success/failure) .</p>
+<p>Here’s what the values mean:</p>
+<ul>
+<li><strong>OR = 1</strong>: No association between the variables</li>
+<li><strong>OR &gt; 1</strong>: Positive association (higher odds in the first group)</li>
+<li><strong>OR &lt; 1</strong>: Negative association (lower odds in the first group)</li>
+</ul>
+<p>For example, if the odds ratio is 3.0, the odds of the outcome are 3 times higher in the exposed group compared to the unexposed group.</p>
+</section>
+<section id="installing-and-loading-epitools" class="level1">
+<h1>Installing and Loading epitools</h1>
+<p>Before we dive into calculations, let’s get the <code>epitools</code> package ready:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install the package (only need to do this once)</span></span>
+<span id="cb1-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#install.packages("epitools")</span></span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load the package</span></span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(epitools)</span></code></pre></div>
+</div>
+</section>
+<section id="understanding-oddsratio-syntax" class="level1">
+<h1>Understanding oddsratio() Syntax</h1>
+<p>The <code>oddsratio()</code> function has a straightforward syntax with several customizable options :</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>, </span>
+<span id="cb2-2">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"midp"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fisher"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"wald"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"small"</span>), </span>
+<span id="cb2-3">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">conf.level =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span>, </span>
+<span id="cb2-4">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rev =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"neither"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"rows"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"columns"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"both"</span>), </span>
+<span id="cb2-5">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">correction =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, </span>
+<span id="cb2-6">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">verbose =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div>
+<p>Let’s break down each parameter:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>x</strong></td>
+<td>A 2x2 matrix or table of counts</td>
+<td>Required</td>
+</tr>
+<tr class="even">
+<td><strong>y</strong></td>
+<td>Optional second vector (rarely used)</td>
+<td>NULL</td>
+</tr>
+<tr class="odd">
+<td><strong>method</strong></td>
+<td>Estimation method</td>
+<td>“midp”</td>
+</tr>
+<tr class="even">
+<td><strong>conf.level</strong></td>
+<td>Confidence level (e.g., 0.95 for 95%)</td>
+<td>0.95</td>
+</tr>
+<tr class="odd">
+<td><strong>rev</strong></td>
+<td>Reverse table orientation</td>
+<td>“neither”</td>
+</tr>
+<tr class="even">
+<td><strong>correction</strong></td>
+<td>Apply continuity correction</td>
+<td>FALSE</td>
+</tr>
+<tr class="odd">
+<td><strong>verbose</strong></td>
+<td>Print detailed output</td>
+<td>FALSE</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="creating-2x2-tables-in-r" class="level1">
+<h1>Creating 2x2 Tables in R</h1>
+<p>Odds ratios work with 2x2 contingency tables. Here’s how to create them :</p>
+<section id="method-1-using-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="method-1-using-matrix">Method 1: Using matrix()</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a 2x2 table</span></span>
+<span id="cb3-2">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add row and column names for clarity</span></span>
+<span id="cb3-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exposed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unexposed"</span>)</span>
+<span id="cb3-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colnames</span>(data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Disease"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No Disease"</span>)</span>
+<span id="cb3-7"></span>
+<span id="cb3-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># View the table</span></span>
+<span id="cb3-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Disease No Disease
+Exposed        30         70
+Unexposed      10         90</code></pre>
+</div>
+</div>
+</section>
+<section id="method-2-using-a-data-frame" class="level2">
+<h2 class="anchored" data-anchor-id="method-2-using-a-data-frame">Method 2: Using a Data Frame</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a data frame</span></span>
+<span id="cb5-2">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb5-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">exposure =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exposed"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unexposed"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)),</span>
+<span id="cb5-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">disease =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Yes"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>), </span>
+<span id="cb5-5">              <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Yes"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>))</span>
+<span id="cb5-6">)</span>
+<span id="cb5-7"></span>
+<span id="cb5-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to table</span></span>
+<span id="cb5-9">my_table <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">table</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>exposure, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>disease)</span>
+<span id="cb5-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(my_table)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           
+            No Yes
+  Exposed   70  30
+  Unexposed 90  10</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="basic-examples-with-oddsratio" class="level1">
+<h1>Basic Examples with oddsratio()</h1>
+<p>Let’s calculate odds ratios with real examples :</p>
+<section id="example-1-simple-calculation" class="level2">
+<h2 class="anchored" data-anchor-id="example-1-simple-calculation">Example 1: Simple Calculation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create the data</span></span>
+<span id="cb7-2">data1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(data1) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exposed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unexposed"</span>)</span>
+<span id="cb7-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colnames</span>(data1) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Disease"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No Disease"</span>)</span>
+<span id="cb7-5"></span>
+<span id="cb7-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate odds ratio</span></span>
+<span id="cb7-7">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(data1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"wald"</span>)</span>
+<span id="cb7-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+          Disease No Disease Total
+Exposed        30         70   100
+Unexposed      10         90   100
+Total          40        160   200
+
+$measure
+                        NA
+odds ratio with 95% C.I. estimate    lower   upper
+               Exposed   1.000000       NA      NA
+               Unexposed 3.857143 1.766603 8.42156
+
+$p.value
+           NA
+two-sided     midp.exact fisher.exact  chi.square
+  Exposed             NA           NA          NA
+  Unexposed 0.0004024082 0.0006504107 0.000406952
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "Unconditional MLE &amp; normal approximation (Wald) CI"</code></pre>
+</div>
+</div>
+<p>Based on our computation results, this would give us:</p>
+<ul>
+<li><strong>Odds Ratio</strong>: 3.857</li>
+<li><strong>95% CI</strong>: 1.767 to 8.422</li>
+<li><strong>p-value</strong>: 0.0007</li>
+</ul>
+</section>
+<section id="example-2-different-method-options" class="level2">
+<h2 class="anchored" data-anchor-id="example-2-different-method-options">Example 2: Different Method Options</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using Fisher's exact method</span></span>
+<span id="cb9-2">result_fisher <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(data1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fisher"</span>)</span>
+<span id="cb9-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Fisher's Exact Method Results:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fisher's Exact Method Results:</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result_fisher)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+          Disease No Disease Total
+Exposed        30         70   100
+Unexposed      10         90   100
+Total          40        160   200
+
+$measure
+                        NA
+odds ratio with 95% C.I. estimate    lower    upper
+               Exposed   1.000000       NA       NA
+               Unexposed 3.831525 1.684537 9.405984
+
+$p.value
+           NA
+two-sided     midp.exact fisher.exact  chi.square
+  Exposed             NA           NA          NA
+  Unexposed 0.0004024082 0.0006504107 0.000406952
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "Conditional MLE &amp; exact CI from 'fisher.test'"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using mid-p method (default)</span></span>
+<span id="cb13-2">result_midp <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(data1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"midp"</span>)</span>
+<span id="cb13-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Mid-P Method Results:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mid-P Method Results:</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result_midp)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+          Disease No Disease Total
+Exposed        30         70   100
+Unexposed      10         90   100
+Total          40        160   200
+
+$measure
+                        NA
+odds ratio with 95% C.I. estimate    lower    upper
+               Exposed   1.000000       NA       NA
+               Unexposed 3.796852 1.783145 8.728312
+
+$p.value
+           NA
+two-sided     midp.exact fisher.exact  chi.square
+  Exposed             NA           NA          NA
+  Unexposed 0.0004024082 0.0006504107 0.000406952
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "median-unbiased estimate &amp; mid-p exact CI"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using small sample adjustment</span></span>
+<span id="cb17-2">result_small <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(data1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"small"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in any(or, na.rm = TRUE): coercing argument of type 'double' to logical</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Small Sample Adjustment Results:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Small Sample Adjustment Results:</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result_small)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+          Disease No Disease Total
+Exposed        30         70   100
+Unexposed      10         90   100
+Total          40        160   200
+
+$measure
+                        NA
+odds ratio with 95% C.I. estimate    lower    upper
+               Exposed   1.000000       NA       NA
+               Unexposed 3.457106 1.731167 8.031582
+
+$p.value
+           NA
+two-sided     midp.exact fisher.exact  chi.square
+  Exposed             NA           NA          NA
+  Unexposed 0.0004024082 0.0006504107 0.000406952
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "small sample-adjusted UMLE &amp; normal approx (Wald) CI"</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="interpreting-the-results" class="level1">
+<h1>Interpreting the Results</h1>
+<p>When you run <code>oddsratio()</code>, you get several key outputs :</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Output</th>
+<th>What It Means</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Odds Ratio</strong></td>
+<td>The strength of association</td>
+</tr>
+<tr class="even">
+<td><strong>95% CI Lower</strong></td>
+<td>Lower bound of confidence interval</td>
+</tr>
+<tr class="odd">
+<td><strong>95% CI Upper</strong></td>
+<td>Upper bound of confidence interval</td>
+</tr>
+<tr class="even">
+<td><strong>p-value</strong></td>
+<td>Statistical significance test</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Key Takeaway</strong>: If the confidence interval includes 1, the association is not statistically significant at your chosen confidence level.</p>
+</blockquote>
+</section>
+<section id="real-world-examples" class="level1">
+<h1>Real-World Examples</h1>
+<p>Let’s look at some practical scenarios:</p>
+<section id="medical-study-example" class="level2">
+<h2 class="anchored" data-anchor-id="medical-study-example">Medical Study Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Smoking and lung cancer data</span></span>
+<span id="cb23-2">smoking_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb23-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(smoking_data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Smokers"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Non-smokers"</span>)</span>
+<span id="cb23-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colnames</span>(smoking_data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cancer"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No Cancer"</span>)</span>
+<span id="cb23-5"></span>
+<span id="cb23-6">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(smoking_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"wald"</span>)</span>
+<span id="cb23-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Smoking and Lung Cancer Results:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Smoking and Lung Cancer Results:</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+            Cancer No Cancer Total
+Smokers         15        25    40
+Non-smokers      5        35    40
+Total           20        60    80
+
+$measure
+                        NA
+odds ratio with 95% C.I. estimate    lower   upper
+             Smokers          1.0       NA      NA
+             Non-smokers      4.2 1.350224 13.0645
+
+$p.value
+             NA
+two-sided     midp.exact fisher.exact  chi.square
+  Smokers             NA           NA          NA
+  Non-smokers 0.01128547   0.01877238 0.009823275
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "Unconditional MLE &amp; normal approximation (Wald) CI"</code></pre>
+</div>
+</div>
+<p>From our calculations, this gives:</p>
+<ul>
+<li><strong>Odds Ratio</strong>: 4.200</li>
+<li><strong>95% CI</strong>: 1.350 to 13.065</li>
+<li><strong>p-value</strong>: 0.011</li>
+</ul>
+<p>This means smokers have 4.2 times higher odds of cancer compared to non-smokers.</p>
+</section>
+<section id="small-sample-example" class="level2">
+<h2 class="anchored" data-anchor-id="small-sample-example">Small Sample Example</h2>
+<p>When dealing with small samples, use appropriate methods:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sparse data</span></span>
+<span id="cb27-2">sparse_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">19</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb27-3">result_sparse <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(sparse_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fisher"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in chisq.test(xx, correct = correction): Chi-squared approximation may
+be incorrect</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sparse Data Results:</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Sparse Data Results:</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result_sparse)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+          Outcome
+Predictor  Disease1 Disease2 Total
+  Exposed1        2        8    10
+  Exposed2        1       19    20
+  Total           3       27    30
+
+$measure
+          odds ratio with 95% C.I.
+Predictor  estimate     lower    upper
+  Exposed1 1.000000        NA       NA
+  Exposed2 4.480431 0.2060739 293.9622
+
+$p.value
+          two-sided
+Predictor  midp.exact fisher.exact chi.square
+  Exposed1         NA           NA         NA
+  Exposed2  0.2807882    0.2512315  0.1967056
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "Conditional MLE &amp; exact CI from 'fisher.test'"</code></pre>
+</div>
+</div>
+<p>Results:</p>
+<ul>
+<li><strong>Odds Ratio</strong>: 4.48</li>
+<li><strong>95% CI</strong>: 0.206 to 293.962</li>
+<li><strong>p-value</strong>: 0.251</li>
+</ul>
+<p>Note the wide confidence interval due to small sample size!</p>
+</section>
+</section>
+<section id="visualizing-odds-ratios" class="level1">
+<h1>Visualizing Odds Ratios</h1>
+<p>Visual representations help communicate your findings. Here are the odds ratios from our examples:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load necessary libraries</span></span>
+<span id="cb33-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb33-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a data frame for plotting</span></span>
+<span id="cb37-2">odds_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb37-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exposed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unexposed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Smokers"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Non-smokers"</span>),</span>
+<span id="cb37-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Odds_Ratio =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3.857</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4.200</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb37-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Lower_CI =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.767</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.350</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>),</span>
+<span id="cb37-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Upper_CI =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8.422</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">13.065</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>)</span>
+<span id="cb37-7">)</span>
+<span id="cb37-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Plot the odds ratios with confidence intervals</span></span>
+<span id="cb37-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(odds_data, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> Odds_Ratio)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb37-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb37-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_errorbar</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ymin =</span> Lower_CI, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ymax =</span> Upper_CI), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">width =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb37-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_hline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">yintercept =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dashed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb37-13">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Odds Ratios with 95% Confidence Intervals"</span>,</span>
+<span id="cb37-14">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Odds Ratio"</span>,</span>
+<span id="cb37-15">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Group"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb37-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-21/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The plot shows odds ratios with 95% confidence intervals. The dashed line at OR=1 represents no association.</p>
+<p>Here’s how the data looks in a contingency table:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a contingency table for visualization</span></span>
+<span id="cb38-2">contingency_table <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb38-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(contingency_table) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Exposed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unexposed"</span>)</span>
+<span id="cb38-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colnames</span>(contingency_table) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Disease"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No Disease"</span>)</span>
+<span id="cb38-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Display the contingency table</span></span>
+<span id="cb38-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(contingency_table)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Disease No Disease
+Exposed        30         70
+Unexposed      10         90</code></pre>
+</div>
+</div>
+</section>
+<section id="common-use-cases" class="level1">
+<h1>Common Use Cases</h1>
+<p>Odds ratios are widely used in:</p>
+<ol type="1">
+<li><strong>Case-Control Studies</strong>: Comparing disease cases with healthy controls</li>
+<li><strong>Clinical Trials</strong>: Evaluating treatment effectiveness</li>
+<li><strong>Epidemiology</strong>: Identifying risk factors for diseases</li>
+<li><strong>Cross-Sectional Studies</strong>: Analyzing prevalence relationships</li>
+<li><strong>Public Health</strong>: Informing policy decisions</li>
+</ol>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p>Try calculating an odds ratio yourself! Given this vaccination data:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Got Flu</th>
+<th>No Flu</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Vaccinated</td>
+<td>10</td>
+<td>90</td>
+</tr>
+<tr class="even">
+<td>Unvaccinated</td>
+<td>30</td>
+<td>70</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Challenge</strong>: Calculate the odds ratio using the <code>oddsratio()</code> function. What does it tell you about vaccine effectiveness?</p>
+<details>
+<summary>
+Click here for Solution!
+</summary>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create the table</span></span>
+<span id="cb40-2">vaccine_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">70</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nrow =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb40-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(vaccine_data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Vaccinated"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Unvaccinated"</span>)</span>
+<span id="cb40-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colnames</span>(vaccine_data) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Got Flu"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No Flu"</span>)</span>
+<span id="cb40-5"></span>
+<span id="cb40-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Calculate odds ratio</span></span>
+<span id="cb40-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(epitools)</span>
+<span id="cb40-8">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">oddsratio</span>(vaccine_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"wald"</span>)</span>
+<span id="cb40-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$data
+             Got Flu No Flu Total
+Vaccinated        10     90   100
+Unvaccinated      30     70   100
+Total             40    160   200
+
+$measure
+                        NA
+odds ratio with 95% C.I.  estimate     lower     upper
+            Vaccinated   1.0000000        NA        NA
+            Unvaccinated 0.2592593 0.1187428 0.5660582
+
+$p.value
+              NA
+two-sided        midp.exact fisher.exact  chi.square
+  Vaccinated             NA           NA          NA
+  Unvaccinated 0.0004024082 0.0006504107 0.000406952
+
+$correction
+[1] FALSE
+
+attr(,"method")
+[1] "Unconditional MLE &amp; normal approximation (Wald) CI"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># The odds ratio should be approximately 0.259</span></span>
+<span id="cb42-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># This means vaccinated people have about 74% lower odds of getting flu</span></span>
+<span id="cb42-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># (1 - 0.259 = 0.741 or 74.1% reduction)</span></span></code></pre></div>
+</div>
+</details>
+</section>
+<section id="quick-takeaways" class="level1">
+<h1>Quick Takeaways</h1>
+<ul>
+<li><strong>Odds ratios</strong> measure association between two binary variables</li>
+<li>Use <code>epitools::oddsratio()</code> for easy calculation in R</li>
+<li>The function requires a 2x2 contingency table</li>
+<li>Choose the right method based on sample size:
+<ul>
+<li>Large samples: “wald”</li>
+<li>Small samples: “fisher” or “midp”</li>
+</ul></li>
+<li>Always check confidence intervals for statistical significance</li>
+<li>OR &gt; 1 means positive association, OR &lt; 1 means negative association</li>
+<li>Wide confidence intervals indicate uncertainty (often due to small samples)</li>
+</ul>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Calculating <strong>odds ratios in R</strong> using the <code>epitools</code> package is straightforward once you understand the basics. The <code>oddsratio()</code> function provides a powerful tool for analyzing binary relationships in your data.</p>
+<p>Remember to:</p>
+<ul>
+<li>Structure your data as a 2x2 table</li>
+<li>Choose the appropriate estimation method</li>
+<li>Interpret both the odds ratio and its confidence interval</li>
+<li>Consider sample size when drawing conclusions</li>
+</ul>
+</section>
+<section id="faqs" class="level1">
+<h1>FAQs</h1>
+<p><strong>Q1: What’s the difference between odds ratio and risk ratio?</strong> A: Odds ratios compare odds (probability of event/probability of no event), while risk ratios compare probabilities directly. Odds ratios are preferred in case-control studies where risk cannot be directly calculated.</p>
+<p><strong>Q2: When should I use Fisher’s method instead of Wald?</strong> A: Use Fisher’s method when you have small sample sizes (any cell count &lt; 5) or sparse data. It provides exact p-values rather than approximations.</p>
+<p><strong>Q3: How do I handle tables larger than 2x2?</strong> A: The <code>oddsratio()</code> function only works with 2x2 tables. For larger tables, you’ll need to subset your data or use other functions like <code>epitab()</code> for more complex analyses.</p>
+<p><strong>Q4: What does it mean if my confidence interval is very wide?</strong> A: A wide confidence interval indicates high uncertainty in your estimate, usually due to small sample sizes. Consider collecting more data or using methods designed for small samples.</p>
+<p><strong>Q5: Can I use odds ratios for non-binary variables?</strong> A: No, odds ratios are specifically for binary (two-category) variables. For variables with more categories, consider other measures like relative risk ratios or multinomial logistic regression.</p>
+<p><em>Found this guide helpful? Share it with fellow R programmers and let us know what topics you’d like us to cover next! Follow us for more R programming tutorials and statistical analysis guides.</em></p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li><p><a href="https://cran.r-project.org/web/packages/epitools/index.html">https://cran.r-project.org/web/packages/epitools/index.html</a></p></li>
+<li><p><a href="https://www.statology.org/odds-ratio-in-r/">https://www.statology.org/odds-ratio-in-r/</a></p></li>
+<li><p><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6532386/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6532386/</a></p></li>
+<li><p><a href="https://stats.oarc.ucla.edu/other/mult-pkg/faq/general/faq-how-do-i-interpret-odds-ratios-in-logistic-regression/">https://stats.oarc.ucla.edu/other/mult-pkg/faq/general/faq-how-do-i-interpret-odds-ratios-in-logistic-regression/</a></p></li>
+</ol>
+<hr>
+<p>Happy Coding! 🚀</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-21/todays_post.png" class="img-fluid figure-img"></p>
+<figcaption>odds Ratio in R</figcaption>
+</figure>
+</div>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-07-21/</guid>
+  <pubDate>Mon, 21 Jul 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Master Python Input Validation: A Beginner’s Guide to Safe User Input</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -22498,1043 +23759,6 @@ font-style: inherit;">:</span>index]</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-04-07/</guid>
   <pubDate>Mon, 07 Apr 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>The Complete Guide to While Loops in R</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-03-31/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Welcome to your comprehensive guide to while loops in R! While loops are one of the fundamental control structures in R that allow you to execute a block of code repeatedly based on a condition.</p>
-<p>In this guide, we’ll break down while loops into simple concepts with plenty of practical examples that you can follow along with. By the end of this article, you’ll feel confident using while loops in your own R projects!</p>
-</section>
-<section id="what-are-while-loops" class="level1">
-<h1>What Are While Loops?</h1>
-<p>A while loop in R is a control structure that repeats a block of code as long as a specified condition remains TRUE. It’s like telling R: “Keep doing this task until I tell you to stop.”</p>
-<p>The basic syntax of a while loop looks like this:</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (condition) {</span>
-<span id="cb1-2">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Code to execute</span></span>
-<span id="cb1-3">}</span></code></pre></div>
-<p>The loop follows these simple steps:</p>
-<ol type="1">
-<li>Check if the condition is TRUE</li>
-<li>If TRUE, execute the code inside the curly braces</li>
-<li>Return to step 1</li>
-<li>If FALSE, exit the loop and continue with the rest of the program</li>
-</ol>
-</section>
-<section id="when-to-use-while-loops" class="level1">
-<h1>When to Use While Loops</h1>
-<p>While loops are particularly useful when:</p>
-<ul>
-<li>You don’t know in advance how many iterations you’ll need</li>
-<li>You need to continue a process until a specific condition is met</li>
-<li>You’re waiting for user input or an external event</li>
-</ul>
-</section>
-<section id="basic-while-loop-example" class="level1">
-<h1>Basic While Loop Example</h1>
-<p>Let’s start with a simple example to see a while loop in action:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Initialize a counter</span></span>
-<span id="cb2-2">counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-3"></span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a while loop that counts from 1 to 5</span></span>
-<span id="cb2-5"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb2-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Count:"</span>, counter))</span>
-<span id="cb2-7">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-8">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Count: 1"
-[1] "Count: 2"
-[1] "Count: 3"
-[1] "Count: 4"
-[1] "Count: 5"</code></pre>
-</div>
-</div>
-<p>In this example, we:</p>
-<ol type="1">
-<li>Set a counter variable to 1</li>
-<li>Create a while loop that runs as long as counter is less than or equal to 5</li>
-<li>Print the current count</li>
-<li>Increment the counter by 1</li>
-<li>When counter becomes 6, the condition becomes FALSE, and the loop stops</li>
-</ol>
-</section>
-<section id="common-pitfalls-infinite-loops" class="level1">
-<h1>Common Pitfalls: Infinite Loops</h1>
-<p>One of the most common issues with while loops is creating an infinite loop—a loop that never ends because the condition never becomes FALSE.</p>
-<p>Here’s an example of an infinite loop:</p>
-<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># DON'T RUN THIS CODE!</span></span>
-<span id="cb4-2">counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb4-3"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>) {</span>
-<span id="cb4-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(counter)</span>
-<span id="cb4-5">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb4-6">}</span></code></pre></div>
-<p>This loop would run forever because counter starts at 1 and keeps increasing, so it will always be greater than 0.</p>
-<p>To avoid infinite loops:</p>
-<ul>
-<li>Always make sure your condition will eventually become FALSE</li>
-<li>Include an incrementing or decrementing step</li>
-<li>Consider adding a safety mechanism like a maximum iteration count</li>
-</ul>
-</section>
-<section id="breaking-out-of-loops" class="level1">
-<h1>Breaking Out of Loops</h1>
-<p>Sometimes you may want to exit a loop early, even if the condition is still TRUE. R provides two commands for this:</p>
-<ul>
-<li><code>break</code>: Exits the loop completely</li>
-<li><code>next</code>: Skips the current iteration and moves to the next one</li>
-</ul>
-<section id="using-break" class="level2">
-<h2 class="anchored" data-anchor-id="using-break">Using break</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb5-2"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>) {</span>
-<span id="cb5-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Count:"</span>, counter))</span>
-<span id="cb5-4">  </span>
-<span id="cb5-5">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Exit the loop if counter reaches 5</span></span>
-<span id="cb5-6">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb5-7">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Breaking the loop!"</span>)</span>
-<span id="cb5-8">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">break</span></span>
-<span id="cb5-9">  }</span>
-<span id="cb5-10">  </span>
-<span id="cb5-11">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb5-12">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Count: 1"
-[1] "Count: 2"
-[1] "Count: 3"
-[1] "Count: 4"
-[1] "Count: 5"
-[1] "Breaking the loop!"</code></pre>
-</div>
-</div>
-</section>
-<section id="using-next" class="level2">
-<h2 class="anchored" data-anchor-id="using-next">Using next</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb7-2"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb7-3">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb7-4">  </span>
-<span id="cb7-5">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Skip printing if counter is 3</span></span>
-<span id="cb7-6">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>) {</span>
-<span id="cb7-7">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Skipping 3..."</span>)</span>
-<span id="cb7-8">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">next</span></span>
-<span id="cb7-9">  }</span>
-<span id="cb7-10">  </span>
-<span id="cb7-11">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Count:"</span>, counter))</span>
-<span id="cb7-12">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Count: 1"
-[1] "Count: 2"
-[1] "Skipping 3..."
-[1] "Count: 4"
-[1] "Count: 5"</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="practical-example-1-sum-of-numbers" class="level1">
-<h1>Practical Example 1: Sum of Numbers</h1>
-<p>Let’s calculate the sum of numbers from 1 to a given limit:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Function to calculate sum of numbers up to a limit</span></span>
-<span id="cb9-2">calculate_sum <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(limit) {</span>
-<span id="cb9-3">  sum <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb9-4">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb9-5">  </span>
-<span id="cb9-6">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> limit) {</span>
-<span id="cb9-7">    sum <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> sum <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> counter</span>
-<span id="cb9-8">    counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb9-9">  }</span>
-<span id="cb9-10">  </span>
-<span id="cb9-11">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">return</span>(sum)</span>
-<span id="cb9-12">}</span>
-<span id="cb9-13"></span>
-<span id="cb9-14"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate sum from 1 to 10</span></span>
-<span id="cb9-15">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">calculate_sum</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)</span>
-<span id="cb9-16"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Sum of numbers from 1 to 10:"</span>, result))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Sum of numbers from 1 to 10: 55"</code></pre>
-</div>
-</div>
-</section>
-<section id="practical-example-2-guessing-game" class="level1">
-<h1>Practical Example 2: Guessing Game</h1>
-<p>Here’s a fun example of a number guessing game using a while loop:</p>
-<div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">play_guessing_game <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>() {</span>
-<span id="cb11-2">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate a random number between 1 and 100</span></span>
-<span id="cb11-3">  secret_number <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb11-4">  guess <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb11-5">  attempts <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb11-6">  </span>
-<span id="cb11-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"I'm thinking of a number between 1 and 100."</span>)</span>
-<span id="cb11-8">  </span>
-<span id="cb11-9">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (guess <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!=</span> secret_number) {</span>
-<span id="cb11-10">    guess <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.numeric</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">readline</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Enter your guess: "</span>))</span>
-<span id="cb11-11">    attempts <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> attempts <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb11-12">    </span>
-<span id="cb11-13">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> (guess <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;</span> secret_number) {</span>
-<span id="cb11-14">      <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Too low! Try again."</span>)</span>
-<span id="cb11-15">    } <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">else</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> (guess <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;</span> secret_number) {</span>
-<span id="cb11-16">      <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Too high! Try again."</span>)</span>
-<span id="cb11-17">    } <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">else</span> {</span>
-<span id="cb11-18">      <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Congratulations! You guessed the number in"</span>, attempts, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"attempts."</span>))</span>
-<span id="cb11-19">    }</span>
-<span id="cb11-20">  }</span>
-<span id="cb11-21">}</span>
-<span id="cb11-22"></span>
-<span id="cb11-23"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Uncomment to play the game</span></span>
-<span id="cb11-24"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># play_guessing_game()</span></span></code></pre></div>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p>Let’s try a simple exercise. Write a while loop that prints the first 10 even numbers.</p>
-<details>
-<summary>
-See Solution
-</summary>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">count <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb12-2">number <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb12-3"></span>
-<span id="cb12-4"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (count <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>) {</span>
-<span id="cb12-5">  number <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> number <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Next even number</span></span>
-<span id="cb12-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(number)</span>
-<span id="cb12-7">  count <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> count <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb12-8">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2
-[1] 4
-[1] 6
-[1] 8
-[1] 10
-[1] 12
-[1] 14
-[1] 16
-[1] 18
-[1] 20</code></pre>
-</div>
-</div>
-</details>
-</section>
-<section id="practical-example-3-fibonacci-sequence" class="level1">
-<h1>Practical Example 3: Fibonacci Sequence</h1>
-<p>The Fibonacci sequence is a classic example where we can use while loops. Each number is the sum of the two preceding ones, starting from 0 and 1:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate Fibonacci sequence up to a limit</span></span>
-<span id="cb14-2">generate_fibonacci <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(limit) {</span>
-<span id="cb14-3">  fibonacci <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb14-4">  </span>
-<span id="cb14-5">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (fibonacci[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(fibonacci) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>] <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> fibonacci[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(fibonacci)] <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> limit) {</span>
-<span id="cb14-6">    next_number <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> fibonacci[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(fibonacci) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>] <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> fibonacci[<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(fibonacci)]</span>
-<span id="cb14-7">    fibonacci <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(fibonacci, next_number)</span>
-<span id="cb14-8">  }</span>
-<span id="cb14-9">  </span>
-<span id="cb14-10">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">return</span>(fibonacci)</span>
-<span id="cb14-11">}</span>
-<span id="cb14-12"></span>
-<span id="cb14-13"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate Fibonacci numbers up to 100</span></span>
-<span id="cb14-14">fib_sequence <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">generate_fibonacci</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)</span>
-<span id="cb14-15"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(fib_sequence)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1]  0  1  1  2  3  5  8 13 21 34 55 89</code></pre>
-</div>
-</div>
-</section>
-<section id="while-loop-vs.-for-loop" class="level1">
-<h1>While Loop vs.&nbsp;For Loop</h1>
-<p>R provides different types of loops, and it’s important to know when to use each:</p>
-<ul>
-<li><strong>While loops</strong>: Use when you don’t know how many iterations you’ll need</li>
-<li><strong>For loops</strong>: Use when you know exactly how many iterations you need</li>
-</ul>
-<p>Here’s the same task using both types:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using a while loop</span></span>
-<span id="cb16-2">counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb16-3"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb16-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"While loop:"</span>, counter))</span>
-<span id="cb16-5">  counter <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> counter <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb16-6">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "While loop: 1"
-[1] "While loop: 2"
-[1] "While loop: 3"
-[1] "While loop: 4"
-[1] "While loop: 5"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using a for loop</span></span>
-<span id="cb18-2"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span> (i <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb18-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"For loop:"</span>, i))</span>
-<span id="cb18-4">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "For loop: 1"
-[1] "For loop: 2"
-[1] "For loop: 3"
-[1] "For loop: 4"
-[1] "For loop: 5"</code></pre>
-</div>
-</div>
-</section>
-<section id="nested-while-loops" class="level1">
-<h1>Nested While Loops</h1>
-<p>You can place one while loop inside another to create nested loops:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">i <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb20-2"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (i <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>) {</span>
-<span id="cb20-3">  j <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb20-4">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (j <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>) {</span>
-<span id="cb20-5">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(i, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"×"</span>, j, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"="</span>, i<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span>j))</span>
-<span id="cb20-6">    j <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> j <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb20-7">  }</span>
-<span id="cb20-8">  i <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> i <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb20-9">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"---"</span>)</span>
-<span id="cb20-10">}</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "1 × 1 = 1"
-[1] "1 × 2 = 2"
-[1] "1 × 3 = 3"
-[1] "---"
-[1] "2 × 1 = 2"
-[1] "2 × 2 = 4"
-[1] "2 × 3 = 6"
-[1] "---"
-[1] "3 × 1 = 3"
-[1] "3 × 2 = 6"
-[1] "3 × 3 = 9"
-[1] "---"</code></pre>
-</div>
-</div>
-</section>
-<section id="performance-considerations" class="level1">
-<h1>Performance Considerations</h1>
-<p>While loops are powerful, they’re not always the most efficient choice in R. R is vectorized by design, meaning it performs operations on entire vectors at once, which is typically faster than looping.</p>
-<p>Consider this example:</p>
-<div class="sourceCode" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using a while loop</span></span>
-<span id="cb22-2">numbers <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000000</span></span>
-<span id="cb22-3">sum_result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb22-4">i <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb22-5"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (i <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;=</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(numbers)) {</span>
-<span id="cb22-6">  sum_result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> sum_result <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> numbers[i]</span>
-<span id="cb22-7">  i <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> i <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb22-8">}</span>
-<span id="cb22-9"></span>
-<span id="cb22-10"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Using vectorization</span></span>
-<span id="cb22-11">vec_sum <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sum</span>(numbers)</span></code></pre></div>
-<p>The vectorized approach (<code>sum(numbers)</code>) will be much faster than the while loop.</p>
-</section>
-<section id="advanced-example-newton-raphson-method" class="level1">
-<h1>Advanced Example: Newton-Raphson Method</h1>
-<p>A practical application of while loops is implementing numerical algorithms. Here’s an example using the Newton-Raphson method to find the square root of a number:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">newton_sqrt <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">tolerance =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1e-10</span>) {</span>
-<span id="cb23-2">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Initial guess</span></span>
-<span id="cb23-3">  x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> n <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span></span>
-<span id="cb23-4">  </span>
-<span id="cb23-5">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Keep track of iterations</span></span>
-<span id="cb23-6">  iterations <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb23-7">  </span>
-<span id="cb23-8">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> (<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abs</span>(x<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> n) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;</span> tolerance) {</span>
-<span id="cb23-9">    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Newton-Raphson update formula for square root</span></span>
-<span id="cb23-10">    x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> (x <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> n<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span>x)</span>
-<span id="cb23-11">    iterations <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> iterations <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb23-12">    </span>
-<span id="cb23-13">    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Safety measure to prevent infinite loops</span></span>
-<span id="cb23-14">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> (iterations <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>) {</span>
-<span id="cb23-15">      <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Maximum iterations reached!"</span>)</span>
-<span id="cb23-16">      <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">break</span></span>
-<span id="cb23-17">    }</span>
-<span id="cb23-18">  }</span>
-<span id="cb23-19">  </span>
-<span id="cb23-20">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Found solution in"</span>, iterations, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"iterations"</span>))</span>
-<span id="cb23-21">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">return</span>(x)</span>
-<span id="cb23-22">}</span>
-<span id="cb23-23"></span>
-<span id="cb23-24"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Find square root of 16</span></span>
-<span id="cb23-25">sqrt_16 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">newton_sqrt</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">16</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Found solution in 5 iterations"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Square root of 16:"</span>, sqrt_16))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Square root of 16: 4"</code></pre>
-</div>
-</div>
-</section>
-<section id="key-takeaways" class="level1">
-<h1>Key Takeaways</h1>
-<ul>
-<li>While loops in R execute a block of code as long as a specified condition remains TRUE</li>
-<li>Remember to update your condition variable to avoid infinite loops</li>
-<li>Use <code>break</code> to exit a loop early and <code>next</code> to skip to the next iteration</li>
-<li>While loops are best used when the number of iterations is not known in advance</li>
-<li>For performance-critical code, consider vectorized operations instead of loops where possible</li>
-<li>Include safety mechanisms in your loops to prevent infinite execution</li>
-</ul>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>While loops are a powerful tool in your R programming toolkit. They enable you to automate repetitive tasks and create dynamic algorithms that respond to changing conditions. By mastering while loops, you’ll significantly enhance your ability to write flexible and responsive R code.</p>
-<p>Remember that while loops are just one of several loop constructs in R. As you continue your programming journey, explore for loops, repeat loops, and vectorized operations to find the most efficient solution for each specific task.</p>
-<p>Now it’s your turn to practice! Try modifying the examples above or create your own while loops to solve different problems. The more you practice, the more natural these concepts will become.</p>
-</section>
-<section id="faqs" class="level1">
-<h1>FAQs</h1>
-<section id="q1-how-do-i-avoid-infinite-loops-in-r" class="level2">
-<h2 class="anchored" data-anchor-id="q1-how-do-i-avoid-infinite-loops-in-r">Q1: How do I avoid infinite loops in R?</h2>
-<p>A1: Always ensure that the condition in your while loop will eventually become FALSE. Include code inside the loop that modifies the variables used in the condition. Additionally, consider adding a maximum iteration count as a safety measure.</p>
-</section>
-<section id="q2-whats-the-difference-between-while-and-repeat-loops-in-r" class="level2">
-<h2 class="anchored" data-anchor-id="q2-whats-the-difference-between-while-and-repeat-loops-in-r">Q2: What’s the difference between while and repeat loops in R?</h2>
-<p>A2: While loops check the condition at the beginning of each iteration, so they might not execute at all if the condition is initially FALSE. Repeat loops always execute at least once and check the condition inside the loop with a break statement.</p>
-</section>
-<section id="q3-when-should-i-use-a-while-loop-instead-of-a-for-loop" class="level2">
-<h2 class="anchored" data-anchor-id="q3-when-should-i-use-a-while-loop-instead-of-a-for-loop">Q3: When should I use a while loop instead of a for loop?</h2>
-<p>A3: Use while loops when you don’t know beforehand how many iterations you’ll need. For loops are better when you know exactly how many times you want to repeat an action.</p>
-</section>
-<section id="q4-can-i-have-nested-while-loops-in-r" class="level2">
-<h2 class="anchored" data-anchor-id="q4-can-i-have-nested-while-loops-in-r">Q4: Can I have nested while loops in R?</h2>
-<p>A4: Yes, you can nest while loops inside other while loops. This is useful for operations that require multiple levels of iteration, like working with matrices or multi-dimensional data.</p>
-</section>
-<section id="q5-are-there-alternatives-to-while-loops-for-better-performance-in-r" class="level2">
-<h2 class="anchored" data-anchor-id="q5-are-there-alternatives-to-while-loops-for-better-performance-in-r">Q5: Are there alternatives to while loops for better performance in R?</h2>
-<p>A5: Yes, R’s vectorized operations usually perform better than loops. Functions like <code>apply()</code>, <code>lapply()</code>, <code>sapply()</code>, and other members of the *apply family can replace loops in many cases with better performance.</p>
-</section>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li><a href="https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Control-structures">R Documentation: Control Structures</a></li>
-<li><a href="https://adv-r.hadley.nz/control-flow.html">Advanced R by Hadley Wickham: Control Flow</a></li>
-<li><a href="https://www.r-bloggers.com/2022/01/understanding-while-loops-in-r/">R-bloggers: Understanding While Loops in R</a></li>
-<li><a href="https://r4ds.had.co.nz/iteration.html">RStudio Education: R for Data Science - Iteration</a></li>
-<li><a href="https://csgillespie.github.io/efficientR/programming.html#vectorisation">Efficient R Programming: Vectorization</a></li>
-</ol>
-</section>
-<section id="share-your-learning" class="level1">
-<h1>Share Your Learning!</h1>
-<p><em>Did you find this guide helpful? Share it with your fellow fRiends! If you’ve created interesting while loop examples, post them in the comments below. I’d love to see what you’ve learned and how you’re applying while loops in your own projects.</em></p>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-03-31/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>While loops with R</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-03-31/</guid>
-  <pubDate>Mon, 31 Mar 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
