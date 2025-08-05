@@ -1,0 +1,549 @@
+---
+title: "The Complete Beginner's Guide to Python Debugging: Assertions, Exceptions, Logging, and More"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-08-06"
+categories: [code, python]
+toc: TRUE
+description: "Learn essential Python debugging techniques for beginners, including how to use assertions, handle exceptions, implement logging, and leverage debugging tools to write more reliable and error-free code."
+keywords: [Programming, Python debugging, Python assertions, Python exception handling, Python logging, Python debug techniques, Python assert statement examples, handling exceptions in Python, logging best practices Python, using pdb Python debugger, debugging Python code for beginners, how to use assertions for debugging in Python, step-by-step guide to exception handling in Python, setting up and using logging in Python applications, beginner-friendly Python debugging strategies with examples, practical tips for debugging Python programs using pdb and logging]
+draft: TRUE
+---
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+reticulate::use_python("C:/Users/ssanders/AppData/Local/Programs/Python/Python313/python.exe")
+reticulate::repl_python()
+```
+
+> **Key Takeaway:** Python debugging doesn't have to be intimidating. With the right tools and techniques—assertions, exception handling, logging, and systematic debugging approaches—you can quickly identify and fix issues in your code.
+
+*Author's Note: Dear Reader, I want to be completely honest with you from the start: I am learning Python debugging as I write this series. This isn't coming from someone who has mastered every aspect of Python development, it's coming from someone who is actively working through these concepts, making mistakes, and discovering better ways to debug code.*
+
+**P.S. - Keep a debugging journal! I wish I had started one earlier. Writing down the problems you solve helps you recognize patterns and builds your debugging intuition over time. Hopefully this blog series will serve as that.**
+
+**Here is a list of links that will continue to grow and hopefully help out: [Python on Dots](https://app.dotadda.io/teams/ab732481-52f3-4388-896c-23d34e828b35/dots?date=2025-08-16&timespan=month)**
+
+------------------------------------------------------------------------
+
+# Understanding Python Debugging Fundamentals
+
+**Debugging** is the process of finding and fixing errors (bugs) in your code . As a beginner Python programmer, you'll encounter various types of errors that can seem overwhelming at first. However, with the right approach and tools, debugging becomes much more manageable.
+
+Python provides several built-in tools and techniques to help you identify and resolve issues:
+
+-   **Assertions** for checking assumptions during development
+-   **Exception handling** for managing runtime errors gracefully
+-   **Logging** for tracking program execution and events
+-   **Debug statements** and interactive debugging tools
+
+Let's explore each of these techniques with practical, working examples.
+
+------------------------------------------------------------------------
+
+# Mastering Python Assertions
+
+**Assertions** are statements that check if a condition is true at a specific point in your code . If the condition is false, Python raises an `AssertionError` and stops execution, helping you catch bugs early in development.
+
+## Basic Assertion Syntax
+
+``` python
+assert condition, "Optional error message"
+```
+
+The assertion checks if the `condition` is `True`. If it's `False`, Python raises an `AssertionError` with your optional message.
+
+## Working Example: Input Validation
+
+```{python}
+def calculate_square_root(x):
+    """Calculate square root with assertion check."""
+    assert x >= 0, "Input must be non-negative for square root"
+    return x ** 0.5
+
+# Test successful case
+print(f"Square root of 9 = {calculate_square_root(9)}")  # Works fine
+
+# Test assertion failure
+try:
+    calculate_square_root(-4)  # This will raise AssertionError
+except AssertionError as e:
+    print(f"AssertionError: {e}")
+```
+
+## When to Use Assertions
+
+| **Use Assertions For**                  | **Don't Use Assertions For** |
+|-----------------------------------------|------------------------------|
+| Internal self-checks during development | Handling user input errors   |
+| Verifying algorithm assumptions         | Production error handling    |
+| Checking data structure integrity       | Validating external data     |
+| Testing function preconditions          | Runtime error management     |
+
+## Practical Assertion Example: Data Validation
+
+```{python}
+def process_student_grades(grades):
+    """Process a list of student grades with validation."""
+    assert isinstance(grades, list), "Grades must be a list"
+    assert len(grades) > 0, "Grades list cannot be empty"
+    assert all(0 <= grade <= 100 for grade in grades), "All grades must be between 0 and 100"
+    
+    average = sum(grades) / len(grades)
+    return round(average, 2)
+
+# Valid case
+valid_grades = [85, 92, 78, 96, 88]
+print(f"Average grade: {process_student_grades(valid_grades)}")
+
+# Invalid case (grade out of range)
+try:
+    invalid_grades = [85, 92, 105, 78]  # 105 is invalid
+    process_student_grades(invalid_grades)
+except AssertionError as e:
+    print(f"Validation failed: {e}")
+```
+
+------------------------------------------------------------------------
+
+# Exception Handling: Managing Runtime Errors
+
+**Exception handling** allows your program to respond to runtime errors gracefully instead of crashing . Python uses a `try-except` structure to catch and handle different types of errors.
+
+## Common Python Exceptions
+
+| **Exception Type** | **When It Occurs** | **Example** |
+|---------------------------|---------------------------|-------------------|
+| `ValueError` | Invalid value for a function | `int("abc")` |
+| `TypeError` | Operation on incompatible types | `"a" + 1` |
+| `ZeroDivisionError` | Division by zero | `10 / 0` |
+| `IndexError` | List index out of range | 1, 2\]`| |`KeyError`| Dictionary key not found |`\["missing"\]`| |`FileNotFoundError`| File doesn't exist |`open("missing.txt")\` |
+
+## Basic Exception Handling
+
+```{python}
+def safe_divide(a, b):
+    """Safely divide two numbers with exception handling."""
+    try:
+        result = a / b
+        return result
+    except ZeroDivisionError:
+        print(f"Error: Cannot divide {a} by zero!")
+        return None
+    except TypeError:
+        print(f"Error: Both arguments must be numbers")
+        return None
+
+# Test cases
+print(f"10 ÷ 2 = {safe_divide(10, 2)}")      # Works: 5.0
+print(f"10 ÷ 0 = {safe_divide(10, 0)}")      # Handles error gracefully
+print(f"'hi' ÷ 5 = {safe_divide('hi', 5)}")  # Handles type error
+```
+
+## Complete Exception Handling Structure
+
+```python
+def read_file_safely(filename):
+    """Demonstrate complete exception handling structure."""
+    try:
+        with open(filename, 'r') as file:
+            content = file.read()
+            return content
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found")
+        return None
+    except PermissionError:
+        print(f"Error: Permission denied for '{filename}'")
+        return None
+    else:
+        # This runs only if no exception occurred
+        print(f"Successfully read {filename}")
+    finally:
+        # This always runs
+        print("File operation completed")
+```
+
+The `try-except-else-finally` structure provides complete control: - **try**: Code that might raise an exception - **except**: Handle specific exceptions - **else**: Runs only if no exception occurs - **finally**: Always runs (cleanup code)
+
+------------------------------------------------------------------------
+
+# Python Logging: Better Than Print Statements
+
+**Logging** is the process of recording events during program execution \[\[4\]\]. Unlike print statements, logging provides levels, timestamps, and flexible output options.
+
+## Logging Levels Explained
+
+| **Level** | **Purpose** | **Example Use Case** |
+|------------------|---------------------|---------------------------------|
+| `DEBUG` | Detailed diagnostic information | Variable values, function calls |
+| `INFO` | Confirmation things work as expected | Process completed successfully |
+| `WARNING` | Something unexpected happened | Deprecated feature used |
+| `ERROR` | Serious problem occurred | Database connection failed |
+| `CRITICAL` | Very serious error | System crash imminent |
+
+## Basic Logging Setup
+
+```{python}
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+
+# Create logger
+logger = logging.getLogger(__name__)
+
+# Use different logging levels
+logger.debug("This is detailed debug information")
+logger.info("This confirms normal operation")
+logger.warning("This warns about unexpected events")
+logger.error("This reports serious problems")
+logger.critical("This reports critical system failures")
+```
+
+## Logging in Functions: Practical Example
+
+```{python}
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+def calculate_factorial(n):
+    """Calculate factorial with comprehensive logging."""
+    logger.info(f"Starting factorial calculation for n={n}")
+    
+    # Input validation with logging
+    if not isinstance(n, int):
+        logger.error(f"Invalid input type: {type(n)}, expected int")
+        return None
+    
+    if n < 0:
+        logger.error(f"Negative input not allowed: {n}")
+        return None
+    
+    if n > 20:
+        logger.warning(f"Large input {n} may cause overflow")
+    
+    logger.debug(f"Input validation passed for n={n}")
+    
+    # Calculate factorial
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+        logger.debug(f"Step {i}: result = {result}")
+    
+    logger.info(f"Factorial calculation complete: {n}! = {result}")
+    return result
+
+# Test the function
+factorial_5 = calculate_factorial(5)
+print(f"5! = {factorial_5}")
+```
+
+------------------------------------------------------------------------
+
+# Debugging Techniques and Strategies
+
+## Strategic Print Statement Debugging
+
+While logging is preferred for production code, print statements are useful for quick debugging during development:
+
+```{python}
+def find_maximum_in_list(numbers):
+    """Find maximum with debug print statements."""
+    print(f"DEBUG: Starting with list = {numbers}")
+    
+    if not numbers:
+        print("DEBUG: Empty list provided")
+        return None
+    
+    max_value = numbers[0]
+    max_index = 0
+    
+    for i, value in enumerate(numbers):
+        print(f"DEBUG: Checking index {i}, value = {value}")
+        if value > max_value:
+            max_value = value
+            max_index = i
+            print(f"DEBUG: New maximum: {max_value} at index {max_index}")
+    
+    print(f"DEBUG: Final result: max_value={max_value}, index={max_index}")
+    return max_value, max_index
+
+# Test
+result = find_maximum_in_list([3, 7, 2, 9, 1, 5])
+print(f"Maximum: {result[0]} at position {result[1]}")
+```
+
+## Using Python's Built-in Debugger (pdb)
+
+Python's `pdb` module allows interactive debugging:
+
+```python
+import pdb
+
+def problematic_function(x, y):
+    pdb.set_trace()  # Execution will pause here
+    result = x * y
+    final_result = result / (x - y)
+    return final_result
+
+# When you run this, you can inspect variables interactively
+```
+
+**Common pdb commands:** - `n` (next line) - `s` (step into function) - `c` (continue execution) - `p variable_name` (print variable value) - `q` (quit debugger)
+
+------------------------------------------------------------------------
+
+# Your Turn! Practice Exercise
+
+**Challenge:** Create a simple bank account class that uses all the debugging techniques we've covered.
+
+**Requirements:** 1. Use assertions to validate inputs 2. Handle exceptions for invalid operations 3. Add logging for all transactions 4. Include debug information for troubleshooting
+
+```{python}
+import logging
+
+class BankAccount:
+    def __init__(self, account_number, initial_balance=0):
+        # Your code here
+        pass
+    
+    def deposit(self, amount):
+        # Your code here
+        pass
+    
+    def withdraw(self, amount):
+        # Your code here
+        pass
+    
+    def get_balance(self):
+        # Your code here
+        pass
+
+# Test your implementation
+account = BankAccount("12345", 1000)
+account.deposit(500)
+account.withdraw(200)
+print(f"Final balance: ${account.get_balance()}")
+```
+
+<details>
+
+<summary>Click here for Solution!</summary>
+
+```{python}
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, 
+                   format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+class BankAccount:
+    def __init__(self, account_number, initial_balance=0):
+        # Use assertions to validate inputs
+        assert isinstance(account_number, str), "Account number must be a string"
+        assert len(account_number) > 0, "Account number cannot be empty"
+        assert isinstance(initial_balance, (int, float)), "Initial balance must be a number"
+        assert initial_balance >= 0, "Initial balance cannot be negative"
+        
+        self.account_number = account_number
+        self.balance = initial_balance
+        
+        logger.info(f"Account {account_number} created with balance ${initial_balance}")
+    
+    def deposit(self, amount):
+        logger.debug(f"Deposit request: ${amount} to account {self.account_number}")
+        
+        try:
+            # Validate input
+            assert isinstance(amount, (int, float)), "Deposit amount must be a number"
+            assert amount > 0, "Deposit amount must be positive"
+            
+            # Process deposit
+            self.balance += amount
+            logger.info(f"Deposited ${amount}. New balance: ${self.balance}")
+            return True
+            
+        except AssertionError as e:
+            logger.error(f"Deposit failed: {e}")
+            return False
+        except Exception as e:
+            logger.critical(f"Unexpected error during deposit: {e}")
+            return False
+    
+    def withdraw(self, amount):
+        logger.debug(f"Withdrawal request: ${amount} from account {self.account_number}")
+        
+        try:
+            # Validate input
+            assert isinstance(amount, (int, float)), "Withdrawal amount must be a number"
+            assert amount > 0, "Withdrawal amount must be positive"
+            
+            # Check sufficient funds
+            if amount > self.balance:
+                raise ValueError(f"Insufficient funds. Balance: ${self.balance}, Requested: ${amount}")
+            
+            # Process withdrawal
+            self.balance -= amount
+            logger.info(f"Withdrew ${amount}. New balance: ${self.balance}")
+            return True
+            
+        except (AssertionError, ValueError) as e:
+            logger.error(f"Withdrawal failed: {e}")
+            return False
+        except Exception as e:
+            logger.critical(f"Unexpected error during withdrawal: {e}")
+            return False
+    
+    def get_balance(self):
+        logger.debug(f"Balance inquiry for account {self.account_number}")
+        return self.balance
+
+# Test the implementation
+try:
+    account = BankAccount("12345", 1000)
+    account.deposit(500)
+    account.withdraw(200)
+    account.withdraw(2000)  # This should fail
+    print(f"Final balance: ${account.get_balance()}")
+except Exception as e:
+    logger.critical(f"Account creation failed: {e}")
+```
+
+</details>
+
+------------------------------------------------------------------------
+
+# Quick Takeaways
+
+• **Assertions** are your first line of defense against logic errors—use them to verify assumptions during development
+
+• **Exception handling** prevents crashes by gracefully managing runtime errors with try-except blocks
+
+• **Logging** is superior to print statements for tracking program execution—it provides levels, timestamps, and flexible output
+
+• **Strategic debugging** involves reading error messages carefully, using print statements judiciously, and leveraging Python's built-in debugger
+
+• **Always validate inputs** and handle edge cases to make your code more robust
+
+• **Read error messages from bottom to top**—the most relevant information is usually at the end
+
+• **Test your code incrementally** rather than writing large chunks before testing
+
+------------------------------------------------------------------------
+
+# Debugging Techniques Comparison
+
+| **Technique** | **Best Used For** | **When NOT to Use** | **Example** |
+|------------------|------------------|-------------------|------------------|
+| **Assertions** | Internal validation, algorithm invariants | Production error handling | `assert x > 0, "Value must be positive"` |
+| **Exceptions** | User input errors, file operations | Internal logic checks | `try: ... except ValueError: ...` |
+| **Logging** | Production monitoring, detailed tracking | Simple one-time debugging | `logging.info("Process started")` |
+| **Print Statements** | Quick debugging, temporary inspection | Production code | `print(f"DEBUG: x = {x}")` |
+| **PDB Debugger** | Complex bugs, step-by-step analysis | Simple issues | `import pdb; pdb.set_trace()` |
+
+------------------------------------------------------------------------
+
+# Common Python Errors and Solutions
+
+| **Error Type** | **Common Cause** | **Prevention** |
+|----------------------|--------------------------|------------------------|
+| `SyntaxError` | Missing colons, incorrect indentation | Use IDE with syntax highlighting |
+| `NameError` | Using undefined variables | Initialize variables before use |
+| `TypeError` | Wrong data types in operations | Use type hints and validation |
+| `ValueError` | Invalid values for functions | Add input validation |
+| `IndexError` | List index out of range | Use `len()` to check bounds |
+| `KeyError` | Dictionary key not found | Use `dict.get()` with defaults |
+| `ZeroDivisionError` | Division by zero | Add zero checks before division |
+
+------------------------------------------------------------------------
+
+# Conclusion
+
+Python debugging doesn't have to be a frustrating experience. By mastering **assertions**, **exception handling**, **logging**, and systematic debugging approaches, you can quickly identify and resolve issues in your code.
+
+Remember these key principles: - **Use assertions** to catch bugs early during development - **Handle exceptions** to make your programs robust and user-friendly\
+- **Implement logging** for better visibility into your program's behavior - **Debug systematically** by reading error messages carefully and testing incrementally
+
+The techniques covered in this guide will serve you well throughout your Python programming journey. As you practice and encounter more complex problems, these debugging skills will become second nature.
+
+**Ready to level up your Python debugging skills?** Start by implementing these techniques in your current projects, and don't forget to keep that debugging journal—you'll be amazed at how much you learn from tracking the problems you solve!
+
+------------------------------------------------------------------------
+
+# Frequently Asked Questions
+
+**Q: Should I use assertions in production code?** A: No, assertions can be disabled with Python's `-O` flag and should only be used during development for internal checks. Use proper exception handling for production error management.
+
+**Q: When should I use logging instead of print statements?** A: Use logging when you need different severity levels, want to output to files, need timestamps, or are working on production code. Print statements are fine for quick debugging during development.
+
+**Q: What's the difference between errors and exceptions in Python?** A: In Python, "errors" and "exceptions" are often used interchangeably. Technically, exceptions are a type of error that can be caught and handled with try-except blocks.
+
+**Q: How do I read Python error messages effectively?** A: Start from the bottom of the traceback and work your way up. The last line contains the error type and message, while preceding lines show the call stack that led to the error.
+
+**Q: Is it okay to use bare except clauses?** A: No, avoid using `except:` without specifying exception types. This can hide unexpected errors and make debugging harder. Always catch specific exceptions when possible.
+
+------------------------------------------------------------------------
+
+*Found this guide helpful? Share your debugging experiences in the comments below and let us know which technique you found most useful! Don't forget to bookmark this page for future reference.* 📚✨
+
+------------------------------------------------------------------------
+
+# References
+
+1.  Real Python Team. (2024). Python's assert: Debug and test your code like a pro. *Real Python*. <https://realpython.com/python-assert-statement/>
+
+2.  Real Python Team. (2024, December 1). Python exceptions: An introduction. *Real Python*. <https://realpython.com/python-exceptions/>
+
+3.  Sweigart, A. (n.d.). Chapter 11: Debugging. In *Automate the boring stuff with Python* (2nd ed.). <https://automatetheboringstuff.com/2e/chapter11/>
+
+4.  W3Schools. (n.d.). Python assert keyword. *W3Schools*. <https://www.w3schools.com/python/ref_keyword_assert.asp>
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+## ![Python Debugging!](todays_post.png)
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
