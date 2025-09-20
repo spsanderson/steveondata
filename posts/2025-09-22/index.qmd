@@ -1,0 +1,302 @@
+---
+title: "How to Find the Max Value in Each Row in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-09-22"
+categories: [code, rtip]
+toc: TRUE
+description: "Learn how to find the max value in each row of a data frame or matrix in R using apply(), pmax(), dplyr, and matrixStats. Step-by-step examples, code explanations, and tips for handling missing values. Perfect for R programmers seeking efficient row-wise operations."
+keywords: [Programming, find max value in row R, rowwise maximum R, R apply max row, dplyr row max, R matrixStats max row, how to get row max in R, R get maximum value per row, R dataframe row maximum, best way to find row max in R, max value by row in R dataframe]
+draft: TRUE
+---
+
+> **Key Insight:** Finding the maximum value in each row is a common data analysis task, in R it's simple. The `apply()` function with `max()` is the most straightforward method, but several alternatives offer better performance or integration with modern R workflows.
+
+Finding the **max value in each row** is a useful operation in data analysis. Whether you're analyzing exam scores, stock prices, or sensor measurements, knowing how to efficiently extract row-wise maximums can save you time and improve your data processing workflows. This guide covers four proven methods using `apply()`, `pmax()`, `dplyr`, and `matrixStats` packages.
+
+---
+
+# Understanding Row-Wise Operations in R
+
+Row-wise operations in R work across the columns of each row, rather than down the columns. When we want the **max value in each row**, we're looking for the highest value across all columns for every single row in our dataset.
+
+**Basic Concept:**
+
+- **Column-wise:** Operations down each column (like finding the mean of each column)
+- **Row-wise:** Operations across columns for each row (like finding the max of each row)
+
+# Method 1: Using `apply()` - The Most Common Approach
+
+The `apply()` function is the **most popular method** for finding row maximums in R. It's part of base R, so no additional packages are required.
+
+## Basic Syntax
+
+```r
+apply(X, MARGIN, FUN, ...)
+```
+
+**Parameters:**
+
+- `X`: Your data frame or matrix
+- `MARGIN`: Use `1` for rows, `2` for columns  
+- `FUN`: The function to apply (in our case, `max`)
+- `...`: Additional arguments (like `na.rm = TRUE`)
+
+## Simple Example
+
+```{r}
+# Create sample data
+df <- data.frame(
+  A = c(1, 4, 7, 2, 9),
+  B = c(2, 5, 8, 6, 3),
+  C = c(3, 6, 9, 4, 1),
+  D = c(5, 2, 1, 8, 7)
+)
+
+# Find max in each row
+df$max_value <- apply(df, 1, max)
+print(df)
+```
+
+## Handling Missing Values
+
+```{r}
+# Data with missing values
+df_na <- data.frame(
+  A = c(1, 4, NA, 2, 9),
+  B = c(2, NA, 8, 6, 3),
+  C = c(3, 6, 9, NA, 1),
+  D = c(5, 2, 1, 8, 7)
+)
+
+# Use na.rm = TRUE to ignore missing values
+df_na$max_value <- apply(df_na, 1, max, na.rm = TRUE)
+print(df_na)
+```
+
+# Method 2: Using `pmax()` - Fastest for Few Columns
+
+The `pmax()` function computes **parallel maximums**, making it excellent for datasets with a small number of columns .
+
+## Basic Usage
+
+```{r}
+# Using pmax for the same data
+df$max_pmax <- pmax(df$A, df$B, df$C, df$D)
+
+# Alternative with do.call
+df$max_pmax2 <- do.call(pmax, df[1:4])
+print(df)
+```
+
+**Advantages:**
+
+- Very fast for datasets with few columns
+- Works well with missing values using `na.rm = TRUE`
+- Part of base R
+
+# Method 3: Using `dplyr` - Tidyverse Approach
+
+For those using the **tidyverse**, `dplyr` offers modern, readable approaches to row-wise operations .
+
+```{r message=FALSE}
+library(dplyr)
+
+# Method 3a: Using rowwise() and c_across()
+df <- df %>%
+  rowwise() %>%
+  mutate(max_tidy = max(c_across(A:D))) %>%
+  ungroup()
+
+# Method 3b: Using pmax within mutate
+df <- df %>%
+  mutate(max_pmax_tidy = pmax(A, B, C, D))
+
+print(df)
+```
+
+# Method 4: Using `matrixStats` - Best for Large Datasets
+
+For **large datasets**, the `matrixStats` package provides optimized functions that significantly outperform base R alternatives .
+
+```{r message=FALSE}
+library(matrixStats)
+
+# Convert to matrix and use rowMaxs
+df$max_matrixstats <- rowMaxs(as.matrix(df[1:4]))
+glimpse(df)
+```
+
+# Method Comparison Table
+
+| Method | Speed | Package Required | Best For | Syntax Complexity |
+|--------|--------|------------------|----------|-------------------|
+| `apply()` | Slow | Base R | General use | Medium |
+| `pmax()` | Fast | Base R | Few columns | Low |
+| `dplyr::rowwise()` | Slow | dplyr | Tidyverse workflows | High |
+| `matrixStats::rowMaxs()` | Very Fast | matrixStats | Large datasets | Medium |
+
+# Practical Examples
+
+## Example 1: Student Exam Scores
+
+```{r}
+# Student performance data
+exam_scores <- data.frame(
+  Student = c("Alice", "Bob", "Charlie", "Diana", "Eve"),
+  Math = c(85, 92, 78, 95, 88),
+  Science = c(90, 85, 82, 93, 91),
+  English = c(88, 89, 85, 97, 86),
+  History = c(82, 88, 90, 89, 94)
+)
+
+# Find highest score for each student
+exam_scores$Highest_Score <- apply(exam_scores[2:5], 1, max)
+print(exam_scores)
+```
+
+## Example 2: Stock Price Analysis
+
+```{r}
+# Quarterly stock prices with missing data
+stock_prices <- data.frame(
+  Stock = c("AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"),
+  Q1 = c(150.5, 2800.0, NA, 3200.0, 800.0),
+  Q2 = c(NA, 2750.0, 280.0, 3100.0, 750.0),
+  Q3 = c(145.0, NA, 285.0, 3250.0, 900.0),
+  Q4 = c(160.0, 2900.0, 290.0, NA, 850.0)
+)
+
+# Find maximum price per stock
+stock_prices$Max_Price <- apply(stock_prices[2:5], 1, max, na.rm = TRUE)
+
+# Find which quarter had the max price
+stock_prices$Best_Quarter <- apply(stock_prices[2:5], 1, function(x) {
+  names(x)[which.max(x)]
+})
+
+glimpse(stock_prices)
+```
+
+# Common Pitfalls and Solutions
+
+• **Forgetting `na.rm = TRUE`:** Returns `NA` if any value in row is missing
+  - **Solution:** Always use `na.rm = TRUE` when dealing with missing data
+
+• **Wrong MARGIN parameter:** Using `MARGIN = 2` finds column max, not row max
+  - **Solution:** Remember `1` = rows, `2` = columns
+
+• **All-NA rows:** With `na.rm = TRUE`, returns `-Inf` instead of `NA`
+  - **Solution:** Use custom function to check for all-NA rows
+
+• **Character columns:** `max()` doesn't work on text data
+  - **Solution:** Select only numeric columns first
+
+# Your Turn!
+
+**Practice Exercise:**
+
+Create a data frame with sales data for different products across four months and find the best performing month for each product.
+
+```{r}
+# Your challenge data
+sales_data <- data.frame(
+  Product = c("Laptop", "Phone", "Tablet", "Watch"),
+  Jan = c(1200, 800, 600, 300),
+  Feb = c(1100, 850, 550, 350),
+  Mar = c(1300, 900, 700, 400),
+  Apr = c(1250, 820, 650, 380)
+)
+
+# TODO: Find the maximum sales for each product
+# TODO: Find which month had the highest sales for each product
+```
+
+<details><summary>Click here for Solution!</summary>
+
+```{r}
+# Solution 1: Find maximum sales
+sales_data$Best_Sales <- apply(sales_data[2:5], 1, max)
+
+# Solution 2: Find best month
+sales_data$Best_Month <- apply(sales_data[2:5], 1, function(x) {
+  names(x)[which.max(x)]
+})
+
+# Alternative using multiple methods
+sales_data$Max_pmax <- pmax(sales_data$Jan, sales_data$Feb, 
+                           sales_data$Mar, sales_data$Apr)
+
+print(sales_data)
+```
+
+</details>
+
+# Key Takeaways
+
+• **`apply(df, 1, max)`** is the most common and versatile method for finding row maximums
+• **Use `na.rm = TRUE`** when your data contains missing values
+• **`pmax()`** is faster for datasets with few columns
+• **`matrixStats::rowMaxs()`** provides the best performance for large datasets
+• **`dplyr::rowwise()`** integrates well with tidyverse workflows
+• **Always specify `MARGIN = 1`** in `apply()` for row-wise operations
+
+# Conclusion
+
+Finding the **max value in each row** in R can be accomplished through multiple approaches, each with specific advantages. The `apply()` function remains the gold standard for most users due to its simplicity and reliability. For performance-critical applications, consider `matrixStats::rowMaxs()`, while tidyverse users will appreciate `dplyr`'s readable syntax.
+
+Choose the method that best fits your workflow, data size, and coding style. With these techniques, you'll efficiently handle row-wise maximum calculations in any R project.
+
+**Ready to level up your R skills?** Try implementing these methods with your own datasets and see which approach works best for your specific use case!
+
+# References
+
+1. [How to Find the Max Value in Each Row in R](https://www.statology.org/r-max-value-in-each-row/)
+2. [Row-wise operations (dplyr documentation)](https://dplyr.tidyverse.org/articles/rowwise.html)
+3. [Apply Functions Over Array Margins (R Documentation)](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/apply)
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+![Row Max R](todays_post.png)
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
