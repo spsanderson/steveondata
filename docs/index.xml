@@ -10,7 +10,988 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.7.32</generator>
-<lastBuildDate>Wed, 17 Sep 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 22 Sep 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Find the Max Value in Each Row in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-09-22/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+
+<blockquote class="blockquote">
+<p><strong>Key Insight:</strong> Finding the maximum value in each row is a common data analysis task, in R it’s simple. The <code>apply()</code> function with <code>max()</code> is the most straightforward method, but several alternatives offer better performance or integration with modern R workflows.</p>
+</blockquote>
+<p>Finding the <strong>max value in each row</strong> is a useful operation in data analysis. Whether you’re analyzing exam scores, stock prices, or sensor measurements, knowing how to efficiently extract row-wise maximums can save you time and improve your data processing workflows. This guide covers four proven methods using <code>apply()</code>, <code>pmax()</code>, <code>dplyr</code>, and <code>matrixStats</code> packages.</p>
+<hr>
+<section id="understanding-row-wise-operations-in-r" class="level1">
+<h1>Understanding Row-Wise Operations in R</h1>
+<p>Row-wise operations in R work across the columns of each row, rather than down the columns. When we want the <strong>max value in each row</strong>, we’re looking for the highest value across all columns for every single row in our dataset.</p>
+<p><strong>Basic Concept:</strong></p>
+<ul>
+<li><strong>Column-wise:</strong> Operations down each column (like finding the mean of each column)</li>
+<li><strong>Row-wise:</strong> Operations across columns for each row (like finding the max of each row)</li>
+</ul>
+</section>
+<section id="method-1-using-apply---the-most-common-approach" class="level1">
+<h1>Method 1: Using <code>apply()</code> - The Most Common Approach</h1>
+<p>The <code>apply()</code> function is the <strong>most popular method</strong> for finding row maximums in R. It’s part of base R, so no additional packages are required.</p>
+<section id="basic-syntax" class="level2">
+<h2 class="anchored" data-anchor-id="basic-syntax">Basic Syntax</h2>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(X, MARGIN, FUN, ...)</span></code></pre></div>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>X</code>: Your data frame or matrix</li>
+<li><code>MARGIN</code>: Use <code>1</code> for rows, <code>2</code> for columns<br>
+</li>
+<li><code>FUN</code>: The function to apply (in our case, <code>max</code>)</li>
+<li><code>...</code>: Additional arguments (like <code>na.rm = TRUE</code>)</li>
+</ul>
+</section>
+<section id="simple-example" class="level2">
+<h2 class="anchored" data-anchor-id="simple-example">Simple Example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create sample data</span></span>
+<span id="cb2-2">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb2-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">A =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>),</span>
+<span id="cb2-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">B =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb2-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">C =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb2-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">D =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>)</span>
+<span id="cb2-7">)</span>
+<span id="cb2-8"></span>
+<span id="cb2-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Find max in each row</span></span>
+<span id="cb2-10">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>max_value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(df, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, max)</span>
+<span id="cb2-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  A B C D max_value
+1 1 2 3 5         5
+2 4 5 6 2         6
+3 7 8 9 1         9
+4 2 6 4 8         8
+5 9 3 1 7         9</code></pre>
+</div>
+</div>
+</section>
+<section id="handling-missing-values" class="level2">
+<h2 class="anchored" data-anchor-id="handling-missing-values">Handling Missing Values</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Data with missing values</span></span>
+<span id="cb4-2">df_na <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb4-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">A =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>),</span>
+<span id="cb4-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">B =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">C =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>),</span>
+<span id="cb4-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">D =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>)</span>
+<span id="cb4-7">)</span>
+<span id="cb4-8"></span>
+<span id="cb4-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Use na.rm = TRUE to ignore missing values</span></span>
+<span id="cb4-10">df_na<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>max_value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(df_na, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, max, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb4-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_na)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   A  B  C D max_value
+1  1  2  3 5         5
+2  4 NA  6 2         6
+3 NA  8  9 1         9
+4  2  6 NA 8         8
+5  9  3  1 7         9</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="method-2-using-pmax---fastest-for-few-columns" class="level1">
+<h1>Method 2: Using <code>pmax()</code> - Fastest for Few Columns</h1>
+<p>The <code>pmax()</code> function computes <strong>parallel maximums</strong>, making it excellent for datasets with a small number of columns .</p>
+<section id="basic-usage" class="level2">
+<h2 class="anchored" data-anchor-id="basic-usage">Basic Usage</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using pmax for the same data</span></span>
+<span id="cb6-2">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>max_pmax <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>A, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>B, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>C, df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>D)</span>
+<span id="cb6-3"></span>
+<span id="cb6-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Alternative with do.call</span></span>
+<span id="cb6-5">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>max_pmax2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">do.call</span>(pmax, df[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>])</span>
+<span id="cb6-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  A B C D max_value max_pmax max_pmax2
+1 1 2 3 5         5        5         5
+2 4 5 6 2         6        6         6
+3 7 8 9 1         9        9         9
+4 2 6 4 8         8        8         8
+5 9 3 1 7         9        9         9</code></pre>
+</div>
+</div>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li>Very fast for datasets with few columns</li>
+<li>Works well with missing values using <code>na.rm = TRUE</code></li>
+<li>Part of base R</li>
+</ul>
+</section>
+</section>
+<section id="method-3-using-dplyr---tidyverse-approach" class="level1">
+<h1>Method 3: Using <code>dplyr</code> - Tidyverse Approach</h1>
+<p>For those using the <strong>tidyverse</strong>, <code>dplyr</code> offers modern, readable approaches to row-wise operations .</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb8-2"></span>
+<span id="cb8-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Method 3a: Using rowwise() and c_across()</span></span>
+<span id="cb8-4">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb8-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rowwise</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb8-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">max_tidy =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c_across</span>(A<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>D))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb8-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ungroup</span>()</span>
+<span id="cb8-8"></span>
+<span id="cb8-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Method 3b: Using pmax within mutate</span></span>
+<span id="cb8-10">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb8-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">max_pmax_tidy =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(A, B, C, D))</span>
+<span id="cb8-12"></span>
+<span id="cb8-13"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 9
+      A     B     C     D max_value max_pmax max_pmax2 max_tidy max_pmax_tidy
+  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;         &lt;dbl&gt;
+1     1     2     3     5         5        5         5        5             5
+2     4     5     6     2         6        6         6        6             6
+3     7     8     9     1         9        9         9        9             9
+4     2     6     4     8         8        8         8        8             8
+5     9     3     1     7         9        9         9        9             9</code></pre>
+</div>
+</div>
+</section>
+<section id="method-4-using-matrixstats---best-for-large-datasets" class="level1">
+<h1>Method 4: Using <code>matrixStats</code> - Best for Large Datasets</h1>
+<p>For <strong>large datasets</strong>, the <code>matrixStats</code> package provides optimized functions that significantly outperform base R alternatives .</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(matrixStats)</span>
+<span id="cb10-2"></span>
+<span id="cb10-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to matrix and use rowMaxs</span></span>
+<span id="cb10-4">df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>max_matrixstats <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rowMaxs</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(df[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>]))</span>
+<span id="cb10-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>(df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 5
+Columns: 10
+$ A               &lt;dbl&gt; 1, 4, 7, 2, 9
+$ B               &lt;dbl&gt; 2, 5, 8, 6, 3
+$ C               &lt;dbl&gt; 3, 6, 9, 4, 1
+$ D               &lt;dbl&gt; 5, 2, 1, 8, 7
+$ max_value       &lt;dbl&gt; 5, 6, 9, 8, 9
+$ max_pmax        &lt;dbl&gt; 5, 6, 9, 8, 9
+$ max_pmax2       &lt;dbl&gt; 5, 6, 9, 8, 9
+$ max_tidy        &lt;dbl&gt; 5, 6, 9, 8, 9
+$ max_pmax_tidy   &lt;dbl&gt; 5, 6, 9, 8, 9
+$ max_matrixstats &lt;dbl&gt; 5, 6, 9, 8, 9</code></pre>
+</div>
+</div>
+</section>
+<section id="method-comparison-table" class="level1">
+<h1>Method Comparison Table</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 21%">
+<col style="width: 18%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Speed</th>
+<th>Package Required</th>
+<th>Best For</th>
+<th>Syntax Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>apply()</code></td>
+<td>Slow</td>
+<td>Base R</td>
+<td>General use</td>
+<td>Medium</td>
+</tr>
+<tr class="even">
+<td><code>pmax()</code></td>
+<td>Fast</td>
+<td>Base R</td>
+<td>Few columns</td>
+<td>Low</td>
+</tr>
+<tr class="odd">
+<td><code>dplyr::rowwise()</code></td>
+<td>Slow</td>
+<td>dplyr</td>
+<td>Tidyverse workflows</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td><code>matrixStats::rowMaxs()</code></td>
+<td>Very Fast</td>
+<td>matrixStats</td>
+<td>Large datasets</td>
+<td>Medium</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="practical-examples" class="level1">
+<h1>Practical Examples</h1>
+<section id="example-1-student-exam-scores" class="level2">
+<h2 class="anchored" data-anchor-id="example-1-student-exam-scores">Example 1: Student Exam Scores</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Student performance data</span></span>
+<span id="cb12-2">exam_scores <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb12-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Student =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Alice"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Bob"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Charlie"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Diana"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Eve"</span>),</span>
+<span id="cb12-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Math =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">92</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">78</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">95</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">88</span>),</span>
+<span id="cb12-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Science =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">82</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">93</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">91</span>),</span>
+<span id="cb12-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">English =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">88</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">89</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">85</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">97</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">86</span>),</span>
+<span id="cb12-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">History =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">82</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">88</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">89</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">94</span>)</span>
+<span id="cb12-8">)</span>
+<span id="cb12-9"></span>
+<span id="cb12-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Find highest score for each student</span></span>
+<span id="cb12-11">exam_scores<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Highest_Score <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(exam_scores[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, max)</span>
+<span id="cb12-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(exam_scores)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Student Math Science English History Highest_Score
+1   Alice   85      90      88      82            90
+2     Bob   92      85      89      88            92
+3 Charlie   78      82      85      90            90
+4   Diana   95      93      97      89            97
+5     Eve   88      91      86      94            94</code></pre>
+</div>
+</div>
+</section>
+<section id="example-2-stock-price-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="example-2-stock-price-analysis">Example 2: Stock Price Analysis</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Quarterly stock prices with missing data</span></span>
+<span id="cb14-2">stock_prices <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb14-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Stock =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AAPL"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"GOOGL"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"MSFT"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AMZN"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"TSLA"</span>),</span>
+<span id="cb14-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Q1 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">150.5</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2800.0</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3200.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">800.0</span>),</span>
+<span id="cb14-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Q2 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2750.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">280.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3100.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">750.0</span>),</span>
+<span id="cb14-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Q3 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">145.0</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">285.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3250.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">900.0</span>),</span>
+<span id="cb14-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Q4 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">160.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2900.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">290.0</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">850.0</span>)</span>
+<span id="cb14-8">)</span>
+<span id="cb14-9"></span>
+<span id="cb14-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Find maximum price per stock</span></span>
+<span id="cb14-11">stock_prices<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Max_Price <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(stock_prices[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, max, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb14-12"></span>
+<span id="cb14-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Find which quarter had the max price</span></span>
+<span id="cb14-14">stock_prices<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Best_Quarter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(stock_prices[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x) {</span>
+<span id="cb14-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(x)[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">which.max</span>(x)]</span>
+<span id="cb14-16">})</span>
+<span id="cb14-17"></span>
+<span id="cb14-18"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glimpse</span>(stock_prices)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 5
+Columns: 7
+$ Stock        &lt;chr&gt; "AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"
+$ Q1           &lt;dbl&gt; 150.5, 2800.0, NA, 3200.0, 800.0
+$ Q2           &lt;dbl&gt; NA, 2750, 280, 3100, 750
+$ Q3           &lt;dbl&gt; 145, NA, 285, 3250, 900
+$ Q4           &lt;dbl&gt; 160, 2900, 290, NA, 850
+$ Max_Price    &lt;dbl&gt; 160, 2900, 290, 3250, 900
+$ Best_Quarter &lt;chr&gt; "Q4", "Q4", "Q4", "Q3", "Q3"</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="common-pitfalls-and-solutions" class="level1">
+<h1>Common Pitfalls and Solutions</h1>
+<p>• <strong>Forgetting <code>na.rm = TRUE</code>:</strong> Returns <code>NA</code> if any value in row is missing - <strong>Solution:</strong> Always use <code>na.rm = TRUE</code> when dealing with missing data</p>
+<p>• <strong>Wrong MARGIN parameter:</strong> Using <code>MARGIN = 2</code> finds column max, not row max - <strong>Solution:</strong> Remember <code>1</code> = rows, <code>2</code> = columns</p>
+<p>• <strong>All-NA rows:</strong> With <code>na.rm = TRUE</code>, returns <code>-Inf</code> instead of <code>NA</code> - <strong>Solution:</strong> Use custom function to check for all-NA rows</p>
+<p>• <strong>Character columns:</strong> <code>max()</code> doesn’t work on text data - <strong>Solution:</strong> Select only numeric columns first</p>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p><strong>Practice Exercise:</strong></p>
+<p>Create a data frame with sales data for different products across four months and find the best performing month for each product.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your challenge data</span></span>
+<span id="cb16-2">sales_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb16-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Product =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Laptop"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Phone"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Tablet"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Watch"</span>),</span>
+<span id="cb16-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Jan =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1200</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">800</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">600</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">300</span>),</span>
+<span id="cb16-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Feb =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">850</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">550</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">350</span>),</span>
+<span id="cb16-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Mar =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1300</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">900</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">700</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">400</span>),</span>
+<span id="cb16-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Apr =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1250</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">820</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">650</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">380</span>)</span>
+<span id="cb16-8">)</span>
+<span id="cb16-9"></span>
+<span id="cb16-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># </span><span class="al" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">TODO</span><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">: Find the maximum sales for each product</span></span>
+<span id="cb16-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># </span><span class="al" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">TODO</span><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">: Find which month had the highest sales for each product</span></span></code></pre></div>
+</div>
+<details>
+<summary>
+Click here for Solution!
+</summary>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Solution 1: Find maximum sales</span></span>
+<span id="cb17-2">sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Best_Sales <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(sales_data[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, max)</span>
+<span id="cb17-3"></span>
+<span id="cb17-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Solution 2: Find best month</span></span>
+<span id="cb17-5">sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Best_Month <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(sales_data[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x) {</span>
+<span id="cb17-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(x)[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">which.max</span>(x)]</span>
+<span id="cb17-7">})</span>
+<span id="cb17-8"></span>
+<span id="cb17-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Alternative using multiple methods</span></span>
+<span id="cb17-10">sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Max_pmax <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Jan, sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Feb, </span>
+<span id="cb17-11">                           sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Mar, sales_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Apr)</span>
+<span id="cb17-12"></span>
+<span id="cb17-13"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(sales_data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Product  Jan  Feb  Mar  Apr Best_Sales Best_Month Max_pmax
+1  Laptop 1200 1100 1300 1250       1300        Mar     1300
+2   Phone  800  850  900  820        900        Mar      900
+3  Tablet  600  550  700  650        700        Mar      700
+4   Watch  300  350  400  380        400        Mar      400</code></pre>
+</div>
+</div>
+</details>
+</section>
+<section id="key-takeaways" class="level1">
+<h1>Key Takeaways</h1>
+<p>• <strong><code>apply(df, 1, max)</code></strong> is the most common and versatile method for finding row maximums • <strong>Use <code>na.rm = TRUE</code></strong> when your data contains missing values • <strong><code>pmax()</code></strong> is faster for datasets with few columns • <strong><code>matrixStats::rowMaxs()</code></strong> provides the best performance for large datasets • <strong><code>dplyr::rowwise()</code></strong> integrates well with tidyverse workflows • <strong>Always specify <code>MARGIN = 1</code></strong> in <code>apply()</code> for row-wise operations</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Finding the <strong>max value in each row</strong> in R can be accomplished through multiple approaches, each with specific advantages. The <code>apply()</code> function remains the gold standard for most users due to its simplicity and reliability. For performance-critical applications, consider <code>matrixStats::rowMaxs()</code>, while tidyverse users will appreciate <code>dplyr</code>’s readable syntax.</p>
+<p>Choose the method that best fits your workflow, data size, and coding style. With these techniques, you’ll efficiently handle row-wise maximum calculations in any R project.</p>
+<p><strong>Ready to level up your R skills?</strong> Try implementing these methods with your own datasets and see which approach works best for your specific use case!</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li><a href="https://www.statology.org/r-max-value-in-each-row/">How to Find the Max Value in Each Row in R</a></li>
+<li><a href="https://dplyr.tidyverse.org/articles/rowwise.html">Row-wise operations (dplyr documentation)</a></li>
+<li><a href="https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/apply">Apply Functions Over Array Margins (R Documentation)</a></li>
+</ol>
+<hr>
+<p>Happy Coding! 🚀</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2025-09-22/todays_post.png" class="img-fluid figure-img"></p>
+<figcaption>Row Max R</figcaption>
+</figure>
+</div>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-09-22/</guid>
+  <pubDate>Mon, 22 Sep 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Working with Google Sheets in Python: A Beginner’s Guide to EZSheets</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -23634,1446 +24615,6 @@ font-style: inherit;"># text[0:3] gives "Pyt", not "Pyth"!</span></span></code><
   <category>python</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-06-25/</guid>
   <pubDate>Wed, 25 Jun 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Mastering Normal Distributions in R: A Comprehensive Guide to rnorm(), TidyDensity, and Statistical Analysis</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-06-23/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<blockquote class="blockquote">
-<p>This guide covers normal distribution generation in R using the base <code>rnorm()</code> function and the TidyDensity package’s specialized functions. You’ll learn each function’s syntax, parameters, and practical applications with code examples and visualizations.</p>
-</blockquote>
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Normal distributions are among the most commonly used probability distributions in statistical programming. R offers several methods to generate, analyze, and visualize normal distributions, from the base <code>rnorm()</code> function to specialized tools in the TidyDensity package. This guide walks through these functions with practical examples to help you incorporate normal distributions in your R workflows.</p>
-</section>
-<section id="base-r-using-rnorm-function" class="level1">
-<h1>Base R: Using <code>rnorm()</code> Function</h1>
-<p>The <code>rnorm()</code> function is R’s built-in method for generating random numbers from a normal distribution. It’s part of base R and requires no additional packages.</p>
-<section id="syntax-and-parameters" class="level2">
-<h2 class="anchored" data-anchor-id="syntax-and-parameters">Syntax and Parameters</h2>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>Description</th>
-<th>Default</th>
-<th>Required</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>n</code></td>
-<td>Number of observations</td>
-<td>None</td>
-<td>Yes</td>
-</tr>
-<tr class="even">
-<td><code>mean</code></td>
-<td>Mean of the distribution</td>
-<td>0</td>
-<td>No</td>
-</tr>
-<tr class="odd">
-<td><code>sd</code></td>
-<td>Standard deviation</td>
-<td>1</td>
-<td>No</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="basic-examples" class="level2">
-<h2 class="anchored" data-anchor-id="basic-examples">Basic Examples</h2>
-<p>Generate 10 random values from a standard normal distribution (mean=0, sd=1):</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Standard normal distribution</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] -0.6034933  0.0570314 -1.4114139 -1.4458639  0.1759349  1.3702679
- [7]  0.7680125  0.5288952 -0.9041921  0.2244687</code></pre>
-</div>
-</div>
-<p>Generate values from a normal distribution with specified parameters:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Normal distribution with mean=100, sd=15</span></span>
-<span id="cb4-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 104.58449 100.48635  83.55449 109.67438  96.21077</code></pre>
-</div>
-</div>
-</section>
-<section id="visualizing-normal-distributions" class="level2">
-<h2 class="anchored" data-anchor-id="visualizing-normal-distributions">Visualizing Normal Distributions</h2>
-<p>Here’s how to generate and visualize two normal distributions with different parameters:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate and plot standard normal distribution</span></span>
-<span id="cb6-2">std_normal <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>))</span>
-<span id="cb6-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(std_normal<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Standard Normal Distribution"</span>,</span>
-<span id="cb6-4">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">border=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span>)</span>
-<span id="cb6-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">density</span>(std_normal<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/rnorm_3-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate and plot normal with mean=100, sd=15</span></span>
-<span id="cb7-2">custom_normal <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>))</span>
-<span id="cb7-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(custom_normal<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Normal Distribution (mean=100, sd=15)"</span>,</span>
-<span id="cb7-4">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">border=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span>)</span>
-<span id="cb7-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">density</span>(custom_normal<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>value), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/rnorm_3-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="tidydensity-package-enhanced-normal-distribution-tools" class="level1">
-<h1>TidyDensity Package: Enhanced Normal Distribution Tools</h1>
-<p>The TidyDensity package extends R’s capabilities with functions that generate tidy data structures for normal distributions and provide additional utility functions for analysis.</p>
-<section id="using-tidy_normal-function" class="level2">
-<h2 class="anchored" data-anchor-id="using-tidy_normal-function">Using <code>tidy_normal()</code> Function</h2>
-<p>The <code>tidy_normal()</code> function generates random samples from a normal distribution and returns them in a tidy tibble format with additional information .</p>
-<section id="syntax-and-parameters-1" class="level3">
-<h3 class="anchored" data-anchor-id="syntax-and-parameters-1">Syntax and Parameters</h3>
-<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.num_sims =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.return_tibble =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span></code></pre></div>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>.n</code></td>
-<td>Number of random points</td>
-<td>50</td>
-</tr>
-<tr class="even">
-<td><code>.mean</code></td>
-<td>Mean of the distribution</td>
-<td>0</td>
-</tr>
-<tr class="odd">
-<td><code>.sd</code></td>
-<td>Standard deviation</td>
-<td>1</td>
-</tr>
-<tr class="even">
-<td><code>.num_sims</code></td>
-<td>Number of simulation runs</td>
-<td>1</td>
-</tr>
-<tr class="odd">
-<td><code>.return_tibble</code></td>
-<td>Return as tibble?</td>
-<td>TRUE</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="example-output" class="level3">
-<h3 class="anchored" data-anchor-id="example-output">Example Output</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(TidyDensity)</span>
-<span id="cb9-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 50 × 7
-   sim_number     x       y    dx       dy      p       q
-   &lt;fct&gt;      &lt;int&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
- 1 1              1 -1.26   -3.36 0.000390 0.104  -1.26  
- 2 1              2  0.559  -3.22 0.00106  0.712   0.559 
- 3 1              3 -1.63   -3.08 0.00260  0.0514 -1.63  
- 4 1              4  1.67   -2.94 0.00574  0.953   1.67  
- 5 1              5  1.12   -2.80 0.0115   0.869   1.12  
- 6 1              6 -0.0232 -2.67 0.0207   0.491  -0.0232
- 7 1              7 -0.0430 -2.53 0.0342   0.483  -0.0430
- 8 1              8  1.28   -2.39 0.0517   0.900   1.28  
- 9 1              9 -1.67   -2.25 0.0724   0.0472 -1.67  
-10 1             10  0.217  -2.12 0.0949   0.586   0.217 
-# ℹ 40 more rows</code></pre>
-</div>
-</div>
-<p>Here’s a visualization of data generated using <code>tidy_normal()</code>:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate and visualize normal distribution data</span></span>
-<span id="cb11-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb11-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_autoplot</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/tidy_normal-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="understanding-the-output-columns" class="level2">
-<h2 class="anchored" data-anchor-id="understanding-the-output-columns">Understanding the Output Columns</h2>
-<p>The tibble returned by tidy_normal() includes:</p>
-<ul>
-<li><code>sim_number</code>: Simulation identifier</li>
-<li><code>x</code>: Index of the generated point</li>
-<li><code>y</code>: The randomly generated value</li>
-<li><code>dx</code>, <code>dy</code>: Density values from <code>stats::density()</code></li>
-<li><code>p</code>: Cumulative probability (<code>pnorm</code>)</li>
-<li><code>q</code>: Quantile value (<code>qnorm</code>)</li>
-</ul>
-<p>This structure provides a comprehensive dataset for analysis and visualization in a single function call.</p>
-</section>
-<section id="parameter-estimation-with-util_normal_param_estimate" class="level2">
-<h2 class="anchored" data-anchor-id="parameter-estimation-with-util_normal_param_estimate">Parameter Estimation with <code>util_normal_param_estimate()</code></h2>
-<p>The <code>util_normal_param_estimate()</code> function estimates normal distribution parameters from a numeric vector of data .</p>
-<section id="syntax-and-parameters-2" class="level3">
-<h3 class="anchored" data-anchor-id="syntax-and-parameters-2">Syntax and Parameters</h3>
-<div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_param_estimate</span>(.x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.auto_gen_empirical =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span></code></pre></div>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>.x</code></td>
-<td>Numeric vector</td>
-<td>Required</td>
-</tr>
-<tr class="even">
-<td><code>.auto_gen_empirical</code></td>
-<td>Generate empirical data comparison?</td>
-<td>TRUE</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="example-usage" class="level3">
-<h3 class="anchored" data-anchor-id="example-usage">Example Usage</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Estimate parameters from mtcars mpg data</span></span>
-<span id="cb13-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> mtcars<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>mpg</span>
-<span id="cb13-3">output <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_param_estimate</span>(x)</span>
-<span id="cb13-4">output<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>parameter_tbl</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 8
-  dist_type samp_size   min   max method              mu stan_dev shape_ratio
-  &lt;chr&gt;         &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;            &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
-1 Gaussian         32  10.4  33.9 EnvStats_MME_MLE  20.1     5.93        3.39
-2 Gaussian         32  10.4  33.9 EnvStats_MVUE     20.1     6.03        3.33</code></pre>
-</div>
-</div>
-<p>The function provides parameter estimates using two methods: - <strong>MLE (Maximum Likelihood Estimation)/MME (Method of Moments Estimation)</strong>: Returns the sample mean and standard deviation - <strong>MVUE (Minimum Variance Unbiased Estimation)</strong>: Returns unbiased estimates for the parameters</p>
-</section>
-</section>
-<section id="distribution-statistics-with-util_normal_stats_tbl" class="level2">
-<h2 class="anchored" data-anchor-id="distribution-statistics-with-util_normal_stats_tbl">Distribution Statistics with <code>util_normal_stats_tbl()</code></h2>
-<p>The <code>util_normal_stats_tbl()</code> function computes a comprehensive set of distribution statistics from a tidy normal distribution tibble .</p>
-<section id="example-usage-1" class="level3">
-<h3 class="anchored" data-anchor-id="example-usage-1">Example Usage</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb15-2"></span>
-<span id="cb15-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb15-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_stats_tbl</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb15-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 1
-Columns: 17
-$ tidy_function     &lt;chr&gt; "tidy_gaussian"
-$ function_call     &lt;chr&gt; "Gaussian c(0, 1)"
-$ distribution      &lt;chr&gt; "Gaussian"
-$ distribution_type &lt;chr&gt; "continuous"
-$ points            &lt;dbl&gt; 50
-$ simulations       &lt;dbl&gt; 1
-$ mean              &lt;dbl&gt; 0
-$ median            &lt;dbl&gt; -0.2635105
-$ mode              &lt;dbl&gt; 0
-$ std_dv            &lt;dbl&gt; 1
-$ coeff_var         &lt;dbl&gt; Inf
-$ skewness          &lt;dbl&gt; 0
-$ kurtosis          &lt;dbl&gt; 3
-$ computed_std_skew &lt;dbl&gt; -0.03932958
-$ computed_std_kurt &lt;dbl&gt; 2.638299
-$ ci_lo             &lt;dbl&gt; -2.012057
-$ ci_hi             &lt;dbl&gt; 1.693464</code></pre>
-</div>
-</div>
-<p>The returned tibble includes a wealth of statistics:</p>
-<ul>
-<li>Basic measures: mean, median, mode</li>
-<li>Dispersion measures: standard deviation, coefficient of variation</li>
-<li>Shape measures: skewness, kurtosis</li>
-<li>Confidence intervals</li>
-</ul>
-</section>
-</section>
-<section id="model-selection-with-util_normal_aic" class="level2">
-<h2 class="anchored" data-anchor-id="model-selection-with-util_normal_aic">Model Selection with <code>util_normal_aic()</code></h2>
-<p>The <code>util_normal_aic()</code> function estimates normal distribution parameters from data and calculates the Akaike Information Criterion (AIC) .</p>
-<section id="syntax" class="level3">
-<h3 class="anchored" data-anchor-id="syntax">Syntax</h3>
-<div class="sourceCode" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_aic</span>(.x)</span></code></pre></div>
-</section>
-<section id="example-usage-2" class="level3">
-<h3 class="anchored" data-anchor-id="example-usage-2">Example Usage</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate AIC for normal fit to mpg data</span></span>
-<span id="cb18-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_aic</span>(mtcars<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>mpg)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 208.7555</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Returns the AIC value as a scalar</span></span></code></pre></div>
-</div>
-<p>The AIC value helps in model selection when comparing multiple distribution fits to the same data. Lower AIC values indicate better model fit.</p>
-</section>
-</section>
-</section>
-<section id="practical-applications-of-normal-distributions-in-r" class="level1">
-<h1>Practical Applications of Normal Distributions in R</h1>
-<section id="random-data-generation-and-simulation" class="level2">
-<h2 class="anchored" data-anchor-id="random-data-generation-and-simulation">1. Random Data Generation and Simulation</h2>
-<p>Normal distributions are frequently used in simulation studies to generate synthetic data. For example, to simulate experimental results:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Simulate 1000 experimental measurements with instrument error</span></span>
-<span id="cb21-2">true_value <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span></span>
-<span id="cb21-3">measurement_error <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2.5</span></span>
-<span id="cb21-4">measurements <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span>true_value, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span>measurement_error)</span>
-<span id="cb21-5"></span>
-<span id="cb21-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate summary statistics</span></span>
-<span id="cb21-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(measurements)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 100.0614</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sd</span>(measurements)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2.523131</code></pre>
-</div>
-</div>
-</section>
-<section id="statistical-inference-and-hypothesis-testing" class="level2">
-<h2 class="anchored" data-anchor-id="statistical-inference-and-hypothesis-testing">2. Statistical Inference and Hypothesis Testing</h2>
-<p>Many statistical tests assume normality of the data. You can use <code>rnorm()</code> to simulate control and treatment groups:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Simulate control and treatment groups</span></span>
-<span id="cb25-2">control <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb25-3">treatment <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb25-4"></span>
-<span id="cb25-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Perform t-test</span></span>
-<span id="cb25-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">t.test</span>(control, treatment)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Welch Two Sample t-test
-
-data:  control and treatment
-t = -3.3845, df = 52.285, p-value = 0.001359
-alternative hypothesis: true difference in means is not equal to 0
-95 percent confidence interval:
- -2.6448455 -0.6761244
-sample estimates:
-mean of x mean of y 
- 10.16769  11.82818 </code></pre>
-</div>
-</div>
-</section>
-<section id="parameter-estimation" class="level2">
-<h2 class="anchored" data-anchor-id="parameter-estimation">3. Parameter Estimation</h2>
-<p>Estimating parameters of a normal distribution from observed data is a common task in statistical analysis. The <code>util_normal_param_estimate()</code> function provides convenient methods:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Estimate parameters from data</span></span>
-<span id="cb27-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)</span>
-<span id="cb27-3">data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb27-4">params <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_param_estimate</span>(data)</span>
-<span id="cb27-5">params<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>parameter_tbl <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb27-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">glimpse</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 2
-Columns: 8
-$ dist_type   &lt;chr&gt; "Gaussian", "Gaussian"
-$ samp_size   &lt;int&gt; 100, 100
-$ min         &lt;dbl&gt; -3.98618, -3.98618
-$ max         &lt;dbl&gt; 6.573291, 6.573291
-$ method      &lt;chr&gt; "EnvStats_MME_MLE", "EnvStats_MVUE"
-$ mu          &lt;dbl&gt; 2.06503, 2.06503
-$ stan_dev    &lt;dbl&gt; 2.072274, 2.082714
-$ shape_ratio &lt;dbl&gt; 0.9965041, 0.9915090</code></pre>
-</div>
-</div>
-</section>
-<section id="model-selection-and-goodness-of-fit" class="level2">
-<h2 class="anchored" data-anchor-id="model-selection-and-goodness-of-fit">4. Model Selection and Goodness-of-Fit</h2>
-<p>The <code>util_normal_aic()</code> function helps determine if a normal distribution is appropriate for your data:</p>
-<div class="sourceCode" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Compare AIC for different distributions</span></span>
-<span id="cb29-2">normal_aic <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_aic</span>(data)</span>
-<span id="cb29-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Compare with other distributions...</span></span></code></pre></div>
-</section>
-<section id="tidy-data-workflows" class="level2">
-<h2 class="anchored" data-anchor-id="tidy-data-workflows">5. Tidy Data Workflows</h2>
-<p>The TidyDensity package integrates well with the tidyverse, enabling seamless workflows:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)</span>
-<span id="cb30-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate normal data</span></span>
-<span id="cb30-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_normal</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.n=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">.sd=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb30-4">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Compute statistics</span></span>
-<span id="cb30-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">util_normal_stats_tbl</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb30-6">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Select key statistics</span></span>
-<span id="cb30-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">select</span>(mean, median, std_dv, ci_lo, ci_hi)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 5
-   mean median std_dv ci_lo ci_hi
-  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
-1     5   5.13    1.5  1.36  7.62</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="comparing-rnorm-and-tidy_normal" class="level1">
-<h1>Comparing rnorm() and tidy_normal()</h1>
-<p>When deciding which function to use for normal distribution generation, consider these differences:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Feature</th>
-<th><code>rnorm()</code></th>
-<th><code>tidy_normal()</code></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Output type</strong></td>
-<td>Numeric vector</td>
-<td>Tibble with multiple columns</td>
-</tr>
-<tr class="even">
-<td><strong>Additional info</strong></td>
-<td>None</td>
-<td>Density, probability, quantiles</td>
-</tr>
-<tr class="odd">
-<td><strong>Memory usage</strong></td>
-<td>Lower</td>
-<td>Higher (more data stored)</td>
-</tr>
-<tr class="even">
-<td><strong>Workflow integration</strong></td>
-<td>Base R</td>
-<td>Tidyverse-friendly</td>
-</tr>
-<tr class="odd">
-<td><strong>Performance</strong></td>
-<td>Fastest</td>
-<td>Slightly more overhead</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="advanced-applications" class="level1">
-<h1>Advanced Applications</h1>
-<section id="monte-carlo-simulation" class="level2">
-<h2 class="anchored" data-anchor-id="monte-carlo-simulation">Monte Carlo Simulation</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Estimate probability using Monte Carlo simulation</span></span>
-<span id="cb32-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb32-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tidy_mcmc_sampling</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$mcmc_data
-# A tibble: 4,000 × 3
-   sim_number name              value
-   &lt;fct&gt;      &lt;fct&gt;             &lt;dbl&gt;
- 1 1          .sample_mean     0.0732
- 2 1          .cum_stat_cmean  0.0732
- 3 2          .sample_mean     0.162 
- 4 2          .cum_stat_cmean  0.118 
- 5 3          .sample_mean     0.0961
- 6 3          .cum_stat_cmean  0.110 
- 7 4          .sample_mean     0.0711
- 8 4          .cum_stat_cmean  0.101 
- 9 5          .sample_mean    -0.0186
-10 5          .cum_stat_cmean  0.0768
-# ℹ 3,990 more rows
-
-$plt</code></pre>
-</div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="bootstrap-confidence-intervals" class="level2">
-<h2 class="anchored" data-anchor-id="bootstrap-confidence-intervals">Bootstrap Confidence Intervals</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Bootstrap confidence interval for mean</span></span>
-<span id="cb34-2">data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb34-3">boot_means <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">replicate</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)))</span>
-<span id="cb34-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">quantile</span>(boot_means, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.025</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.975</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 95% CI</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     2.5%     97.5% 
- 9.358964 10.645430 </code></pre>
-</div>
-</div>
-</section>
-<section id="probability-density-function-visualization" class="level2">
-<h2 class="anchored" data-anchor-id="probability-density-function-visualization">Probability Density Function Visualization</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate x-values</span></span>
-<span id="cb36-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">seq</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">length=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>)</span>
-<span id="cb36-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate density values</span></span>
-<span id="cb36-4">y <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x)</span>
-<span id="cb36-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot PDF</span></span>
-<span id="cb36-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, y, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, </span>
-<span id="cb36-7">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Standard Normal Probability Density Function"</span>, </span>
-<span id="cb36-8">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"z"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Density"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p>Try generating a mixture of two normal distributions in R:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate a mixture of two normal distributions</span></span>
-<span id="cb37-2">n <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span></span>
-<span id="cb37-3">mixture <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(n<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(n<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb37-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(mixture, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Mixture of Two Normal Distributions"</span>)</span>
-<span id="cb37-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">density</span>(mixture), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<details>
-<summary>
-See Solution
-</summary>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate a mixture of two normal distributions</span></span>
-<span id="cb38-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb38-3">n <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span></span>
-<span id="cb38-4">mixture <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(n<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(n<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb38-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(mixture, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Mixture of Two Normal Distributions"</span>)</span>
-<span id="cb38-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">density</span>(mixture), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb38-7"></span>
-<span id="cb38-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># You can also visualize the component distributions:</span></span>
-<span id="cb38-9">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">seq</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">9</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">length=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>)</span>
-<span id="cb38-10">y1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Scaling by 0.5 for mixture proportion</span></span>
-<span id="cb38-11">y2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span></span>
-<span id="cb38-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, y1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb38-13"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, y2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb38-14"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">legend</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"topright"</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Mixture"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Component 1"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Component 2"</span>), </span>
-<span id="cb38-15">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-</details>
-</section>
-<section id="key-takeaways" class="level1">
-<h1>Key Takeaways</h1>
-<ul>
-<li><code>rnorm()</code> is the fastest and simplest way to generate random normal values in base R</li>
-<li><code>tidy_normal()</code> creates enhanced tibbles with density, probability, and quantile information</li>
-<li><code>util_normal_param_estimate()</code> offers multiple methods to estimate distribution parameters from data</li>
-<li><code>util_normal_stats_tbl()</code> provides comprehensive statistics for normal distributions</li>
-<li><code>util_normal_aic()</code> helps with model selection through AIC calculation</li>
-<li>Performance differences between methods are minor for typical dataset sizes</li>
-<li>Each function serves different purposes in a statistical workflow, from data generation to analysis</li>
-</ul>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>The R programming language provides multiple approaches to generate and analyze normal distributions. Whether you prefer the simplicity of base R’s <code>rnorm()</code> or the comprehensive tibble output of TidyDensity’s <code>tidy_normal()</code> and utility functions, you can easily incorporate normal distributions in your statistical analysis workflows.</p>
-<p>For straightforward random number generation, <code>rnorm()</code> is fast and efficient. For more complex analyses requiring additional statistics and tidy data structures, the TidyDensity package’s functions offer integrated solutions that work well within modern R programming paradigms.</p>
-</section>
-<section id="faq" class="level1">
-<h1>FAQ</h1>
-<p><strong>Q: How do I generate the same random normal values every time?</strong><br>
-A: Use <code>set.seed()</code> before calling <code>rnorm()</code> or <code>tidy_normal()</code> to ensure reproducibility:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb39-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Will always produce the same 5 values</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] -0.56047565 -0.23017749  1.55870831  0.07050839  0.12928774</code></pre>
-</div>
-</div>
-<p><strong>Q: Can I generate multivariate normal distributions?</strong><br>
-A: Yes, use the <code>MASS::mvrnorm()</code> function from the MASS package:</p>
-<div class="cell" data-messge="false">
-<div class="sourceCode cell-code" id="cb41" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(MASS)</span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'MASS'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    select</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb44" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1">sigma <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb44-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mvrnorm</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mu=</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Sigma=</span>sigma) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">head</span>()</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>           [,1]         [,2]
-[1,]  1.5078037  1.462775985
-[2,]  0.7916174  0.006712909
-[3,] -0.2616042 -1.929546135
-[4,] -0.4047188 -0.784945279
-[5,] -0.8454529  0.073543717
-[6,]  1.3477594  0.772412452</code></pre>
-</div>
-</div>
-<p><strong>Q: How can I check if my data follows a normal distribution?</strong><br>
-A: Use the Shapiro-Wilk test or QQ plots:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb46" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">shapiro.test</span>(data)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Shapiro-Wilk normality test
-
-data:  data
-W = 0.98244, p-value = 0.8861</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb48" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">qqnorm</span>(data); <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">qqline</span>(data)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/index_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p><strong>Q: What’s the difference between MLE and MVUE parameter estimation?</strong><br>
-A: MLE uses maximum likelihood estimation while MVUE provides minimum variance unbiased estimates. For normal distributions, they primarily differ in how they calculate the standard deviation.</p>
-<p><strong>Q: How many data points should I generate for accurate simulations?</strong><br>
-A: It depends on your purpose, but typically 1,000+ points provide good distribution shape, while sensitive statistical tests might require 10,000+ samples for stability.</p>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li><p><a href="https://www.r-project.org/">R Project for Statistical Computing</a> - Official website for the R programming language.</p></li>
-<li><p><a href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Normal.html">Normal Distribution in R Documentation</a> - Official documentation for <code>rnorm()</code> and related normal distribution functions.</p></li>
-<li><p><a href="https://cran.r-project.org/manuals.html">R Manuals and Documentation</a> - Comprehensive list of all documentation for R functions and packages.</p></li>
-<li><p><a href="https://cran.r-project.org/web/packages/TidyDensity/index.html">TidyDensity Package on CRAN</a> - Official CRAN page with documentation and vignettes.</p></li>
-<li><p><a href="https://cran.r-project.org/web/packages/TidyDensity/TidyDensity.pdf">TidyDensity Reference Manual (PDF)</a> - Complete reference guide for all TidyDensity functions.</p></li>
-<li><p><a href="https://github.com/spsanderson/TidyDensity">TidyDensity GitHub Repository</a> - Source code and additional documentation.</p></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-23/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>R your data normal?</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-06-23/</guid>
-  <pubDate>Mon, 23 Jun 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
