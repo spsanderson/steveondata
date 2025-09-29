@@ -1,0 +1,353 @@
+---
+title: "Data Imputation and Scaling with healthyR.ai: A Guide for R Programmers"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-09-29"
+categories: [code, rtip]
+toc: TRUE
+description: ''
+keywords: [Programming]
+---
+
+> This guide covers some data preprocessing techniques using healthyR.ai, focusing on imputation and scaling functions with clear syntax examples and best practices.
+
+# Introduction
+
+Data preprocessing is a necessary step in any machine learning workflow. The healthyR.ai package offers user-friendly functions for imputation (filling missing values) and scaling (normalizing data) that integrate seamlessly with the tidymodels ecosystem in R. This guide explains the syntax and implementation of these functions in straightforward terms.
+
+# Data Imputation with hai_data_impute()
+
+Imputation replaces missing values in your dataset. The `hai_data_impute()` function supports multiple imputation methods through a consistent interface.
+
+## Basic Syntax
+
+```r
+hai_data_impute(
+  .recipe_object = NULL,
+  ...,
+  .type_of_imputation = "mean",
+  .seed_value = 123,
+  # Additional parameters based on method
+)
+```
+
+Key arguments:
+
+- `.recipe_object`: Recipe object containing your data
+- `...`: Variables to impute (using selector functions)
+- `.type_of_imputation`: Method for imputation
+- Method-specific parameters (e.g., `.neighbors` for KNN)
+
+## Supported Imputation Methods
+
+| Method    | Description                            | Best For                        | Key Parameters         |
+|-----------|----------------------------------------|---------------------------------|------------------------|
+| "mean"    | Replace with column mean               | Normal distributions            | `.mean_trim`           |
+| "median"  | Replace with column median             | Skewed data, outliers present   | None                   |
+| "mode"    | Replace with most frequent value       | Categorical variables           | None                   |
+| "knn"     | K-nearest neighbors imputation         | Complex relationships           | `.neighbors` (default: 5) |
+| "bagged"  | Bagged tree imputation                 | Non-linear patterns             | `.number_of_trees` (default: 25) |
+| "roll"    | Rolling window statistic               | Time series data                | `.roll_window`, `.roll_statistic` |
+
+## Example: Rolling Median Imputation
+
+```r
+library(healthyR.ai)
+library(recipes)
+library(dplyr)
+
+# Create recipe object
+rec_obj <- recipe(value ~ ., df_tbl)
+
+# Apply rolling median imputation
+imputed_data <- hai_data_impute(
+  .recipe_object = rec_obj,
+  value,
+  .type_of_imputation = "roll",
+  .roll_statistic = median
+)$impute_rec_obj %>%
+  get_juiced_data()
+```
+
+# Data Scaling with hai_data_scale()
+
+Scaling transforms variables to a common scale, which is important for many machine learning algorithms.
+
+## Basic Syntax
+
+```r
+hai_data_scale(
+  .recipe_object = NULL,
+  ...,
+  .type_of_scale = "center",
+  .range_min = 0,
+  .range_max = 1,
+  .scale_factor = 1
+)
+```
+
+Key arguments:
+
+- `.recipe_object`: Recipe object containing your data
+- `...`: Variables to scale (using selector functions)
+- `.type_of_scale`: Method for scaling
+- `.range_min`, `.range_max`: Range bounds (for "range" method)
+- `.scale_factor`: Scale by 1 or 2 standard deviations (for interpretability)
+
+## Supported Scaling Methods
+
+| Method      | Description                  | Formula            | Result Range              |
+|-------------|------------------------------|--------------------|-----------------------------|
+| "center"    | Subtract mean                | x - mean(x)        | Mean = 0, original variance |
+| "scale"     | Divide by standard deviation | x / sd(x)          | Standard deviation = 1     |
+| "normalize" | Scale to unit norm           | x / \|\|x\|\|      | Vector length = 1          |
+| "range"     | Min-max scaling              | (x-min)/(max-min)  | [range_min, range_max]     |
+
+## Example: Standardization
+
+```r
+library(healthyR.ai)
+library(recipes)
+library(dplyr)
+
+# Create recipe object
+rec_obj <- recipe(value ~ ., df_tbl)
+
+# Apply standardization (z-score)
+scaled_data <- hai_data_scale(
+  .recipe_object = rec_obj,
+  value,
+  .type_of_scale = "scale"
+)$scale_rec_obj %>%
+  get_juiced_data()
+```
+
+# Combining Imputation and Scaling
+
+A typical preprocessing workflow combines both steps:
+
+```r
+# Create recipe
+rec_obj <- recipe(target ~ ., data_df)
+
+# Step 1: Impute missing values
+imputed <- hai_data_impute(
+  .recipe_object = rec_obj,
+  all_numeric(),
+  .type_of_imputation = "median"
+)$impute_rec_obj
+
+# Step 2: Scale the imputed data
+final_data <- hai_data_scale(
+  .recipe_object = imputed,
+  all_numeric(),
+  .type_of_scale = "range"
+)$scale_rec_obj %>%
+  get_juiced_data()
+```
+
+# Exampls
+
+I think things work best when you can see an example in action.
+
+## Imputation
+
+```{r message=FALSE, warning=FALSE}
+library(healthyR.ai)
+library(recipes)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+
+n <- 10L
+l <- 5L
+lo <- n * l
+
+date_seq <- seq.Date(from = as.Date("2013-01-01"), length.out = lo, by = "month")
+date_seq
+val_seq <- replicate(n = l, c(runif(9), NA)) |> as.vector() |> as.double()
+val_seq
+
+data_tbl <- tibble(
+  date_col = date_seq,
+  value = val_seq
+)
+
+rec_obj <- recipe(value ~ date_col, data = data_tbl)
+rec_obj
+
+df_tbl <- tibble(
+  impute_type = c("bagged","knn","linear","mean","median","roll"),
+  rec_obj = list(rec_obj),
+  data = list(data_tbl)
+)
+df_tbl[1,][[3]][[1]]
+
+data_list <- df_tbl |>
+  group_split(impute_type)
+
+data_impute_list <- data_list |>
+  imap(
+    .f = function(obj, id){
+      imp_type = obj |> pull(impute_type)
+      rec_obj = obj |> pull(rec_obj) |> pluck(1)
+      data = obj[["data"]][[1]]
+      
+      imp_obj <- hai_data_impute(
+        .recipe_object = rec_obj,
+        value,
+        .type_of_imputation = imp_type,
+        .roll_statistic = median
+      )$impute_rec_obj
+
+      imputed_data <- get_juiced_data(imp_obj)
+
+      combined_tbl <- data |>
+        left_join(imputed_data, by = "date_col") |>
+        setNames(c("date_col", "original_value", "imputed_value")) |>
+        mutate(rec_no = row_number()) |>
+        mutate(color_col = original_value,
+              size_col = original_value) |>
+        mutate(impute_type = imp_type)
+      
+      return(combined_tbl)
+    }
+  )
+
+combined_tbl <- data_impute_list |>
+  list_rbind()
+
+imped_na_vals_tbl <- combined_tbl |>
+  filter(is.na(original_value)) |>
+  summarize(
+        avg_imputed_val = mean(imputed_value),
+        .by = impute_type
+  )
+
+combined_tbl |>
+  summarize(
+        avg_imputed_val_col = mean(imputed_value),
+        avg_original_val_col = mean(original_value, na.rm = TRUE),
+        .by = impute_type
+  ) |>
+mutate(imputation_diff = avg_imputed_val_col - avg_original_val_col) |>
+left_join(imped_na_vals_tbl, by = "impute_type")
+
+ggplot(data = combined_tbl,
+  aes(
+    x = date_col,
+    y = imputed_value,
+    color = color_col
+    )
+  ) + 
+  facet_wrap(~ impute_type) +
+  geom_point(data = combined_tbl |> filter(is.na(original_value)), aes(shape = 'NA', size = 3)) +
+  scale_shape_manual(values = c('NA' = 3)) +
+  geom_line(aes(x = date_col, y = original_value), color = "black") +
+  geom_line(aes(x = date_col, y = imputed_value), color = "red", linetype = "dashed", alpha = .328) +
+  geom_vline(
+    data = combined_tbl[combined_tbl$original_value |> is.na(), ], 
+    aes(xintercept = date_col), color = "black", linetype = "dashed"
+  ) +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Original vs. Imputed Data using HealthyR.ai",
+    subtitle = "Function: hai_data_impute()",
+    caption = "Red line is the imputed data, blue line is the original data"
+  ) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+combined_tbl |>
+  filter(is.na(original_value)) |>
+  ggplot(aes(x = impute_type, y = imputed_value, color = impute_type, group = impute_type)) +
+  geom_boxplot() +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Original vs. Imputed Data using HealthyR.ai",
+    subtitle = "Function: hai_data_impute()"
+  ) +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+# Choosing the Right Method
+
+For imputation:
+
+- **Continuous normal data**: Use "mean"
+- **Skewed data or outliers**: Use "median"
+- **Categorical data**: Use "mode"
+- **Time series**: Use "roll" with appropriate window
+- **Complex relationships**: Try "knn" or "bagged"
+
+For scaling:
+
+- **Linear regression**: Use "center" or "scale"
+- **Distance-based algorithms** (KNN, SVM): Use "scale"
+- **Neural networks**: Use "range" [0,1] or "normalize"
+
+# Best Practices
+
+- Always load required libraries: `healthyR.ai`, `recipes`, `dplyr`
+- Create recipe object first: `recipe(target ~ ., data = df)`
+- Set `.seed_value` for reproducible results with stochastic methods
+- Extract processed data with `get_juiced_data()` function
+- Verify results with `summary()` after processing
+- Choose imputation method based on data characteristics and missingness pattern
+
+# Key Takeaways
+
+- healthyR.ai provides user-friendly wrappers around recipes functions for data preprocessing
+- Both imputation and scaling require a recipe object
+- Functions return a list containing the processed recipe object
+- Choose methods based on your data type and the requirements of your modeling approach
+- Chain operations (imputation → scaling → modeling) for a complete workflow
+
+The goal of these healthyR.ai functions is to simplify data preprocessing with a consistent syntax and integration with the tidymodels ecosystem, making it an excellent choice for streamlining your machine learning pipeline.
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
