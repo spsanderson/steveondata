@@ -10,7 +10,957 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.7.32</generator>
-<lastBuildDate>Wed, 01 Oct 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 06 Oct 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Select Row with Max Value in Specific Column in R</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-10-06/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+
+<blockquote class="blockquote">
+<p><strong>Key Takeaway:</strong> R offers some powerful methods to select rows with maximum values: Base R (simple, no dependencies), dplyr (readable, tidyverse-friendly), and data.table (fast performance). Each has distinct advantages for different scenarios.</p>
+</blockquote>
+<p>Finding rows with maximum values in a specific column is a common operation in data analysis. You could be trying to identify top performers, peak measurements, or maximum scores, R provides multiple efficient approaches. This guide compares <strong>Base R</strong>, <strong>dplyr</strong>, and <strong>data.table</strong> methods with performance insights and practical examples.</p>
+<hr>
+<section id="sample-data-setup" class="level1">
+<h1>Sample Data Setup</h1>
+<p>Let’s start with a sample dataset to demonstrate each method:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sample data</span></span>
+<span id="cb1-2">data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ID =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>),</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>),</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"B"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"B"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C"</span>)</span>
+<span id="cb1-6">)</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(data)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+1  1    10     A
+2  2    25     A
+3  3    15     B
+4  4    25     B
+5  5    20     C</code></pre>
+</div>
+</div>
+</section>
+<section id="base-r-methods" class="level1">
+<h1>Base R Methods</h1>
+<section id="first-row-with-max-value" class="level2">
+<h2 class="anchored" data-anchor-id="first-row-with-max-value">First Row with Max Value</h2>
+<p>Use <code>which.max()</code> to get the index of the first maximum value:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Returns first occurrence only</span></span>
+<span id="cb3-2">data[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">which.max</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Value), ]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+2  2    25     A</code></pre>
+</div>
+</div>
+<p><strong>Result:</strong> Row 2 (ID=2, Value=25)</p>
+</section>
+<section id="all-rows-with-max-value-handling-ties" class="level2">
+<h2 class="anchored" data-anchor-id="all-rows-with-max-value-handling-ties">All Rows with Max Value (Handling Ties)</h2>
+<p>Use logical subsetting to capture all maximum values:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Returns all rows with max value</span></span>
+<span id="cb5-2">data[data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Value), ]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+2  2    25     A
+4  4    25     B</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="dplyr-methods" class="level1">
+<h1>dplyr Methods</h1>
+<p>The <strong>dplyr</strong> package offers <code>slice_max()</code> for intuitive max row selection .</p>
+<section id="first-max-row" class="level2">
+<h2 class="anchored" data-anchor-id="first-max-row">First Max Row</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># First max row only</span></span>
+<span id="cb7-4">data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">slice_max</span>(Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">with_ties =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+1  2    25     A</code></pre>
+</div>
+</div>
+</section>
+<section id="all-max-rows-including-ties" class="level2">
+<h2 class="anchored" data-anchor-id="all-max-rows-including-ties">All Max Rows (Including Ties)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># All rows with max value (default behavior)</span></span>
+<span id="cb9-2">data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">slice_max</span>(Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+1  2    25     A
+2  4    25     B</code></pre>
+</div>
+</div>
+</section>
+<section id="grouped-max-selection" class="level2">
+<h2 class="anchored" data-anchor-id="grouped-max-selection">Grouped Max Selection</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Max row per group</span></span>
+<span id="cb11-2">data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(Group) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">slice_max</span>(Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 3
+# Groups:   Group [3]
+     ID Value Group
+  &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;
+1     2    25 A    
+2     4    25 B    
+3     5    20 C    </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="data.table-methods" class="level1">
+<h1>data.table Methods</h1>
+<p><strong>data.table</strong> provides the fastest performance for large datasets .</p>
+<section id="setup-and-basic-selection" class="level2">
+<h2 class="anchored" data-anchor-id="setup-and-basic-selection">Setup and Basic Selection</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb13-2">dt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.table</span>(data)</span>
+<span id="cb13-3"></span>
+<span id="cb13-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># First max row</span></span>
+<span id="cb13-5">dt[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">which.max</span>(Value)]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      ID Value  Group
+   &lt;num&gt; &lt;num&gt; &lt;char&gt;
+1:     2    25      A</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># All max rows</span></span>
+<span id="cb15-2">dt[Value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(Value)]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      ID Value  Group
+   &lt;num&gt; &lt;num&gt; &lt;char&gt;
+1:     2    25      A
+2:     4    25      B</code></pre>
+</div>
+</div>
+</section>
+<section id="grouped-max-selection-1" class="level2">
+<h2 class="anchored" data-anchor-id="grouped-max-selection-1">Grouped Max Selection</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Max row per group (fastest method)</span></span>
+<span id="cb17-2">dt[, .SD[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">which.max</span>(Value)], by <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> Group]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Group    ID Value
+   &lt;char&gt; &lt;num&gt; &lt;num&gt;
+1:      A     2    25
+2:      B     4    25
+3:      C     5    20</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="performance-comparison-using-rbenchmark" class="level1">
+<h1>Performance Comparison Using rbenchmark</h1>
+<p>Row selection (filtering) is one of the most common data manipulation operations. Let’s compare the performance of Base R, dplyr, and data.table for filtering operations using the <code>rbenchmark</code> package .</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Install and load required packages</span></span>
+<span id="cb19-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rbenchmark)</span>
+<span id="cb19-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb19-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(dplyr)</span>
+<span id="cb19-5"></span>
+<span id="cb19-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create sample data</span></span>
+<span id="cb19-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb19-8">n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100000</span>L</span>
+<span id="cb19-9">dt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.table</span>(</span>
+<span id="cb19-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">id =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n,</span>
+<span id="cb19-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">category =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"B"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"C"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"D"</span>), n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb19-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>),</span>
+<span id="cb19-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">flag =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>), n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb19-14">)</span>
+<span id="cb19-15"></span>
+<span id="cb19-16"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to data.frame for base R and dplyr</span></span>
+<span id="cb19-17">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>(dt)</span>
+<span id="cb19-18"></span>
+<span id="cb19-19"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Benchmark: Finding rows with maximum value</span></span>
+<span id="cb19-20">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">benchmark</span>(</span>
+<span id="cb19-21">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_R =</span> df[df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>value), ],</span>
+<span id="cb19-22">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data_table =</span> dt[value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(value)],</span>
+<span id="cb19-23">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dplyr =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(df, value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(value)),</span>
+<span id="cb19-24">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replications =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>,</span>
+<span id="cb19-25">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">columns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"test"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"replications"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"relative"</span>)</span>
+<span id="cb19-26">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb19-27">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arrange</span>(relative)</span>
+<span id="cb19-28"></span>
+<span id="cb19-29"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(result)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        test replications elapsed relative
+1     base_R         1000    1.72    1.000
+2      dplyr         1000    4.25    2.471
+3 data_table         1000    6.10    3.547</code></pre>
+</div>
+</div>
+</section>
+<section id="handling-edge-cases" class="level1">
+<h1>Handling Edge Cases</h1>
+<section id="missing-values-na" class="level2">
+<h2 class="anchored" data-anchor-id="missing-values-na">Missing Values (NA)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Base R: Remove NAs</span></span>
+<span id="cb21-2">data[data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), ]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+2  2    25     A
+4  4    25     B</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># dplyr: Filter NAs first</span></span>
+<span id="cb23-2">data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">filter</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(Value)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">slice_max</span>(Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  ID Value Group
+1  2    25     A
+2  4    25     B</code></pre>
+</div>
+</div>
+</section>
+<section id="all-values-are-na" class="level2">
+<h2 class="anchored" data-anchor-id="all-values-are-na">All Values are NA</h2>
+<p>Always include error handling for edge cases where no maximum can be determined.</p>
+</section>
+</section>
+<section id="method-selection-guide" class="level1">
+<h1>Method Selection Guide</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 50%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Recommended Method</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Small data (&lt;1K rows)</strong></td>
+<td>Any method</td>
+<td>Performance differences minimal</td>
+</tr>
+<tr class="even">
+<td><strong>Medium data (1K-10K)</strong></td>
+<td>Base R or data.table</td>
+<td>Good performance balance</td>
+</tr>
+<tr class="odd">
+<td><strong>Large data (&gt;10K rows)</strong></td>
+<td><strong>data.table</strong></td>
+<td>Best performance scaling</td>
+</tr>
+<tr class="even">
+<td><strong>Readability priority</strong></td>
+<td>dplyr</td>
+<td>Clear, expressive syntax</td>
+</tr>
+<tr class="odd">
+<td><strong>No dependencies</strong></td>
+<td>Base R</td>
+<td>Built-in functionality</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p>Now it’s your turn to experiment with <code>rbenchmark</code> and deepen your understanding of R performance optimization!</p>
+<section id="exercise-1-string-operations-benchmark" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-1-string-operations-benchmark">Exercise 1: String Operations Benchmark</h2>
+<p>Compare the performance of different string matching methods:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(stringr)</span>
+<span id="cb25-2"></span>
+<span id="cb25-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create test data</span></span>
+<span id="cb25-4">text_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb25-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">id =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50000</span>,</span>
+<span id="cb25-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">text =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"apple"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"banana"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cherry"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elderberry"</span>), </span>
+<span id="cb25-7">                <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50000</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb25-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">stringsAsFactors =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span></span>
+<span id="cb25-9">)</span>
+<span id="cb25-10"></span>
+<span id="cb25-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your task: Benchmark these approaches for finding rows containing "app"</span></span>
+<span id="cb25-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">benchmark</span>(</span>
+<span id="cb25-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_R =</span> text_data[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"app"</span>, text_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>text), ],</span>
+<span id="cb25-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_R_fixed =</span> text_data[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grepl</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"app"</span>, text_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>text, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fixed =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), ],</span>
+<span id="cb25-15">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">stringr =</span> text_data[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_detect</span>(text_data<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>text, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"app"</span>), ],</span>
+<span id="cb25-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replications =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>,</span>
+<span id="cb25-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">columns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"test"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"relative"</span>)</span>
+<span id="cb25-18">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb25-19">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arrange</span>(relative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          test elapsed relative
+1 base_R_fixed    0.26    1.000
+2       base_R    0.95    3.654
+3      stringr    1.30    5.000</code></pre>
+</div>
+</div>
+<p><strong>Question</strong>: Which method is fastest? Why might <code>fixed = TRUE</code> make a difference?</p>
+</section>
+<section id="exercise-2-aggregation-benchmark" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-2-aggregation-benchmark">Exercise 2: Aggregation Benchmark</h2>
+<p>Compare grouping and summarization methods:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create grouping data</span></span>
+<span id="cb27-2">group_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb27-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(LETTERS[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>], <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10000</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb27-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10000</span>)</span>
+<span id="cb27-5">)</span>
+<span id="cb27-6">dt_group <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.table</span>(group_data)</span>
+<span id="cb27-7"></span>
+<span id="cb27-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your task: Benchmark mean calculation by group</span></span>
+<span id="cb27-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">benchmark</span>(</span>
+<span id="cb27-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_R =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aggregate</span>(value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> group_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">FUN =</span> mean),</span>
+<span id="cb27-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data_table =</span> dt_group[, .(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean_value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(value)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> group],</span>
+<span id="cb27-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dplyr =</span> group_data <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(group) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mean_value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(value)),</span>
+<span id="cb27-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replications =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>,</span>
+<span id="cb27-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">columns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"test"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"relative"</span>)</span>
+<span id="cb27-15">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb27-16">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arrange</span>(relative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        test elapsed relative
+1 data_table    0.23    1.000
+2      dplyr    0.67    2.913
+3     base_R    1.23    5.348</code></pre>
+</div>
+</div>
+<p><strong>Challenge</strong>: Try with different aggregation functions (median, sd, length). Do the relative performance patterns change?</p>
+</section>
+<section id="exercise-3-memory-efficiency-test" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-3-memory-efficiency-test">Exercise 3: Memory Efficiency Test</h2>
+<p>Investigate memory usage alongside timing:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Your task: Compare memory efficiency</span></span>
+<span id="cb29-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(pryr)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for object_size()</span></span>
+<span id="cb29-3"></span>
+<span id="cb29-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create copies for fair comparison</span></span>
+<span id="cb29-5">df_copy <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df</span>
+<span id="cb29-6">dt_copy <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">copy</span>(dt)</span>
+<span id="cb29-7"></span>
+<span id="cb29-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Time and measure memory for column addition</span></span>
+<span id="cb29-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>({</span>
+<span id="cb29-10">  df_result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">transform</span>(df_copy, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">new_col =</span> value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb29-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Base R result size:"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">object_size</span>(df_result), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb29-12">})</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Base R result size: 3201456 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+   0.02    0.00    0.03 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>({</span>
+<span id="cb32-2">  dt_copy[, new_col <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">=</span> value <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]</span>
+<span id="cb32-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data.table result size:"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">object_size</span>(dt_copy), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb32-4">})</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>data.table result size: 3602088 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+      0       0       0 </code></pre>
+</div>
+</div>
+<p><strong>Question</strong>: Which approach uses less memory? Why might this matter for large datasets?</p>
+</section>
+<section id="exercise-4-your-own-max-value-challenge" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-4-your-own-max-value-challenge">Exercise 4: Your Own Max Value Challenge</h2>
+<p>Apply what you’ve learned to your own dataset:</p>
+<ol type="1">
+<li><strong>Load your data</strong> (or create a sample with <code>rnorm()</code> and <code>sample()</code>)</li>
+<li><strong>Identify the column</strong> you want to find maximum values for</li>
+<li><strong>Test all three methods</strong> (Base R, dplyr, data.table) for finding max rows</li>
+<li><strong>Benchmark the performance</strong> using <code>rbenchmark</code> with at least 50 replications</li>
+<li><strong>Analyze the results</strong>: Which method works best for your specific use case?</li>
+</ol>
+<p><strong>Bonus Challenge</strong>: Try grouped maximum operations if your data has natural grouping variables!</p>
+</section>
+</section>
+<section id="quick-takeaways" class="level1">
+<h1>Quick Takeaways</h1>
+<p>Some quick easy takeaways from this guide:</p>
+<p>• <strong>Base R</strong> <code>which.max()</code> and logical subsetting provide simple, dependency-free solutions • <strong>dplyr</strong> <code>slice_max()</code> offers the most readable syntax with excellent tie handling • <strong>data.table</strong> delivers superior performance, especially for large datasets and grouped operations • <strong>rbenchmark</strong> helps you make data-driven decisions about method selection • Always consider handling NA values and ties in real-world applications • Choose your method based on dataset size, performance requirements, and code readability preferences • Performance differences become more significant with larger datasets and complex operations</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Selecting rows with maximum values in R is straightforward with all three approaches. <strong>Base R methods</strong> work well for most scenarios without additional packages. <strong>dplyr</strong> excels when code readability matters most. <strong>data.table</strong> is your best choice for performance-critical applications with large datasets.</p>
+<p>The <code>rbenchmark</code> package provides valuable insights into actual performance differences, helping you make informed decisions about which method to use for your specific situation .</p>
+<p><strong>Your turn:</strong> Try implementing these methods with your own data and compare the performance differences. Start with the approach that best fits your current workflow and data size requirements, then optimize based on your benchmarking results!</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li><p><strong>Sanderson, S.</strong> (2024, December 10). How to Select Row with Max Value in Specific Column in R: A Complete Guide. <em>R-bloggers</em>. https://www.r-bloggers.com/2024/12/how-to-select-row-with-max-value-in-specific-column-in-r-a-complete-guide/</p></li>
+<li><p><strong>Statology.</strong> (n.d.). R: How to Select Row with Max Value in Specific Column. <em>Statology</em>. Retrieved October 6, 2025, from https://www.statology.org/r-select-row-with-max-value/</p></li>
+</ol>
+<hr>
+<p>Happy Coding! 🚀</p>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-10-06/</guid>
+  <pubDate>Mon, 06 Oct 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Working with CSV Files and JSON Data in Python</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -22044,1049 +22994,6 @@ font-style: inherit;">print</span>(students)</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-07-14/</guid>
   <pubDate>Mon, 14 Jul 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Pattern Matching with Regular Expressions in Python: A Beginner’s Guide</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-07-09/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<blockquote class="blockquote">
-<p><strong>Author’s Note:</strong> I’m learning about regular expressions alongside you as I write this series. While I’ve done my research and tested the examples, there might be mistakes or oversights. If you spot any errors or have suggestions for improvement, please let me know! We’re all learning together. 🌱</p>
-</blockquote>
-<section id="introduction" class="level1">
-<h1><strong>Introduction</strong></h1>
-<p>Ever wished you could find all phone numbers in a document with just one line of code? Or validate email addresses without writing dozens of if statements? That’s where <strong>regular expressions</strong> (regex) come in handy!</p>
-<p>Think of regex as a super-powered search tool. Instead of looking for exact text like “cat”, you can search for patterns like “any three letter word ending in ‘at’”. In Python, the <code>re</code> module gives you access to this powerful pattern-matching capability .</p>
-<p>In this guide, we’ll explore how to use <strong>Python regex</strong> to solve real world text processing problems. You’ll learn the basics, see practical examples, and even try your hand at writing your own patterns.</p>
-</section>
-<section id="what-are-regular-expressions" class="level1">
-<h1><strong>What Are Regular Expressions?</strong></h1>
-<p>Regular expressions are special text patterns that describe how to search for text. They’re like wildcards on steroids. While a simple search finds exact matches, regex can find patterns like:</p>
-<ul>
-<li>All words starting with “Python”</li>
-<li>Phone numbers in any format</li>
-<li>Email addresses</li>
-<li>Dates in MM/DD/YYYY format</li>
-</ul>
-<p>Here’s a simple example:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>exit</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> re</span>
-<span id="cb2-2"></span>
-<span id="cb2-3">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"My phone number is 415-555-1234"</span></span>
-<span id="cb2-4">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">-\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">-\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'</span></span>
-<span id="cb2-5">match <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.search(pattern, text)</span>
-<span id="cb2-6"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> match:</span>
-<span id="cb2-7">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Found: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>match<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>group()<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: Found: 415-555-1234</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Found: 415-555-1234</code></pre>
-</div>
-</div>
-<p>The pattern <code>\d{3}-\d{3}-\d{4}</code> means “three digits, dash, three digits, dash, four digits” .</p>
-</section>
-<section id="setting-up-the-re-module" class="level1">
-<h1><strong>Setting Up: The re Module</strong></h1>
-<p>Before using regex in Python, you need to import the <code>re</code> module:</p>
-<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> re</span></code></pre></div>
-<p>Python’s <code>re</code> module provides several functions for pattern matching :</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 41%">
-<col style="width: 58%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Function</th>
-<th>What It Does</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>re.search()</code></td>
-<td>Finds the first match anywhere in the string</td>
-</tr>
-<tr class="even">
-<td><code>re.match()</code></td>
-<td>Checks if the pattern matches at the start of the string</td>
-</tr>
-<tr class="odd">
-<td><code>re.findall()</code></td>
-<td>Returns all matches as a list</td>
-</tr>
-<tr class="even">
-<td><code>re.sub()</code></td>
-<td>Replaces matches with new text</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="basic-pattern-elements" class="level1">
-<h1><strong>Basic Pattern Elements</strong></h1>
-<p>Let’s start with the building blocks of regex patterns:</p>
-<section id="character-classes" class="level2">
-<h2 class="anchored" data-anchor-id="character-classes"><strong>Character Classes</strong></h2>
-<p>These are shortcuts for common character types:</p>
-<ul>
-<li><code>\d</code> - Any digit (0-9)</li>
-<li><code>\w</code> - Any word character (letters, digits, underscore)</li>
-<li><code>\s</code> - Any whitespace (space, tab, newline)</li>
-<li><code>.</code> - Any character except newline</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Finding all digits in a string</span></span>
-<span id="cb5-2">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"I have 2 cats and 3 dogs"</span></span>
-<span id="cb5-3">digits <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\d'</span>, text)</span>
-<span id="cb5-4"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(digits)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: ['2', '3']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['2', '3']</code></pre>
-</div>
-</div>
-</section>
-<section id="quantifiers" class="level2">
-<h2 class="anchored" data-anchor-id="quantifiers"><strong>Quantifiers</strong></h2>
-<p>These specify how many times a pattern should repeat:</p>
-<ul>
-<li><code>*</code> - Zero or more times</li>
-<li><code>+</code> - One or more times</li>
-<li><code>?</code> - Zero or one time</li>
-<li><code>{n}</code> - Exactly n times</li>
-<li><code>{n,m}</code> - Between n and m times</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Finding words with 3 or more letters</span></span>
-<span id="cb7-2">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"I am learning Python"</span></span>
-<span id="cb7-3">long_words <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\w{3,}'</span>, text)</span>
-<span id="cb7-4"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(long_words)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: ['learning', 'Python']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['learning', 'Python']</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="common-regex-patterns-for-beginners" class="level1">
-<h1><strong>Common Regex Patterns for Beginners</strong></h1>
-<section id="email-validation" class="level2">
-<h2 class="anchored" data-anchor-id="email-validation"><strong>1. Email Validation</strong></h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> is_valid_email(email):</span>
-<span id="cb9-2">    pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'</span></span>
-<span id="cb9-3">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> re.match(pattern, email) <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">is</span> <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">not</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">None</span></span>
-<span id="cb9-4"></span>
-<span id="cb9-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Test it</span></span>
-<span id="cb9-6"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(is_valid_email(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"user@example.com"</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># True</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>True</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(is_valid_email(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"invalid.email"</span>))     <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># False</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>False</code></pre>
-</div>
-</div>
-</section>
-<section id="phone-number-extraction" class="level2">
-<h2 class="anchored" data-anchor-id="phone-number-extraction"><strong>2. Phone Number Extraction</strong></h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Call me at 415-555-1234 or (555) 987-6543"</span></span>
-<span id="cb13-2">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'(\(?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\)?[-.\s]?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">[-.\s]?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)'</span></span>
-<span id="cb13-3">phones <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(pattern, text)</span>
-<span id="cb13-4"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(phones)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['415-555-1234', '(555) 987-6543']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['415-555-1234', '(555) 987-6543']</code></pre>
-</div>
-</div>
-</section>
-<section id="password-strength-check" class="level2">
-<h2 class="anchored" data-anchor-id="password-strength-check"><strong>3. Password Strength Check</strong></h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> check_password(password):</span>
-<span id="cb15-2">    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># At least 8 chars, one uppercase, one lowercase, one digit</span></span>
-<span id="cb15-3">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">len</span>(password) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>:</span>
-<span id="cb15-4">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb15-5">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">not</span> re.search(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'[A-Z]'</span>, password):</span>
-<span id="cb15-6">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb15-7">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">not</span> re.search(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'[a-z]'</span>, password):</span>
-<span id="cb15-8">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb15-9">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">not</span> re.search(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\d'</span>, password):</span>
-<span id="cb15-10">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb15-11">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">True</span></span>
-<span id="cb15-12"></span>
-<span id="cb15-13"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(check_password(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Pass123!"</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># True</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>True</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(check_password(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"weak"</span>))      <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># False</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>False</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="groups-extracting-parts-of-matches" class="level1">
-<h1><strong>Groups: Extracting Parts of Matches</strong></h1>
-<p>Groups let you extract specific parts of a match using parentheses:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Extract area code and number separately</span></span>
-<span id="cb19-2">phone <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"415-555-1234"</span></span>
-<span id="cb19-3">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'(\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)-(\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">-\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)'</span></span>
-<span id="cb19-4">match <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.search(pattern, phone)</span>
-<span id="cb19-5"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> match:</span>
-<span id="cb19-6">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Area code: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>match<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>group(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 415</span></span>
-<span id="cb19-7">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Number: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>match<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>group(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)     <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 555-1234</span></span>
-<span id="cb19-8">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Full match: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>match<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>group(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 415-555-1234</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Area code: 415
-Number: 555-1234
-Full match: 415-555-1234</code></pre>
-</div>
-</div>
-<blockquote class="blockquote">
-<p><strong>Remember:</strong> <code>group(0)</code> is the entire match, <code>group(1)</code> is the first set of parentheses, and so on .</p>
-</blockquote>
-</section>
-<section id="special-characters-and-escaping" class="level1">
-<h1><strong>Special Characters and Escaping</strong></h1>
-<p>Some characters have special meanings in regex. To match them literally, you need to escape them with a backslash:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Character</th>
-<th>Special Meaning</th>
-<th>To Match Literally</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>.</code></td>
-<td>Any character</td>
-<td><code>\.</code></td>
-</tr>
-<tr class="even">
-<td><code>*</code></td>
-<td>Zero or more</td>
-<td><code>\*</code></td>
-</tr>
-<tr class="odd">
-<td><code>+</code></td>
-<td>One or more</td>
-<td><code>\+</code></td>
-</tr>
-<tr class="even">
-<td><code>?</code></td>
-<td>Zero or one</td>
-<td><code>\?</code></td>
-</tr>
-<tr class="odd">
-<td><code>^</code></td>
-<td>Start of string</td>
-<td><code>\^</code></td>
-</tr>
-<tr class="even">
-<td><code>$</code></td>
-<td>End of string</td>
-<td><code>\$</code></td>
-</tr>
-</tbody>
-</table>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Matching a literal period</span></span>
-<span id="cb21-2">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"The price is $19.99"</span></span>
-<span id="cb21-3">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\$\d+\.\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{2}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'</span></span>
-<span id="cb21-4">match <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.search(pattern, text)</span>
-<span id="cb21-5"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(match.group())  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># $19.99</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$19.99</code></pre>
-</div>
-</div>
-</section>
-<section id="using-raw-strings-important" class="level1">
-<h1><strong>Using Raw Strings (Important!)</strong></h1>
-<p>Always use raw strings (prefix with <code>r</code>) for regex patterns :</p>
-<div class="sourceCode" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Good - raw string</span></span>
-<span id="cb23-2">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\d+'</span></span>
-<span id="cb23-3"></span>
-<span id="cb23-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Bad - regular string (backslash might be interpreted)</span></span>
-<span id="cb23-5">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'\d+'</span></span></code></pre></div>
-<p>Raw strings prevent Python from interpreting backslashes as escape characters.</p>
-</section>
-<section id="common-mistakes-to-avoid" class="level1">
-<h1><strong>Common Mistakes to Avoid</strong></h1>
-<section id="greedy-vs.-non-greedy-matching" class="level2">
-<h2 class="anchored" data-anchor-id="greedy-vs.-non-greedy-matching"><strong>1. Greedy vs.&nbsp;Non-Greedy Matching</strong></h2>
-<p>By default, quantifiers are “greedy” - they match as much as possible:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'&lt;b&gt;Bold&lt;/b&gt; and &lt;i&gt;Italic&lt;/i&gt;'</span></span>
-<span id="cb24-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Greedy - matches too much!</span></span>
-<span id="cb24-3">greedy <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'&lt;.*&gt;'</span>, text)</span>
-<span id="cb24-4"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(greedy)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['&lt;b&gt;Bold&lt;/b&gt; and &lt;i&gt;Italic&lt;/i&gt;']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['&lt;b&gt;Bold&lt;/b&gt; and &lt;i&gt;Italic&lt;/i&gt;']</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Non-greedy - add ? after quantifier</span></span>
-<span id="cb26-2">non_greedy <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'&lt;.*?&gt;'</span>, text)</span>
-<span id="cb26-3"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(non_greedy)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['&lt;b&gt;', '&lt;/b&gt;', '&lt;i&gt;', '&lt;/i&gt;']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['&lt;b&gt;', '&lt;/b&gt;', '&lt;i&gt;', '&lt;/i&gt;']</code></pre>
-</div>
-</div>
-</section>
-<section id="forgetting-anchors" class="level2">
-<h2 class="anchored" data-anchor-id="forgetting-anchors"><strong>2. Forgetting Anchors</strong></h2>
-<p>Use <code>^</code> and <code>$</code> to match the entire string:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Without anchors - matches partial string</span></span>
-<span id="cb28-2">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'</span></span>
-<span id="cb28-3"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(re.search(pattern, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"abc123def"</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Matches!</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;re.Match object; span=(3, 6), match='123'&gt;</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># With anchors - must be entire string</span></span>
-<span id="cb30-2">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'^\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$'</span></span>
-<span id="cb30-3"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(re.search(pattern, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"abc123def"</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># No match</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>None</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(re.search(pattern, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"123"</span>))        <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Matches!</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;re.Match object; span=(0, 3), match='123'&gt;</code></pre>
-</div>
-</div>
-</section>
-<section id="case-sensitivity" class="level2">
-<h2 class="anchored" data-anchor-id="case-sensitivity"><strong>3. Case Sensitivity</strong></h2>
-<p>Regex is case-sensitive by default. Use the <code>re.IGNORECASE</code> flag for case-insensitive matching :</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Python PYTHON python"</span></span>
-<span id="cb34-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Case-sensitive</span></span>
-<span id="cb34-3"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'python'</span>, text))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['python']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['python']</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Case-insensitive</span></span>
-<span id="cb36-2"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(re.findall(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'python'</span>, text, re.IGNORECASE))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['Python', 'PYTHON', 'python']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['Python', 'PYTHON', 'python']</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="your-turn" class="level1">
-<h1><strong>Your Turn!</strong></h1>
-<p>Here’s a practical exercise to test your new regex skills:</p>
-<p><strong>Challenge:</strong> Write a regex pattern to find all dates in the format MM/DD/YYYY in the following text:</p>
-<div class="sourceCode" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"""</span></span>
-<span id="cb38-2"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Important dates:</span></span>
-<span id="cb38-3"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Project starts on 01/15/2025</span></span>
-<span id="cb38-4"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- First deadline: 02/28/2025</span></span>
-<span id="cb38-5"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Final submission: 12/31/2025</span></span>
-<span id="cb38-6"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Invalid date: 13/45/2025</span></span>
-<span id="cb38-7"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"""</span></span>
-<span id="cb38-8"></span>
-<span id="cb38-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Write your pattern here</span></span>
-<span id="cb38-10">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'___'</span>  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fill in the blank!</span></span>
-<span id="cb38-11"></span>
-<span id="cb38-12">dates <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(pattern, text)</span>
-<span id="cb38-13"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(dates)</span></code></pre></div>
-<details>
-<summary>
-Click here for Solution!
-</summary>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1">text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"""</span></span>
-<span id="cb39-2"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Important dates:</span></span>
-<span id="cb39-3"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Project starts on 01/15/2025</span></span>
-<span id="cb39-4"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- First deadline: 02/28/2025</span></span>
-<span id="cb39-5"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Final submission: 12/31/2025</span></span>
-<span id="cb39-6"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">- Invalid date: 13/45/2025</span></span>
-<span id="cb39-7"><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"""</span></span>
-<span id="cb39-8"></span>
-<span id="cb39-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Solution</span></span>
-<span id="cb39-10">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\b(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\b'</span></span>
-<span id="cb39-11"></span>
-<span id="cb39-12">dates <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(pattern, text)</span>
-<span id="cb39-13"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(dates)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># [('01', '15'), ('02', '28'), ('12', '31')]</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[('01', '15'), ('02', '28'), ('12', '31')]</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb41" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># To get full dates as strings:</span></span>
-<span id="cb41-2">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])/\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\b'</span></span>
-<span id="cb41-3">dates <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(pattern, text)</span>
-<span id="cb41-4"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(dates)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># ['01/15/2025', '02/28/2025', '12/31/2025']</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>['01/15/2025', '02/28/2025', '12/31/2025']</code></pre>
-</div>
-</div>
-<p>The pattern breaks down as: - <code>\b</code> - Word boundary - <code>(?:0[1-9]|1[0-2])</code> - Month: 01-09 or 10-12 - <code>/</code> - Literal forward slash - <code>(?:0[1-9]|[12][0-9]|3[01])</code> - Day: 01-09, 10-29, or 30-31 - <code>/</code> - Another forward slash - <code>\d{4}</code> - Four-digit year - <code>\b</code> - Word boundary</p>
-<p>Note: This pattern doesn’t validate if dates are real (like February 30th).</p>
-</details>
-</section>
-<section id="quick-reference-guide" class="level1">
-<h1><strong>Quick Reference Guide</strong></h1>
-<section id="common-patterns" class="level2">
-<h2 class="anchored" data-anchor-id="common-patterns"><strong>Common Patterns</strong></h2>
-<div class="sourceCode" id="cb43" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Email</span></span>
-<span id="cb43-2">email_pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'</span></span>
-<span id="cb43-3"></span>
-<span id="cb43-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Phone (US format)</span></span>
-<span id="cb43-5">phone_pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'(\(?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\)?[-.\s]?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">[-.\s]?\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)'</span></span>
-<span id="cb43-6"></span>
-<span id="cb43-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># URL</span></span>
-<span id="cb43-8">url_pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'https?://(?:www\.)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&amp;\'\(\)\*\+,;=.]+'</span></span>
-<span id="cb43-9"></span>
-<span id="cb43-10"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Date (MM/DD/YYYY)</span></span>
-<span id="cb43-11">date_pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])/\d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\b'</span></span></code></pre></div>
-</section>
-<section id="most-used-functions" class="level2">
-<h2 class="anchored" data-anchor-id="most-used-functions"><strong>Most Used Functions</strong></h2>
-<div class="sourceCode" id="cb44" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Search for first match</span></span>
-<span id="cb44-2">match <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.search(pattern, text)</span>
-<span id="cb44-3"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> match:</span>
-<span id="cb44-4">    result <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> match.group()</span>
-<span id="cb44-5"></span>
-<span id="cb44-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Find all matches</span></span>
-<span id="cb44-7">matches <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.findall(pattern, text)</span>
-<span id="cb44-8"></span>
-<span id="cb44-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Replace matches</span></span>
-<span id="cb44-10">new_text <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.sub(pattern, replacement, text)</span>
-<span id="cb44-11"></span>
-<span id="cb44-12"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Split by pattern</span></span>
-<span id="cb44-13">parts <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.split(pattern, text)</span></code></pre></div>
-</section>
-</section>
-<section id="key-takeaways" class="level1">
-<h1><strong>Key Takeaways</strong></h1>
-<ul>
-<li><strong>Always use raw strings</strong> (r’pattern’) for regex patterns</li>
-<li><strong>Start simple</strong> - build complex patterns step by step</li>
-<li><strong>Test your patterns</strong> with online tools like regex101.com</li>
-<li><strong>Remember the difference</strong> between search(), match(), and findall()</li>
-<li><strong>Escape special characters</strong> when you want to match them literally</li>
-<li><strong>Use groups</strong> to extract parts of your matches</li>
-<li><strong>Be careful with greedy matching</strong> - add ? to make quantifiers non-greedy</li>
-</ul>
-</section>
-<section id="conclusion" class="level1">
-<h1><strong>Conclusion</strong></h1>
-<p>Regular expressions might seem intimidating at first, but they’re just patterns made up of simple building blocks. Start with basic patterns like <code>\d+</code> for numbers or <code>\w+</code> for words, then gradually combine them to solve more complex problems.</p>
-<p>The key is practice! Try modifying the examples in this guide, experiment with your own patterns, and don’t be afraid to make mistakes. Every Python programmer started exactly where myself and possibly you are now.</p>
-<p><strong>Ready to level up your text processing skills?</strong> Pick a real problem you’re facing, maybe cleaning up messy data or validating user input, and try solving it with regex. You’ll be surprised how much time it can save!</p>
-</section>
-<section id="frequently-asked-questions" class="level1">
-<h1><strong>Frequently Asked Questions</strong></h1>
-<p><strong>Q: When should I use regex instead of regular string methods?</strong> A: Use regex when you need pattern matching, not exact matching. For simple tasks like checking if a string starts with something, use <code>str.startswith()</code>. For complex patterns like “find all email addresses,” use regex.</p>
-<p><strong>Q: Why do my patterns sometimes not work?</strong> A: Common issues include forgetting to use raw strings, not escaping special characters, or using greedy matching when you need non-greedy. Test your patterns piece by piece to find the problem.</p>
-<p><strong>Q: Are Python regex patterns the same as in other languages?</strong> A: The basics are similar, but there are differences. Python uses Perl-compatible syntax with some variations. Always check Python-specific documentation .</p>
-<p><strong>Q: How can I make my regex patterns more readable?</strong> A: Use the <code>re.VERBOSE</code> flag to write patterns across multiple lines with comments :</p>
-<div class="sourceCode" id="cb45" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1">pattern <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> re.<span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">compile</span>(<span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">r'''</span></span>
-<span id="cb45-2"><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">    \d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{3}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">  # Area code</span></span>
-<span id="cb45-3"><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">    -      # Separator</span></span>
-<span id="cb45-4"><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">    \d</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{4}</span><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">  # Number</span></span>
-<span id="cb45-5"><span class="vs" style="color: #20794D;
-background-color: null;
-font-style: inherit;">'''</span>, re.VERBOSE)</span></code></pre></div>
-<p><strong>Q: Is there a performance impact with complex regex?</strong> A: Yes, poorly written patterns can be slow. The <code>re</code> module caches the last 512 compiled patterns for efficiency. For frequently used patterns, compile them once and reuse.</p>
-</section>
-<section id="share-your-experience" class="level1">
-<h1><strong>Share Your Experience!</strong></h1>
-<p>Found this guide helpful? Have questions or suggestions? I’d love to hear from you! Drop a comment below or share this article with fellow Python learners. Remember, we’re all learning together, and your feedback helps make these guides better for everyone.</p>
-<p>Follow me for more beginner-friendly Python tutorials, and don’t forget to bookmark this page for quick reference!</p>
-</section>
-<section id="references" class="level1">
-<h1><strong>References</strong></h1>
-<ol type="1">
-<li><p><a href="https://docs.python.org/3/library/re.html">Python Software Foundation. “re — Regular expression operations.” Python Documentation.</a></p></li>
-<li><p><a href="https://docs.python.org/3/howto/regex.html">Python Software Foundation. “Regular Expression HOWTO.” Python Documentation.</a></p></li>
-<li><p><a href="https://realpython.com/regex-python/">Real Python. “Regular Expressions: Regexes in Python.”</a></p></li>
-<li><p><a href="https://automatetheboringstuff.com/2e/chapter7/">Sweigart, Al. “Automate the Boring Stuff with Python.” Chapter 7: Pattern Matching with Regular Expressions.</a></p></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-09/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>Regex in Python</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>python</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-07-09/</guid>
-  <pubDate>Wed, 09 Jul 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
