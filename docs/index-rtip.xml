@@ -10,7 +10,589 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.7.32</generator>
-<lastBuildDate>Mon, 06 Oct 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 20 Oct 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>How to Master Data Cleaning in R: Three Methods for Removing Empty Rows</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-10-20/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>For every <strong>R programmer</strong>, data wrangling is a daily task, and few things are more frustrating than incomplete, “empty” rows silently contaminating your analysis. While “empty” can mean a row entirely composed of missing values (<strong>NAs</strong>), it more often refers to a row containing <em>at least one</em> missing value.</p>
+<p>Efficiently identifying and purging these incomplete records is crucial for maintaining data integrity. Fortunately, R offers powerful, flexible tools in both <strong>Base R</strong> and the popular <strong>Tidyverse</strong> ecosystem to handle this.</p>
+<p>In this guide, we’ll go into three core methods; two rooted in Base R and one modern <strong><code>dplyr</code></strong> solution. We’ll put all three techniques to the test using the <strong><code>rbenchmark</code></strong> package to settle the debate on speed and efficiency.</p>
+</section>
+<section id="the-base-r-standard-using-complete.cases" class="level1">
+<h1>The Base R Standard: Using <code>complete.cases()</code></h1>
+<p>The most common and often the fastest way to remove rows containing <em>any</em> <code>NA</code> is by leveraging the built-in Base R function, <strong><code>complete.cases()</code></strong>. This method is the workhorse of R data cleaning, offering a balance of speed and simplicity.</p>
+<section id="deep-dive-into-complete.cases" class="level2">
+<h2 class="anchored" data-anchor-id="deep-dive-into-complete.cases">Deep Dive into <code>complete.cases()</code></h2>
+<p>The <code>complete.cases()</code> function returns a logical vector (<code>TRUE</code> or <code>FALSE</code>) for each row in a data frame. <strong><code>TRUE</code></strong> indicates the row contains <strong>no missing values</strong>, and <strong><code>FALSE</code></strong> means it contains <strong>at least one <code>NA</code></strong>.</p>
+<p>When used inside the subsetting brackets <code>[ ]</code>, it acts as a powerful filter, keeping only the rows where the result is <code>TRUE</code>.</p>
+<p><strong>Example Code:</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 1. Setup Sample Data</span></span>
+<span id="cb1-2">df_test <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">40</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>),</span>
+<span id="cb1-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">80</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>),</span>
+<span id="cb1-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">z =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb1-6">)</span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Original Data Frame:"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Original Data Frame:"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_test)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   x  y  z
+1 10 NA  6
+2 20 50  7
+3 NA NA NA
+4 40 80  9
+5 NA 90 10</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 2. Method 1: Remove rows with NA in at least one column</span></span>
+<span id="cb5-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># The comma at the end applies the filter to the rows (before the comma is the row index)</span></span>
+<span id="cb5-3">df_cleaned_cc <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df_test[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">complete.cases</span>(df_test), ]</span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cleaned using complete.cases():"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Cleaned using complete.cases():"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_cleaned_cc)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   x  y z
+2 20 50 7
+4 40 80 9</code></pre>
+</div>
+</div>
+<p>In this example, <code>complete.cases(df_test)</code> returns <code>FALSE</code> for any row that is not fully populated, effectively removing both the row where only column <code>x</code> is missing and the row where all columns are missing.</p>
+</section>
+</section>
+<section id="addressing-truly-empty-rows-with-rowsums" class="level1">
+<h1>Addressing Truly Empty Rows with <code>rowSums()</code></h1>
+<p>While <strong><code>complete.cases()</code></strong> is great for removing <em>incomplete</em> records, sometimes you only want to remove rows that are <em>entirely</em> empty (i.e., every cell in that row is <code>NA</code>). This requires a slightly different approach using <strong><code>rowSums()</code></strong> and <strong><code>is.na()</code></strong>.</p>
+<p>This method works by:</p>
+<ol type="1">
+<li><strong><code>is.na(df)</code>:</strong> Converts the data frame into a matrix of logical values (<code>TRUE</code> where there’s an <code>NA</code>).</li>
+<li><strong><code>rowSums(...)</code>:</strong> Sums the <code>TRUE</code> values (which are treated as 1s) across each row, counting the total number of NAs per row.</li>
+<li><strong><code>!= ncol(df)</code>:</strong> Filters the rows where the sum of NAs is <em>not equal</em> to the total number of columns. If the row sum of NAs <em>equals</em> the number of columns, the row is 100% empty and is removed.</li>
+</ol>
+<p><strong>Example Code:</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Setup data frame where row 3 is fully NA</span></span>
+<span id="cb9-2">df_truly_empty <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb9-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">40</span>),</span>
+<span id="cb9-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">60</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">80</span>),</span>
+<span id="cb9-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">z =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>)</span>
+<span id="cb9-6">)</span>
+<span id="cb9-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Original Data Frame:"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Original Data Frame:"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_truly_empty)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   x  y  z
+1 10 50  1
+2 NA 60  2
+3 NA NA NA
+4 40 80  4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Method 2: Remove rows where all columns are NA</span></span>
+<span id="cb13-2">df_cleaned_rs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df_truly_empty[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rowSums</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(df_truly_empty)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(df_truly_empty), ]</span>
+<span id="cb13-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cleaned using rowSums():"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Cleaned using rowSums():"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_cleaned_rs)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   x  y z
+1 10 50 1
+2 NA 60 2
+4 40 80 4</code></pre>
+</div>
+</div>
+<p>Notice how row 3 is removed, but row 2 (which had only one <code>NA</code>) is retained.</p>
+</section>
+<section id="the-tidyverse-approach-dplyrdrop_na" class="level1">
+<h1>The Tidyverse Approach: <code>dplyr::drop_na()</code></h1>
+<p>For those who prefer the readable, pipe-friendly syntax of the <strong>Tidyverse</strong>, the <strong><code>tidyr</code></strong> package offers the concise <strong><code>drop_na()</code></strong> function. This method achieves the same result as <code>complete.cases()</code>—removing all rows with <em>at least one</em> missing value.</p>
+<p>The primary advantage here is <strong>readability</strong>; the intent is immediately clear, especially when chaining multiple data operations.</p>
+<p><strong>Example Code:</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Ensure dplyr is loaded</span></span>
+<span id="cb17-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyr)</span>
+<span id="cb17-3"></span>
+<span id="cb17-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Method 3: Remove rows with NA using dplyr</span></span>
+<span id="cb17-5">df_cleaned_tidyr <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> df_test <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb17-6">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">drop_na</span>()</span>
+<span id="cb17-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cleaned using tidyr::drop_na():"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Cleaned using tidyr::drop_na():"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(df_cleaned_tidyr)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   x  y z
+1 20 50 7
+2 40 80 9</code></pre>
+</div>
+</div>
+</section>
+<section id="performance-matters-benchmarking-removal-methods" class="level1">
+<h1>Performance Matters: Benchmarking Removal Methods</h1>
+<p>As R programmers, we care about more than just syntax—we care about efficiency. While <code>tidyr</code> is often favored for readability, Base R methods can sometimes offer a performance edge on very large datasets.</p>
+<p>We use the <strong><code>rbenchmark</code></strong> package to compare the two common methods for removing incomplete rows: Base R <code>complete.cases()</code> and the <code>tidyr::drop_na()</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rbenchmark)</span>
+<span id="cb21-2"></span>
+<span id="cb21-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Create a large test data frame (10,000 rows)</span></span>
+<span id="cb21-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb21-5">big_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.data.frame</span>(</span>
+<span id="cb21-6">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">matrix</span>(</span>
+<span id="cb21-7">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10000</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prob =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>), <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.05</span>)),</span>
+<span id="cb21-8">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span></span>
+<span id="cb21-9">    )</span>
+<span id="cb21-10">)</span>
+<span id="cb21-11"></span>
+<span id="cb21-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Benchmark the two common methods</span></span>
+<span id="cb21-13">benchmark_results <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">benchmark</span>(</span>
+<span id="cb21-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">BaseR_Complete =</span> big_df[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">complete.cases</span>(big_df), ],</span>
+<span id="cb21-15">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tidyr_DropNa =</span> big_df <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">drop_na</span>(),</span>
+<span id="cb21-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replications =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>,</span>
+<span id="cb21-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">columns =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"test"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"replications"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"relative"</span>)</span>
+<span id="cb21-18">)</span>
+<span id="cb21-19"></span>
+<span id="cb21-20"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(benchmark_results[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">order</span>(benchmark_results<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>relative), ])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            test replications elapsed relative
+2   tidyr_DropNa         1000    0.44    1.000
+1 BaseR_Complete         1000    1.66    3.773</code></pre>
+</div>
+</div>
+<p>The benchmarking results consistently show that the <strong>Base R <code>complete.cases()</code> method is slower</strong> than <code>tidyr::drop_na()</code> when executing the same operation on large data frames. For most day-to-day tasks, this difference is negligible, even though there is a large speedup but for massive datasets or functions running millions of times, tidyr retains a slight performance advantage.</p>
+</section>
+<section id="your-turn" class="level1">
+<h1>Your Turn!</h1>
+<p>Imagine you have a data frame of customer survey responses. You want to remove only those rows where <em>both</em> the <code>Satisfaction</code> and <code>Usage</code> columns are missing, allowing rows with <code>NA</code> in only one of them to remain.</p>
+<p><strong>Your Task:</strong> Write the Base R code to remove rows where <code>Satisfaction</code> and <code>Usage</code> are <em>both</em> <code>NA</code> from the data frame <code>survey_df</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">survey_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb23-2">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Customer =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>,</span>
+<span id="cb23-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Satisfaction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>),</span>
+<span id="cb23-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Usage =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>)</span>
+<span id="cb23-5">)</span></code></pre></div>
+</div>
+<details>
+<summary>
+See Solution!
+</summary>
+<p>The key is to use <code>is.na()</code> on the specific columns and combine the logical vectors with the <strong>AND</strong> operator (<code>&amp;</code>):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Logical vector where both are NA</span></span>
+<span id="cb24-2">is_double_na <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(survey_df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Satisfaction) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(survey_df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Usage)</span>
+<span id="cb24-3"></span>
+<span id="cb24-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Filter the data frame to keep rows where 'is_double_na' is FALSE</span></span>
+<span id="cb24-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># The '!' negates the logical vector, keeping rows that are NOT double NA</span></span>
+<span id="cb24-6">cleaned_survey_df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> survey_df[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span>is_double_na, ]</span>
+<span id="cb24-7"></span>
+<span id="cb24-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(cleaned_survey_df)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Customer Satisfaction Usage
+1        1            5    10
+2        2           NA     5
+3        3            3    NA
+5        5            4     8</code></pre>
+</div>
+</div>
+</details>
+</section>
+<section id="key-takeaways" class="level1">
+<h1>Key Takeaways</h1>
+<ul>
+<li><strong>Most Readable:</strong> <code>df %&gt;% drop_na()</code> (Tidyverse) offers the clearest, most readable syntax for Tidyverse users.</li>
+<li><strong>Targeted Cleaning:</strong> You can use <code>complete.cases(df[ , c("col1", "col2")])</code> to check for completeness in only a subset of columns.</li>
+<li><strong>Truly Empty Rows:</strong> Use the <code>rowSums(is.na(df)) != ncol(df)</code> method to target and remove only rows that are <strong>100% missing</strong>.</li>
+</ul>
+</section>
+<section id="frequently-asked-questions-faqs" class="level1">
+<h1>Frequently Asked Questions (FAQs)</h1>
+<ol type="1">
+<li><p><strong>What is the difference between <code>complete.cases()</code> and <code>na.omit()</code>?</strong></p>
+<ul>
+<li><code>complete.cases()</code> returns a logical vector (<code>TRUE</code>/<code>FALSE</code>) that you can use for flexible subsetting. <code>na.omit()</code> is a high-level function that directly returns the data frame with all incomplete rows removed. For simple cleaning, the results are functionally the same.</li>
+</ul></li>
+<li><p><strong>Can I use <code>drop_na()</code> on specific columns?</strong></p>
+<ul>
+<li>Yes. You can pass specific column names to the function: <code>df %&gt;% drop_na(column_a, column_b)</code>. This removes rows only if they have an <code>NA</code> in the specified columns.</li>
+</ul></li>
+<li><p><strong>Why do my empty rows sometimes show up as <code>""</code> (empty strings) instead of <code>NA</code>?</strong></p>
+<ul>
+<li>This is common when reading messy CSVs. If a cell is truly blank, R might import it as <code>""</code>. You must first convert these empty strings to the official <code>NA</code> missing value before using the functions discussed: <code>df[df == ""] &lt;- NA</code>.</li>
+</ul></li>
+<li><p><strong>Is one method always better than the others?</strong></p>
+<ul>
+<li>No.&nbsp;For raw performance on massive datasets, Base R often wins. For clear, pipe-friendly code in a Tidyverse project, <code>dplyr::drop_na()</code> is preferred. Choose the method that best fits your coding environment and performance needs.</li>
+</ul></li>
+<li><p><strong>Does <code>complete.cases()</code> consider rows with <code>NaN</code>?</strong></p>
+<ul>
+<li>No, <code>complete.cases()</code> only checks for <code>NA</code> (Not Available). If you need to include <code>NaN</code> (Not a Number, often used in mathematical operations) as a missing value, you should first convert it to <code>NA</code> or use a custom function.</li>
+</ul></li>
+</ol>
+</section>
+<section id="conclusion-choosing-your-cleaning-tool" class="level1">
+<h1>Conclusion: Choosing Your Cleaning Tool</h1>
+<p>Removing empty or incomplete rows is a foundational skill in R. Whether you are a performance purist favoring the speed of <strong><code>complete.cases()</code></strong> or a Tidyverse enthusiast prioritizing the clarity of <strong><code>dplyr::drop_na()</code></strong>, R provides the perfect tool for your data cleaning toolkit.</p>
+<p>Choosing between them ultimately boils down to balancing performance benchmarks with code readability. Start cleaning your data frames today for more accurate, robust statistical models!</p>
+<p><strong>What’s your go-to method?</strong> Share your preferred data cleaning function in the comments below!</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ul>
+<li>Statology. (n.d.). <em>How to Remove Empty Rows from Data Frame in R</em>. Retrieved from <a href="https://www.statology.org/remove-empty-rows-in-r/">https://www.statology.org/remove-empty-rows-in-r/</a></li>
+<li>Wickham, H., François, R., Henry, L., &amp; Müller, K. (2024). <em>dplyr: A Grammar of Data Manipulation</em>. R package version 1.1.4.</li>
+<li>R Core Team (2024). <em>R: A language and environment for statistical computing</em>. R Foundation for Statistical Computing, Vienna, Austria. URL <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</li>
+</ul>
+<hr>
+<p>Happy Coding! 🚀</p>
+<section id="getting-complete-rows-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="getting-complete-rows-in-r"><img src="https://www.spsanderson.com/steveondata/posts/2025-10-20/todays_post.jpeg" class="img-fluid" alt="Getting Complete Rows in R"></h2>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-10-20/</guid>
+  <pubDate>Mon, 20 Oct 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>How to Select Row with Max Value in Specific Column in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -22063,1014 +22645,6 @@ font-style: inherit;">2</span>))</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-06-02/</guid>
   <pubDate>Mon, 02 Jun 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Generate Random Numbers in R With Examples</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-05-26/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<blockquote class="blockquote">
-<p>Random number generation is a basic skill for statistics, simulations, and data analysis in R. This guide should help you get famililar with some of those basics.</p>
-</blockquote>
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Random number generation is a basic component of many statistical analyses, simulations, and data science workflows in R. Whether you’re running Monte Carlo simulations, creating sample datasets, or implementing statistical algorithms, knowing how to generate random numbers efficiently is a valuable skill. This article will walk you through the most common methods for generating random numbers in R, with practical examples and visualizations to help you understand the concepts better.</p>
-</section>
-<section id="understanding-random-number-generation-in-r" class="level1">
-<h1>Understanding Random Number Generation in R</h1>
-<p>R provides a powerful suite of functions for generating random numbers from various probability distributions. These functions are prefixed with <code>r</code> (for random), followed by the abbreviated name of the distribution. For example, <code>rnorm()</code> generates random numbers from a normal distribution, while <code>runif()</code> generates random numbers from a uniform distribution.</p>
-</section>
-<section id="basic-random-number-generation" class="level1">
-<h1>Basic Random Number Generation</h1>
-<section id="uniform-distribution-with-runif" class="level2">
-<h2 class="anchored" data-anchor-id="uniform-distribution-with-runif">Uniform Distribution with runif()</h2>
-<p>The <code>runif()</code> function generates random numbers from a uniform distribution where each number in the specified range has an equal probability of being chosen.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 5 random numbers between 0 and 1</span></span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.9631528 0.6473717 0.8502536 0.5132711 0.3478398</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 10 random numbers between 10 and 20</span></span>
-<span id="cb3-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] 18.06993 14.80453 15.20832 16.79679 16.00856 10.91564 18.10421 19.74378
- [9] 12.87939 15.08066</code></pre>
-</div>
-</div>
-</section>
-<section id="normal-distribution-with-rnorm" class="level2">
-<h2 class="anchored" data-anchor-id="normal-distribution-with-rnorm">Normal Distribution with rnorm()</h2>
-<p>The <code>rnorm()</code> function generates random numbers from a normal (Gaussian) distribution with a specified mean and standard deviation.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 5 random numbers from a normal distribution with mean 0 and sd 1</span></span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.3169287 0.4466374 0.5926026 1.7024986 1.5120444</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 10 random numbers with mean 100 and sd 20</span></span>
-<span id="cb7-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] 109.83534  93.56975 113.24464 128.31562 103.70459  87.70473  89.19045
- [8]  92.77541  80.40960 128.66981</code></pre>
-</div>
-</div>
-</section>
-<section id="random-integers-with-sample" class="level2">
-<h2 class="anchored" data-anchor-id="random-integers-with-sample">Random Integers with sample()</h2>
-<p>The <code>sample()</code> function is perfect for generating random integers or sampling from a specific set of values.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 5 random integers between 1 and 100</span></span>
-<span id="cb9-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 81 70 98 46 89</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Sample with replacement (allowing repeated values)</span></span>
-<span id="cb11-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] 8 9 5 4 7 4 8 3 7 5 4 9 1 4 8</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="setting-seeds-for-reproducibility" class="level1">
-<h1>Setting Seeds for Reproducibility</h1>
-<p>When working with random numbers, it’s often essential to make your results reproducible. The <code>set.seed()</code> function allows you to get the same sequence of “random” numbers each time you run your code.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set a seed for reproducibility</span></span>
-<span id="cb13-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb13-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate random numbers</span></span>
-<span id="cb13-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.2875775 0.7883051 0.4089769 0.8830174 0.9404673</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Run again with the same seed for the same results</span></span>
-<span id="cb15-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb15-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.2875775 0.7883051 0.4089769 0.8830174 0.9404673</code></pre>
-</div>
-</div>
-</section>
-<section id="visualizing-random-distributions" class="level1">
-<h1>Visualizing Random Distributions</h1>
-<p>Visualizing random number distributions helps you understand their properties better. Here’s a comparison of different random distributions:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb17-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Uniform Distribution</span></span>
-<span id="cb17-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb17-4">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Uniform Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightblue"</span>)</span>
-<span id="cb17-5"></span>
-<span id="cb17-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Normal Distribution</span></span>
-<span id="cb17-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb17-8">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Normal Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightgreen"</span>)</span>
-<span id="cb17-9"></span>
-<span id="cb17-10"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Random Sampling</span></span>
-<span id="cb17-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb17-12">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Random Sampling"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightcoral"</span>)</span>
-<span id="cb17-13"></span>
-<span id="cb17-14"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Probability Density Functions Comparison</span></span>
-<span id="cb17-15">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">seq</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">length.out =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)</span>
-<span id="cb17-16"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylim =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb17-17">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Probability Density Functions Comparison"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb17-18">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Density"</span>)</span>
-<span id="cb17-19"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb17-20"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">lines</span>(x, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dnorm</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"green"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-26/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>The plots above show:</p>
-<ol type="1">
-<li><strong>Uniform Distribution</strong>: A flat distribution where all values in the range have equal probability</li>
-<li><strong>Normal Distribution</strong>: The classic bell-shaped curve with most values clustered around the mean</li>
-<li><strong>Random Sampling</strong>: The result of random sampling with replacement</li>
-<li><strong>Probability Density Functions Comparison</strong>: A comparison of different probability distributions</li>
-</ol>
-</section>
-<section id="advanced-random-number-generation" class="level1">
-<h1>Advanced Random Number Generation</h1>
-<p>R provides functions for generating random numbers from many other probability distributions. Here are some of the most commonly used ones:</p>
-<section id="binomial-distribution-rbinom" class="level2">
-<h2 class="anchored" data-anchor-id="binomial-distribution-rbinom">Binomial Distribution (rbinom)</h2>
-<p>Useful for modeling success/failure scenarios with a fixed number of trials.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 10 random numbers from a binomial distribution </span></span>
-<span id="cb19-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># with 20 trials and probability 0.5</span></span>
-<span id="cb19-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rbinom</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] 18 14 14 11 11 14  8 11  7 10</code></pre>
-</div>
-</div>
-</section>
-<section id="poisson-distribution-rpois" class="level2">
-<h2 class="anchored" data-anchor-id="poisson-distribution-rpois">Poisson Distribution (rpois)</h2>
-<p>Perfect for modeling the number of events occurring in a fixed time period.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 10 random numbers from a Poisson distribution with lambda = 5</span></span>
-<span id="cb21-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rpois</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lambda =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] 6 1 3 2 7 4 6 6 3 4</code></pre>
-</div>
-</div>
-</section>
-<section id="other-useful-distributions" class="level2">
-<h2 class="anchored" data-anchor-id="other-useful-distributions">Other Useful Distributions</h2>
-<p>R supports many other probability distributions, including:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Gamma distribution</span></span>
-<span id="cb23-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rgamma</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scale =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1.0359106 0.4800262 1.5689731 0.9516189 1.6413728</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Beta distribution</span></span>
-<span id="cb25-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rbeta</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape1 =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape2 =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.16886543 0.36738431 0.26962401 0.27630634 0.04024299</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Chi-squared distribution</span></span>
-<span id="cb27-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rchisq</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">df =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.8795775 2.8472263 1.0508443 1.6913313 1.1525831</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="visualizing-advanced-distributions" class="level1">
-<h1>Visualizing Advanced Distributions</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb29-2"></span>
-<span id="cb29-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Gamma Distribution</span></span>
-<span id="cb29-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rgamma</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scale =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb29-5">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Gamma Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightblue"</span>)</span>
-<span id="cb29-6"></span>
-<span id="cb29-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Beta Distribution</span></span>
-<span id="cb29-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rbeta</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape1 =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape2 =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb29-9">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Beta Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightgreen"</span>)</span>
-<span id="cb29-10"></span>
-<span id="cb29-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Poisson Distribution</span></span>
-<span id="cb29-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rpois</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lambda =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb29-13">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Poisson Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightcoral"</span>)</span>
-<span id="cb29-14"></span>
-<span id="cb29-15"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Chi-square Distribution</span></span>
-<span id="cb29-16"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rchisq</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">df =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>, </span>
-<span id="cb29-17">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Chi-square Distribution"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lightyellow"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-26/index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>The plots above show the theoretical distributions (red lines) compared to randomly sampled data (histograms) for:</p>
-<ol type="1">
-<li><strong>Gamma Distribution</strong>: Useful for modeling waiting times</li>
-<li><strong>Beta Distribution</strong>: Often used for modeling probabilities or proportions</li>
-<li><strong>Poisson Distribution</strong>: Models count data or rare events</li>
-<li><strong>Chi-square Distribution</strong>: Used in hypothesis testing</li>
-</ol>
-</section>
-<section id="common-pitfalls-and-best-practices" class="level1">
-<h1>Common Pitfalls and Best Practices</h1>
-<section id="pitfall-1-not-setting-a-seed" class="level2">
-<h2 class="anchored" data-anchor-id="pitfall-1-not-setting-a-seed">Pitfall 1: Not Setting a Seed</h2>
-<p>If you don’t set a seed, you’ll get different random numbers each time you run your code, which can make debugging difficult and results irreproducible.</p>
-</section>
-<section id="best-practice-always-set-a-seed-for-reproducibility" class="level2">
-<h2 class="anchored" data-anchor-id="best-practice-always-set-a-seed-for-reproducibility">Best Practice: Always Set a Seed for Reproducibility</h2>
-<div class="sourceCode" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Choose any number you like</span></span></code></pre></div>
-</section>
-<section id="pitfall-2-using-the-same-seed-in-parallel-processing" class="level2">
-<h2 class="anchored" data-anchor-id="pitfall-2-using-the-same-seed-in-parallel-processing">Pitfall 2: Using the Same Seed in Parallel Processing</h2>
-<p>When using parallel processing, setting the same seed in each parallel worker can lead to correlated random numbers.</p>
-</section>
-<section id="best-practice-use-parallel-safe-rng-methods" class="level2">
-<h2 class="anchored" data-anchor-id="best-practice-use-parallel-safe-rng-methods">Best Practice: Use Parallel-Safe RNG Methods</h2>
-<div class="sourceCode" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(parallel)</span>
-<span id="cb32-2">cl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">makeCluster</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span>
-<span id="cb32-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clusterSetRNGStream</span>(cl, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">iseed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)</span></code></pre></div>
-</section>
-<section id="pitfall-3-ignoring-the-properties-of-the-distribution" class="level2">
-<h2 class="anchored" data-anchor-id="pitfall-3-ignoring-the-properties-of-the-distribution">Pitfall 3: Ignoring the Properties of the Distribution</h2>
-<p>Using the wrong distribution for your data can lead to incorrect results.</p>
-</section>
-<section id="best-practice-select-the-appropriate-distribution" class="level2">
-<h2 class="anchored" data-anchor-id="best-practice-select-the-appropriate-distribution">Best Practice: Select the Appropriate Distribution</h2>
-<p>Choose the distribution that best models your data:</p>
-<ul>
-<li>Use <code>rnorm()</code> for continuous, symmetric data</li>
-<li>Use <code>rpois()</code> for count data</li>
-<li>Use <code>rbinom()</code> for binary outcomes</li>
-</ul>
-</section>
-</section>
-<section id="your-turn-interactive-section" class="level1">
-<h1>Your Turn! Interactive Section</h1>
-<p>Now, let’s put your knowledge into practice with a simple exercise.</p>
-<p><strong>Exercise</strong>: Generate 1000 random numbers from a normal distribution with mean 50 and standard deviation 10. Then calculate their mean and standard deviation to verify they are close to the expected values.</p>
-<details>
-<summary>
-Click here for Solution!
-</summary>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set seed for reproducibility</span></span>
-<span id="cb33-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)</span>
-<span id="cb33-3"></span>
-<span id="cb33-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Generate 1000 random numbers from normal distribution</span></span>
-<span id="cb33-5">random_numbers <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)</span>
-<span id="cb33-6"></span>
-<span id="cb33-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate mean and standard deviation</span></span>
-<span id="cb33-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mean</span>(random_numbers)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Should be close to 50</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 50.16128</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sd</span>(random_numbers)    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Should be close to 10</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 9.91695</code></pre>
-</div>
-</div>
-The mean should be approximately 50, and the standard deviation should be approximately 10, with small variations due to randomness.
-</details>
-</section>
-<section id="quick-takeaways" class="level1">
-<h1>Quick Takeaways</h1>
-<ul>
-<li><strong>Function Pattern</strong>: Random number generators in R follow the pattern r + distribution name (e.g., <code>rnorm</code>, <code>runif</code>)</li>
-<li><strong>Reproducibility</strong>: Use <code>set.seed()</code> to make your random numbers reproducible</li>
-<li><strong>Common Distributions</strong>:
-<ul>
-<li><code>runif()</code> for uniform distribution</li>
-<li><code>rnorm()</code> for normal distribution</li>
-<li><code>sample()</code> for random sampling</li>
-<li><code>rbinom()</code> for binomial distribution</li>
-<li><code>rpois()</code> for Poisson distribution</li>
-</ul></li>
-<li><strong>Visualization</strong>: Always visualize your random numbers to verify their distribution</li>
-<li><strong>Parameters</strong>: Each distribution function has specific parameters that control its shape</li>
-</ul>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Random number generation is a powerful tool in R programming that enables everything from simple sampling to complex statistical simulations. By understanding the different distribution functions and their parameters, you can generate the precise type of random data you need for your analyses.</p>
-<p>Now that you have a solid foundation in generating random numbers in R, try incorporating these techniques into your next data analysis project or statistical simulation. Remember to set a seed for reproducibility, choose the appropriate distribution for your data, and visualize your results to ensure they meet your expectations.</p>
-<p><strong>Ready to level up your R programming skills?</strong> Share this article with your colleagues and let us know in the comments which random number generation techniques you find most useful in your work.</p>
-</section>
-<section id="faqs" class="level1">
-<h1>FAQs</h1>
-</section>
-<section id="why-do-i-get-different-random-numbers-each-time-i-run-my-code" class="level1">
-<h1>1. Why do I get different random numbers each time I run my code?</h1>
-<p>If you don’t set a seed using <code>set.seed()</code>, R will generate different random numbers each time. To get reproducible results, always set a seed at the beginning of your script.</p>
-<section id="which-function-should-i-use-to-generate-random-integers" class="level2">
-<h2 class="anchored" data-anchor-id="which-function-should-i-use-to-generate-random-integers">2. Which function should I use to generate random integers?</h2>
-<p>Use the <code>sample()</code> function to generate random integers. For example, <code>sample(1:100, 10)</code> generates 10 random integers between 1 and 100.</p>
-</section>
-<section id="how-do-i-generate-random-numbers-from-a-custom-probability-distribution" class="level2">
-<h2 class="anchored" data-anchor-id="how-do-i-generate-random-numbers-from-a-custom-probability-distribution">3. How do I generate random numbers from a custom probability distribution?</h2>
-<p>You can use the <code>sample()</code> function with custom probabilities. For example:</p>
-<div class="sourceCode" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>))</span></code></pre></div>
-<p>This will generate random numbers from 1 to 6, with 6 being five times more likely to appear than the other numbers.</p>
-</section>
-<section id="whats-the-difference-between-sampling-with-and-without-replacement" class="level2">
-<h2 class="anchored" data-anchor-id="whats-the-difference-between-sampling-with-and-without-replacement">4. What’s the difference between sampling with and without replacement?</h2>
-<p>When sampling with replacement (<code>replace = TRUE</code>), the same value can be selected multiple times. Without replacement (<code>replace = FALSE</code>), each value can only be selected once.</p>
-</section>
-<section id="how-can-i-check-if-my-random-numbers-follow-the-expected-distribution" class="level2">
-<h2 class="anchored" data-anchor-id="how-can-i-check-if-my-random-numbers-follow-the-expected-distribution">5. How can I check if my random numbers follow the expected distribution?</h2>
-<p>Use visualization techniques like histograms, density plots, or Q-Q plots to verify your random numbers follow the expected distribution:</p>
-<div class="sourceCode" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">hist</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Histogram for normal distribution</span></span>
-<span id="cb38-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">qqnorm</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Q-Q plot for normal distribution</span></span></code></pre></div>
-</section>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li><strong>Official R Documentation</strong>
-<ul>
-<li>R Core Team (2023). “Introduction to R: A Programming Environment for Data Analysis and Graphics”<br>
-<a href="https://cran.r-project.org/doc/manuals/r-release/R-intro.html">https://cran.r-project.org/doc/manuals/r-release/R-intro.html</a></li>
-</ul></li>
-<li><strong>R Random Number Generation Tutorial</strong>
-<ul>
-<li>GeeksforGeeks (2023). “How to Generate Random Numbers in R”<br>
-<a href="https://www.geeksforgeeks.org/how-to-generate-random-numbers-in-r/">https://www.geeksforgeeks.org/how-to-generate-random-numbers-in-r/</a></li>
-</ul></li>
-<li><strong>Statistical Applications of Random Numbers</strong>
-<ul>
-<li>Statology (2023). “Random Number Generation in R”<br>
-<a href="https://www.statology.org/r-random-number/">https://www.statology.org/r-random-number/</a></li>
-</ul></li>
-<li><strong>Academic Resources on Random Number Generation</strong>
-<ul>
-<li>MIT OpenCourseWare (2022). “R Tutorial B: Random Numbers”<br>
-<a href="https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/pages/r-tutorial-b-random-numbers/">https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/pages/r-tutorial-b-random-numbers/</a></li>
-</ul></li>
-<li><strong>Random Number Generators in R</strong>
-<ul>
-<li>Wikibooks (2023). “R Programming/Random Number Generation”<br>
-<a href="https://en.wikibooks.org/wiki/R_Programming/Random_Number_Generation">https://en.wikibooks.org/wiki/R_Programming/Random_Number_Generation</a></li>
-</ul></li>
-<li><strong>Practical Applications of Random Numbers</strong>
-<ul>
-<li>Ducat India (2023). “Random Number Generator in R”<br>
-<a href="https://tutorials.ducatindia.com/r-programming/random-number-generator-in-r">https://tutorials.ducatindia.com/r-programming/random-number-generator-in-r</a></li>
-</ul></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-05-26/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>Random Numbers in R</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-05-26/</guid>
-  <pubDate>Mon, 26 May 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
