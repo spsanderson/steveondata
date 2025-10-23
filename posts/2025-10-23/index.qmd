@@ -1,0 +1,374 @@
+---
+title: "Python Time Management: A Beginner's Guide to Keeping Time, Scheduling Tasks, and Launching Programs"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-10-23"
+categories: [code, python]
+toc: TRUE
+description: ''
+keywords: [Programming]
+---
+
+**Author's Note: As I write this series on Python programming, I'm learning alongside you every step of the way. My goal is to share what I learn and present it to you in a simple manner. While I research and test each concept, I'm constantly expanding my own understanding of these topics, this means I might make mistakes or do things in a manner that is not best practice. Your feedback, questions, and insights are not only welcome but to me, incredibly valuable.**
+
+------------------------------------------------------------------------
+
+> **Key Takeaway:** Master Python's built-in time functions, automate your tasks with smart scheduling, and seamlessly launch external programs to boost your programming productivity.
+
+Python offers powerful built-in tools for managing time, scheduling tasks, and launching external programs. Whether you're building automated scripts, creating scheduled backups, or integrating with other applications, these important skills will transform how you approach programming projects.
+
+------------------------------------------------------------------------
+
+# Understanding Python's Time Management Tools
+
+Python provides several modules for working with time and dates. Let's explore the most important ones for beginners:
+
+## The `time` Module: Your Basic Timekeeping Toolkit
+
+The `time` module handles basic time operations like measuring duration, pausing execution, and working with timestamps.
+
+**Key `time` Functions:**
+
+| Function | Purpose | Example Usage |
+|---------------------|-------------------|-------------------------------|
+| `time.time()` | Get current timestamp | `start = time.time()` |
+| `time.sleep(seconds)` | Pause execution | `time.sleep(2)` |
+| `time.ctime()` | Convert timestamp to readable string | `time.ctime()` → `'Tue Oct 21 03:26:00 2025'` |
+
+```{python}
+import time
+
+# Measure how long code takes to run
+start_time = time.time()
+
+# Your code here
+end_time = time.time()
+print(f"Execution time: {end_time - start_time} seconds")
+
+# Pause execution for 3 seconds
+time.sleep(3)
+print("This prints after 3 seconds!")
+```
+
+## The `datetime` Module: Advanced Date and Time Manipulation
+
+For more complex date operations, the `datetime` module provides powerful tools for creating, formatting, and calculating with dates.
+
+**Key `datetime` Classes:**
+
+-   **`datetime.now()`**: Get current date and time
+-   **`datetime.strftime()`**: Format dates as strings\
+-   **`datetime.strptime()`**: Parse strings into date objects
+-   **`timedelta`**: Represent time durations
+
+```{python}
+from datetime import datetime, timedelta
+
+# Get current date and time
+now = datetime.now()
+print(now.strftime("%Y-%m-%d %H:%M:%S"))
+
+# Calculate future dates
+tomorrow = now + timedelta(days=1)
+next_week = now + timedelta(weeks=1)
+```
+
+# Scheduling Tasks with Python
+
+## Using the `schedule` Library for Simple Task Automation
+
+The `schedule` library makes it incredibly easy to run Python functions at specific times or intervals.
+
+**Installation:**
+
+```bash
+pip install schedule
+```
+
+**Common Scheduling Patterns:**
+
+| Schedule Expression | Description | Example |
+|--------------------------------|----------------------|------------------|
+| `every(10).seconds` | Every 10 seconds | `schedule.every(10).seconds.do(job)` |
+| `every().day.at("10:30")` | Daily at 10:30 AM | `schedule.every().day.at("10:30").do(job)` |
+| `every().monday` | Every Monday | `schedule.every().monday.do(job)` |
+| `every().hour` | Every hour | `schedule.every().hour.do(job)` |
+
+**Complete Scheduling Example:**
+
+```python
+import schedule
+import time
+
+def backup_files():
+    print("Running backup...")
+    # Your backup logic here
+
+def send_report():
+    print("Sending daily report...")
+    # Your reporting logic here
+
+# Schedule tasks
+schedule.every().day.at("02:00").do(backup_files)
+schedule.every().friday.at("17:00").do(send_report)
+schedule.every(30).minutes.do(lambda: print("System check"))
+
+# Keep scheduler running
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+```
+
+## Building Custom Schedulers
+
+For simple recurring tasks, you can create basic schedulers without external libraries:
+
+```python
+import time
+from datetime import datetime
+
+def simple_scheduler():
+    last_run = time.time()
+    interval = 60  # Run every 60 seconds
+    
+    while True:
+        current_time = time.time()
+        if current_time - last_run >= interval:
+            print(f"Task executed at {datetime.now().strftime('%H:%M:%S')}")
+            last_run = current_time
+        time.sleep(1)
+```
+
+# Launching External Programs
+
+## Using `subprocess` for Program Execution
+
+The `subprocess` module is the recommended way to launch external programs from Python.
+
+**Key `subprocess` Functions:**
+
+| Function | Purpose | Use Case |
+|-------------------------|-----------------------|-------------------------|
+| `subprocess.run()` | Execute command and wait | Simple one-time commands |
+| `subprocess.Popen()` | Advanced process control | Background processes, real-time interaction |
+| `subprocess.check_output()` | Get command output only | When you only need the result |
+
+**Basic Program Launch:**
+
+```python
+import subprocess
+
+# Run a Python script
+result = subprocess.run(['python', 'my_script.py'], 
+                       capture_output=True, 
+                       text=True)
+
+if result.returncode == 0:
+    print("Success:", result.stdout)
+else:
+    print("Error:", result.stderr)
+```
+
+**Important Parameters:**
+
+-   **`capture_output=True`**: Capture the program's output
+-   **`text=True`**: Get output as strings (not bytes)
+-   **`timeout=5`**: Prevent hanging by setting a time limit
+-   **`check=True`**: Raise an exception if the program fails
+
+## Security Best Practices
+
+Always use command lists instead of strings to prevent security vulnerabilities:
+
+```python
+# ✅ Safe way
+subprocess.run(['ls', '-l', '/home/user'])
+
+# ❌ Dangerous way (vulnerable to injection)
+subprocess.run("ls -l /home/user", shell=True)
+```
+
+# Practical Applications: Putting It All Together
+
+## Automated Backup Script with Logging
+
+Here's a complete example combining time management, scheduling, and program launching:
+
+```python
+import subprocess
+import time
+from datetime import datetime
+import schedule
+
+def create_backup():
+    """Create a timestamped backup"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_name = f"backup_{timestamp}.tar.gz"
+    
+    print(f"Starting backup at {datetime.now().strftime('%H:%M:%S')}")
+    
+    # Measure backup time
+    start_time = time.time()
+    
+    # Create backup (example command)
+    try:
+        result = subprocess.run([
+            'tar', '-czf', backup_name, '/path/to/data'
+        ], capture_output=True, text=True, timeout=300)
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        if result.returncode == 0:
+            print(f"Backup completed in {duration:.2f} seconds")
+            log_backup_success(backup_name, duration)
+        else:
+            print(f"Backup failed: {result.stderr}")
+            
+    except subprocess.TimeoutExpired:
+        print("Backup timed out after 5 minutes")
+
+def log_backup_success(filename, duration):
+    """Log successful backup to file"""
+    with open('backup_log.txt', 'a') as f:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{timestamp}] Backup created: {filename} ({duration:.2f}s)\n")
+
+# Schedule daily backups
+schedule.every().day.at("02:00").do(create_backup)
+```
+
+# Your Turn!
+
+**Challenge:** Create a simple system monitor that checks disk space every 5 minutes and logs the results.
+
+**Requirements:** 
+
+- Use `subprocess` to run a disk space command 
+- Schedule the check to run every 5 minutes 
+- Log results with timestamps 
+- Display results in a readable format
+
+<details><summary>Click here for Solution!</summary>
+
+```python
+import subprocess
+import time
+from datetime import datetime
+import schedule
+
+def check_disk_space():
+    """Monitor disk space and log results"""
+    try:
+        # Get disk usage (Unix/Linux command)
+        result = subprocess.run(['df', '-h'], 
+                              capture_output=True, 
+                              text=True, 
+                              timeout=10)
+        
+        if result.returncode == 0:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Parse the output
+            lines = result.stdout.strip().split('\n')
+            root_line = [line for line in lines if line.endswith('/')][0]
+            usage = root_line.split()[4]  # Get usage percentage
+            
+            # Log to file
+            with open('disk_monitor.log', 'a') as f:
+                f.write(f"[{timestamp}] Disk Usage: {usage}\n")
+            
+            print(f"Disk usage logged: {usage} at {timestamp}")
+            
+            # Alert if usage is high
+            if int(usage.strip('%')) > 80:
+                print("⚠️  Warning: Disk usage above 80%!")
+                
+    except Exception as e:
+        print(f"Error checking disk space: {e}")
+
+# Schedule the check
+schedule.every(5).minutes.do(check_disk_space)
+
+# Run scheduler
+print("Starting disk space monitor...")
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+```
+</details>
+
+# Quick Takeaways
+
+- **Use `time.time()` and `time.sleep()`** for basic timing and delays in your programs
+- **Master `datetime`** for working with dates, formatting, and date arithmetic
+- **Install and use the `schedule` library** for easy task automation with human-readable syntax
+- **Always use `subprocess.run()`** instead of older methods like `os.system()` for launching programs
+- **Use command lists, not strings** with subprocess for better security
+- **Capture output with `capture_output=True`** when you need to process program results
+- **Set timeouts** to prevent your programs from hanging on external commands
+- **Combine these tools** to create powerful automation scripts for backups, monitoring, and maintenance
+
+# Conclusion
+
+Python's time management and process control capabilities make it an excellent choice for automation and system administration tasks. By mastering the `time` and `datetime` modules for timekeeping, the `schedule` library for task automation, and the `subprocess` module for program launching, you'll be able to build sophisticated scripts that handle complex workflows.
+
+Start small with simple scheduled tasks, then gradually incorporate external program launches as you become more comfortable. The combination of these tools will dramatically expand what you can accomplish with Python automation.
+
+**Ready to automate your workflow?** Pick one repetitive task you do regularly and try scheduling it with Python. Your future self will thank you for the time saved!
+
+# References
+
+1. **Python Software Foundation**. (2024). *time — Time access and conversions*. Python 3 Documentation. Retrieved from [https://docs.python.org/3/library/time.html](https://docs.python.org/3/library/time.html)
+
+2. **Python Software Foundation**. (2024). *subprocess — Subprocess management*. Python 3 Documentation. Retrieved from [https://docs.python.org/3/library/subprocess.html](https://docs.python.org/3/library/subprocess.html)
+
+3. **Real Python Team**. (2024). *A Beginner's Guide to the Python time Module*. Real Python. Retrieved from [https://realpython.com/python-time-module/](https://realpython.com/python-time-module/)
+
+4. **schedule Library Contributors**. (2024). *schedule: Python job scheduling for humans*. Schedule Documentation. Retrieved from [https://schedule.readthedocs.io/](https://schedule.readthedocs.io/)
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+![Time and Scheduling with Python](todays_post.png)
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
