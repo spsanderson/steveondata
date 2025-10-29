@@ -1,0 +1,366 @@
+---
+title: "RAG with Ollama and ragnar in R: A Practical Guide for R Programmers"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-10-29"
+categories: [code, rtip]
+toc: TRUE
+description: "Learn how to build a privacy-preserving Retrieval-Augmented Generation (RAG) workflow in R using Ollama and the ragnar package. Discover step-by-step methods for summarizing health insurance policy documents, automating compliance reporting, and leveraging local LLMs—all within your R environment."
+keywords: [Programming, RAG in R, Ollama R integration, ragnar package R, Retrieval-Augmented Generation R, Local LLM R workflow, Health insurance policy summarization, RAG pipeline tutorial, Document chunking R, Ollama embeddings R, Automated compliance reporting R, How to use Ollama and ragnar for document summarization in R, Step-by-step RAG workflow for healthcare policy PDFs, Local LLM document Q&A with R and Ollama, Automate payer policy summaries using R and Ollama, Privacy-preserving RAG pipeline for sensitive documents in R]
+---
+
+> **Key Takeaway:**  
+> Learn how to build a fully local, privacy-preserving Retrieval-Augmented Generation (RAG) pipeline in R using the `ragnar` and `ellmer` packages with Ollama. This workflow enables automated, accurate document summarization—ideal for healthcare, compliance, and enterprise use cases.
+
+# Introduction: Why RAG, Ollama, and ragnar in R?
+
+I want to show you how to leverage the power of Retrieval-Augmented Generation (RAG) in R using the Ollama and ragnar packages. This came about by the need for a more efficient way to process and summarize large volumes of text data, particularly in the healthcare domain that I ran into.
+
+Retrieval-Augmented Generation (RAG) is transforming how we interact with documents by combining the strengths of Large Language Models (LLMs) with precise, document-grounded retrieval. With the rise of local LLM runners like **Ollama** and R packages such as **ragnar** and **ellmer**, R programmers can now build powerful, private, and production-ready document summarization pipelines—entirely within R.
+
+This post walks you through a real-world RAG workflow for summarizing health insurance policy PDFs, explaining each code step in simple terms. Whether you're new to LLMs or looking to automate document Q&A in R, this guide is for you.
+
+# Prerequisites & Setup
+
+Before diving in, ensure you have the following:
+
+| Component         | Installation Command / Link                                  | Purpose                                      |
+|-------------------|-------------------------------------------------------------|----------------------------------------------|
+| **Ollama**        | [Download Ollama](https://ollama.com/) or use Docker        | Local LLM and embedding model hosting        |
+| **R Packages**    | `install.packages(c("ragnar", "ellmer", "tidyverse", "fs", "glue"))` | Core RAG and data manipulation               |
+| **Ollama Models** | `ollama pull nomic-embed-text:latest`<br>`ollama pull llama3.1` | Embedding and chat models                    |
+| **Email Tools**   | `install.packages(c("blastula", "RDCOMClient"))` (optional) | Email automation (Windows/Outlook)           |
+
+> **Tip:**  
+> Make sure the Ollama server is running and the required models are pulled before starting your R workflow.
+
+# Understanding the RAG Workflow in R
+
+Here's a high-level overview of the RAG pipeline you'll build:
+
+1. **Load and list PDF files**
+2. **Convert documents to markdown and chunk them**
+3. **Generate embeddings using Ollama**
+4. **Store and index chunks in a DuckDB vector database**
+5. **Register retrieval as a tool for the LLM**
+6. **Query the LLM for summaries, grounded in your documents**
+7. **Format and send results via email or markdown**
+
+## Library Overview
+
+| Library         | Purpose                                                      |
+|-----------------|-------------------------------------------------------------|
+| `ragnar`        | RAG: document storage, chunking, embedding, retrieval        |
+| `ellmer`        | LLM chat interface (Ollama, OpenAI, etc.)                   |
+| `fs`            | File system operations                                      |
+| `tidyverse`     | Data manipulation, pipes, mapping                           |
+| `glue`          | String interpolation for prompts and output                  |
+| `blastula`      | Email composition (alternative to RDCOMClient)              |
+| `RDCOMClient`   | Windows Outlook automation for email                        |
+
+# Step-by-Step Code Walkthrough
+
+Let's break down the workflow, explaining each step and key syntax.
+
+## 1. Load Libraries
+
+```r
+library(ragnar)
+library(ellmer)
+library(fs)
+library(tidyverse)
+library(glue)
+library(blastula)
+library(RDCOMClient)
+```
+*Loads all required packages for RAG, LLM chat, file handling, and email.*
+
+## 2. Discover and List Policy Files
+
+```r
+policy_files_path <- "W:/Path/To/PDFs/"
+policy_files <- list.files(policy_files_path, full.names = TRUE)
+```
+*Finds all PDF files in your specified directory.*
+
+## 3. Define the System Prompt
+
+```r
+TOPIC: RAG with Ollama and ragnar in R
+KEYWORD: RAG, Ollama, LLM
+AUDIENCE: R Programmers
+WORDCOUNT: 750 to 1000
+
+Use the following R code as the basis for the blog post. Explain syntax in simple terms and use tables and bullet points where appropriate.
+
+<code>
+# Load Libraries ----
+library(ragnar)
+library(ellmer)
+library(fs)
+library(tidyverse)
+library(glue)
+library(blastula)
+library(RDCOMClient)
+
+
+# Files ----
+policy_files_path <- "W:/Path/To/PDFs/"
+policy_files <- list.files(policy_files_path, full.names = TRUE)
+
+# System Prompt ----
+system_prompt <- str_squish(
+  "
+  You are an expert assistant that summarizes **Health Insurance Payer Policies** clearly and accurately for healthcare, billing, and administrative users.
+
+  When responding, you should first quote relevant material from the documents in the store,
+  provide links to the sources, and then add your own context and interpretation. Try to be as concise
+  as you are thorough.
+
+  For every document passed to you the output should if applicable include:
+
+  1. Policy Summary: 1–2 paragraphs describing purpose, scope, and coverage intent.
+  2. Key Points: At least 3 concise bullet points summarizing coverage criteria, limitations, exclusions, or authorization requirements.
+  3. Policy Information Table
+
+  **Model Behavior Rules:**
+
+  * If information is missing, state “Not specified in document.”
+  * Do not infer or assume; summarize only verifiable content.
+  * Maintain neutral, factual tone using payer-standard language (e.g., “medically necessary,” “experimental/investigational”).
+  * Simplify complex clinical text while preserving accuracy.
+  * Always follow the structure: **Policy Summary → Key Points → Policy Information Table.**
+  * Avoid opinion, speculation, or advice; ensure compliance-focused clarity.
+  "
+)
+```
+*Sets the LLM's behavior, ensuring consistent, compliance-focused summaries.*
+
+## 4. Prepare File Metadata
+
+```r
+file_split_tbl <- tibble(
+  file_path = policy_files
+) |>
+  mutate(
+    file_name = path_file(file_path),
+    file_extension = path_ext(file_path),
+    file_size = file_size(file_path),
+    file_date = file_info(file_path)$modification_time
+  ) |>
+  group_split(file_name)
+```
+*Creates a tidy table with file metadata for processing.*
+
+## 5. RAG Processing Loop
+
+This is the heart of the workflow rocessing each file through the RAG pipeline.
+
+```r
+llm_resp_list <- file_split_tbl |>
+  imap(
+    .f = function(obj, id) {
+      file_path <- obj |> pull(1) |> pluck(1)
+      store_location <- "pdf_ragnar_duckdb"
+      store <- ragnar_store_create(
+        store_location,
+        embed = \(x) embed_ollama(x, model = "nomic-embed-text:latest"),
+        overwrite = TRUE
+      )
+      chunks <- file_path |> read_as_markdown() |> markdown_chunk()
+      ragnar_store_insert(store, chunks)
+      ragnar_store_build_index(store)
+      client <- chat_ollama(
+        model = "gpt-oss:20b-cloud",
+        system_prompt = system_prompt,
+        params = list(temperature = 0.1)
+      )
+      ragnar_register_tool_retrieve(chat = client, store = store)
+      user_prompt <- glue("Please summarize the policy: {file_path}")
+      res <- client$chat(user_prompt, echo = "all")
+      rec <- obj |> mutate(llm_resp = res)
+      return(rec)
+    }
+  )
+```
+
+**Key Concepts Explained:**
+
+- `embed = \(x) embed_ollama(x, model = "nomic-embed-text:latest")`:  
+  *Anonymous function (R 4.1+), tells ragnar to use Ollama for embeddings.*
+- `read_as_markdown()` and `markdown_chunk()`:  
+  *Convert documents to markdown and split into manageable chunks for retrieval.*
+- `ragnar_store_create()`, `ragnar_store_insert()`, `ragnar_store_build_index()`:  
+  *Set up and populate the vector database for semantic search.*
+- `chat_ollama()`:  
+  *Creates a chat client using a local LLM model via Ollama.*
+- `ragnar_register_tool_retrieve()`:  
+  *Connects the retrieval tool to the LLM, enabling RAG.*
+- `client$chat()`:  
+  *Sends the user prompt and gets a grounded summary.*
+
+## 6. Format Output for Email
+
+```r
+output_tbl <- list_rbind(llm_resp_list) |>
+  mutate(
+    email_body = md(glue("
+      Please see summary for below:
+
+      Name: {file_name}
+      
+      Extension: {file_extension}
+      
+      Size: {file_size} bytes
+      
+      Date: {file_date}
+      
+      Summary Response: 
+      
+      {llm_resp}
+    "))
+  )
+```
+*Prepares a markdown-formatted summary for each file.*
+
+## 7. Automate Email Sending (Optional)
+
+```r
+walk(
+  .x = output_tbl$email_body,
+  ~ {
+    Outlook <- COMCreate("Outlook.Application")
+    Email <- Outlook$CreateItem(0)
+    Email[["subject"]] <- "Payer Policy Summary"
+    Email[["htmlbody"]] <- markdown::markdownToHTML(.x)
+    attachment <- str_replace_all(
+      output_tbl$file_path[output_tbl$email_body == .x],
+      "/",
+      "\\\\"
+    )
+    Email[["to"]] <- "who gets the summarized files?"
+    Email[["attachments"]]$Add(attachment)
+    Email$Send()
+    rm(Outlook)
+    rm(Email)
+    Sys.sleep(1)
+  }
+)
+```
+*Uses Windows COM automation to send emails with summaries and attachments.*
+
+## 8. Export Results to Markdown
+
+```r
+markdown_sections <- map_chr(1:nrow(output_tbl), function(i) {
+  row_to_md(output_tbl[i, ])
+})
+markdown_doc <- paste(markdown_sections, collapse = "\n---\n")
+write_file(markdown_doc, paste0(getwd(), "/test_policy_output.md"))
+```
+*Creates a markdown report with all summaries for documentation or review.*
+
+# Key Functions Reference
+
+| Function                      | Purpose                                         | Key Parameters / Notes                       |
+|-------------------------------|-------------------------------------------------|----------------------------------------------|
+| `ragnar_store_create()`       | Create vector store with embedding function     | `location`, `embed`, `overwrite`             |
+| `read_as_markdown()`          | Convert file to markdown                        | `file_path`                                  |
+| `markdown_chunk()`            | Split markdown into chunks                      | Default chunking parameters                  |
+| `ragnar_store_insert()`       | Insert chunks and generate embeddings           | `store`, `chunks`                            |
+| `ragnar_store_build_index()`  | Build search indices                            | `store`                                      |
+| `chat_ollama()`               | Create chat client with Ollama model            | `model`, `system_prompt`, `params`           |
+| `ragnar_register_tool_retrieve()` | Register retrieval tool for LLM             | `chat`, `store`                              |
+
+# Best Practices & Tips
+
+- **Keep it Local:** All processing and LLM inference happen on your machine—no sensitive data leaves your environment.
+- **Use Clear Prompts:** A detailed system prompt ensures consistent, compliance-ready summaries.
+- **Chunk Wisely:** Proper chunking improves retrieval accuracy and LLM grounding.
+- **Monitor Memory:** Large PDFs and embeddings can be memory-intensive; process in batches if needed.
+- **Automate Output:** Use email or markdown export to integrate with business workflows.
+
+# FAQ: RAG with Ollama and ragnar in R
+
+**Q1: What is Retrieval-Augmented Generation (RAG)?**  
+A: RAG combines LLMs with document retrieval, ensuring responses are grounded in your actual data.
+
+**Q2: Why use Ollama with R?**  
+A: Ollama lets you run LLMs and embedding models locally, keeping data private and reducing latency.
+
+**Q3: What file types are supported?**  
+A: `ragnar` supports PDF, DOCX, HTML, and more—anything convertible to markdown.
+
+**Q4: Can I use other LLMs or embedding models?**  
+A: Yes! `ragnar` and `ellmer` support multiple providers (OpenAI, Google, etc.), but Ollama is ideal for local workflows.
+
+**Q5: How do I troubleshoot model or memory issues?**  
+A: Ensure Ollama is running, models are pulled, and process large files in smaller batches if you hit memory limits.
+
+# Quick Takeaways
+
+- **RAG in R** is now practical and private with `ragnar`, `ellmer`, and Ollama.
+- **Chunking and embedding** are key to accurate, document-grounded LLM responses.
+- **Automated summarization** can be integrated into business workflows via email or markdown.
+- **All code is modular**—customize prompts, models, and output as needed.
+- **Ideal for sensitive data**—no cloud required.
+
+# Conclusion & Next Steps
+
+Building a RAG pipeline in R with Ollama and ragnar empowers you to automate document summarization, Q&A, and compliance reporting—entirely on your own infrastructure. This approach is especially valuable for healthcare, legal, and enterprise settings where privacy and accuracy are paramount.
+
+> **Ready to try it?**  
+> Install the packages, set up Ollama, and adapt the code to your own document collections. Explore advanced features like hybrid retrieval, custom chunking, or integrating with Shiny dashboards for interactive Q&A.
+
+# Further Reading & Resources
+
+- [ragnar documentation](https://ragnar.tidyverse.org/)
+- [ellmer documentation](https://ellmer.tidyverse.org/)
+- [Ollama official site](https://ollama.com/)
+
+> **Share your feedback!**  
+> Did you find this guide helpful? Share your experience or questions in the comments, and connect with the document summarizing!**
+
+---
+
+Happy Coding! 🚀
+
+![RAG with R!](todays_post.jpg)
+---
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: [https://t.me/steveondata](https://t.me/steveondata)
+
+*LinkedIn Network here*: [https://www.linkedin.com/in/spsanderson/](https://www.linkedin.com/in/spsanderson/)
+
+*Mastadon Social here*: [https://mstdn.social/@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: [https://github.com/spsanderson](https://github.com/spsanderson)
+
+*Bluesky Network here*: [https://bsky.app/profile/spsanderson.com](https://bsky.app/profile/spsanderson.com)
+
+*My Book: _Extending Excel with Python and R_ here*: [https://packt.link/oTyZJ](https://packt.link/oTyZJ)
+
+*You.com Referral Link*: [https://you.com/join/EHSLDTL6](https://you.com/join/EHSLDTL6)
+
+---
+
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+

@@ -10,7 +10,864 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.7.32</generator>
-<lastBuildDate>Mon, 20 Oct 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 29 Oct 2025 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>RAG with Ollama and ragnar in R: A Practical Guide for R Programmers</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2025-10-29/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+
+<blockquote class="blockquote">
+<p><strong>Key Takeaway:</strong><br>
+Learn how to build a fully local, privacy-preserving Retrieval-Augmented Generation (RAG) pipeline in R using the <code>ragnar</code> and <code>ellmer</code> packages with Ollama. This workflow enables automated, accurate document summarization—ideal for healthcare, compliance, and enterprise use cases.</p>
+</blockquote>
+<section id="introduction-why-rag-ollama-and-ragnar-in-r" class="level1">
+<h1>Introduction: Why RAG, Ollama, and ragnar in R?</h1>
+<p>I want to show you how to leverage the power of Retrieval-Augmented Generation (RAG) in R using the Ollama and ragnar packages. This came about by the need for a more efficient way to process and summarize large volumes of text data, particularly in the healthcare domain that I ran into.</p>
+<p>Retrieval-Augmented Generation (RAG) is transforming how we interact with documents by combining the strengths of Large Language Models (LLMs) with precise, document-grounded retrieval. With the rise of local LLM runners like <strong>Ollama</strong> and R packages such as <strong>ragnar</strong> and <strong>ellmer</strong>, R programmers can now build powerful, private, and production-ready document summarization pipelines—entirely within R.</p>
+<p>This post walks you through a real-world RAG workflow for summarizing health insurance policy PDFs, explaining each code step in simple terms. Whether you’re new to LLMs or looking to automate document Q&amp;A in R, this guide is for you.</p>
+</section>
+<section id="prerequisites-setup" class="level1">
+<h1>Prerequisites &amp; Setup</h1>
+<p>Before diving in, ensure you have the following:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Installation Command / Link</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Ollama</strong></td>
+<td><a href="https://ollama.com/">Download Ollama</a> or use Docker</td>
+<td>Local LLM and embedding model hosting</td>
+</tr>
+<tr class="even">
+<td><strong>R Packages</strong></td>
+<td><code>install.packages(c("ragnar", "ellmer", "tidyverse", "fs", "glue"))</code></td>
+<td>Core RAG and data manipulation</td>
+</tr>
+<tr class="odd">
+<td><strong>Ollama Models</strong></td>
+<td><code>ollama pull nomic-embed-text:latest</code><br><code>ollama pull llama3.1</code></td>
+<td>Embedding and chat models</td>
+</tr>
+<tr class="even">
+<td><strong>Email Tools</strong></td>
+<td><code>install.packages(c("blastula", "RDCOMClient"))</code> (optional)</td>
+<td>Email automation (Windows/Outlook)</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Tip:</strong><br>
+Make sure the Ollama server is running and the required models are pulled before starting your R workflow.</p>
+</blockquote>
+</section>
+<section id="understanding-the-rag-workflow-in-r" class="level1">
+<h1>Understanding the RAG Workflow in R</h1>
+<p>Here’s a high-level overview of the RAG pipeline you’ll build:</p>
+<ol type="1">
+<li><strong>Load and list PDF files</strong></li>
+<li><strong>Convert documents to markdown and chunk them</strong></li>
+<li><strong>Generate embeddings using Ollama</strong></li>
+<li><strong>Store and index chunks in a DuckDB vector database</strong></li>
+<li><strong>Register retrieval as a tool for the LLM</strong></li>
+<li><strong>Query the LLM for summaries, grounded in your documents</strong></li>
+<li><strong>Format and send results via email or markdown</strong></li>
+</ol>
+<section id="library-overview" class="level2">
+<h2 class="anchored" data-anchor-id="library-overview">Library Overview</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Library</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ragnar</code></td>
+<td>RAG: document storage, chunking, embedding, retrieval</td>
+</tr>
+<tr class="even">
+<td><code>ellmer</code></td>
+<td>LLM chat interface (Ollama, OpenAI, etc.)</td>
+</tr>
+<tr class="odd">
+<td><code>fs</code></td>
+<td>File system operations</td>
+</tr>
+<tr class="even">
+<td><code>tidyverse</code></td>
+<td>Data manipulation, pipes, mapping</td>
+</tr>
+<tr class="odd">
+<td><code>glue</code></td>
+<td>String interpolation for prompts and output</td>
+</tr>
+<tr class="even">
+<td><code>blastula</code></td>
+<td>Email composition (alternative to RDCOMClient)</td>
+</tr>
+<tr class="odd">
+<td><code>RDCOMClient</code></td>
+<td>Windows Outlook automation for email</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="step-by-step-code-walkthrough" class="level1">
+<h1>Step-by-Step Code Walkthrough</h1>
+<p>Let’s break down the workflow, explaining each step and key syntax.</p>
+<section id="load-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="load-libraries">1. Load Libraries</h2>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ragnar)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ellmer)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(fs)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(glue)</span>
+<span id="cb1-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(blastula)</span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RDCOMClient)</span></code></pre></div>
+<p><em>Loads all required packages for RAG, LLM chat, file handling, and email.</em></p>
+</section>
+<section id="discover-and-list-policy-files" class="level2">
+<h2 class="anchored" data-anchor-id="discover-and-list-policy-files">2. Discover and List Policy Files</h2>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">policy_files_path <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"W:/Path/To/PDFs/"</span></span>
+<span id="cb2-2">policy_files <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list.files</span>(policy_files_path, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">full.names =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span></code></pre></div>
+<p><em>Finds all PDF files in your specified directory.</em></p>
+</section>
+<section id="define-the-system-prompt" class="level2">
+<h2 class="anchored" data-anchor-id="define-the-system-prompt">3. Define the System Prompt</h2>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">TOPIC<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span> RAG with Ollama and ragnar <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> R</span>
+<span id="cb3-2">KEYWORD<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span> RAG, Ollama, LLM</span>
+<span id="cb3-3">AUDIENCE<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span> R Programmers</span>
+<span id="cb3-4">WORDCOUNT<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">750</span> to <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span></span>
+<span id="cb3-5"></span>
+<span id="cb3-6">Use the following R code as the basis <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> the blog post. Explain syntax <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> simple terms and use tables and bullet points where appropriate.</span>
+<span id="cb3-7"></span>
+<span id="cb3-8"><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span>code<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span></span>
+<span id="cb3-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load Libraries ----</span></span>
+<span id="cb3-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ragnar)</span>
+<span id="cb3-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ellmer)</span>
+<span id="cb3-12"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(fs)</span>
+<span id="cb3-13"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb3-14"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(glue)</span>
+<span id="cb3-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(blastula)</span>
+<span id="cb3-16"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(RDCOMClient)</span>
+<span id="cb3-17"></span>
+<span id="cb3-18"></span>
+<span id="cb3-19"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Files ----</span></span>
+<span id="cb3-20">policy_files_path <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"W:/Path/To/PDFs/"</span></span>
+<span id="cb3-21">policy_files <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list.files</span>(policy_files_path, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">full.names =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb3-22"></span>
+<span id="cb3-23"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># System Prompt ----</span></span>
+<span id="cb3-24">system_prompt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_squish</span>(</span>
+<span id="cb3-25">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb3-26"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  You are an expert assistant that summarizes **Health Insurance Payer Policies** clearly and accurately for healthcare, billing, and administrative users.</span></span>
+<span id="cb3-27"></span>
+<span id="cb3-28"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  When responding, you should first quote relevant material from the documents in the store,</span></span>
+<span id="cb3-29"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  provide links to the sources, and then add your own context and interpretation. Try to be as concise</span></span>
+<span id="cb3-30"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  as you are thorough.</span></span>
+<span id="cb3-31"></span>
+<span id="cb3-32"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  For every document passed to you the output should if applicable include:</span></span>
+<span id="cb3-33"></span>
+<span id="cb3-34"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  1. Policy Summary: 1–2 paragraphs describing purpose, scope, and coverage intent.</span></span>
+<span id="cb3-35"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  2. Key Points: At least 3 concise bullet points summarizing coverage criteria, limitations, exclusions, or authorization requirements.</span></span>
+<span id="cb3-36"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  3. Policy Information Table</span></span>
+<span id="cb3-37"></span>
+<span id="cb3-38"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  **Model Behavior Rules:**</span></span>
+<span id="cb3-39"></span>
+<span id="cb3-40"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * If information is missing, state “Not specified in document.”</span></span>
+<span id="cb3-41"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * Do not infer or assume; summarize only verifiable content.</span></span>
+<span id="cb3-42"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * Maintain neutral, factual tone using payer-standard language (e.g., “medically necessary,” “experimental/investigational”).</span></span>
+<span id="cb3-43"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * Simplify complex clinical text while preserving accuracy.</span></span>
+<span id="cb3-44"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * Always follow the structure: **Policy Summary → Key Points → Policy Information Table.**</span></span>
+<span id="cb3-45"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  * Avoid opinion, speculation, or advice; ensure compliance-focused clarity.</span></span>
+<span id="cb3-46"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">  "</span></span>
+<span id="cb3-47">)</span></code></pre></div>
+<p><em>Sets the LLM’s behavior, ensuring consistent, compliance-focused summaries.</em></p>
+</section>
+<section id="prepare-file-metadata" class="level2">
+<h2 class="anchored" data-anchor-id="prepare-file-metadata">4. Prepare File Metadata</h2>
+<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">file_split_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(</span>
+<span id="cb4-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file_path =</span> policy_files</span>
+<span id="cb4-3">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb4-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(</span>
+<span id="cb4-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file_name =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_file</span>(file_path),</span>
+<span id="cb4-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file_extension =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_ext</span>(file_path),</span>
+<span id="cb4-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file_size =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file_size</span>(file_path),</span>
+<span id="cb4-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file_date =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file_info</span>(file_path)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>modification_time</span>
+<span id="cb4-9">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb4-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_split</span>(file_name)</span></code></pre></div>
+<p><em>Creates a tidy table with file metadata for processing.</em></p>
+</section>
+<section id="rag-processing-loop" class="level2">
+<h2 class="anchored" data-anchor-id="rag-processing-loop">5. RAG Processing Loop</h2>
+<p>This is the heart of the workflow rocessing each file through the RAG pipeline.</p>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">llm_resp_list <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> file_split_tbl <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb5-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">imap</span>(</span>
+<span id="cb5-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.f =</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(obj, id) {</span>
+<span id="cb5-4">      file_path <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> obj <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pull</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pluck</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb5-5">      store_location <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pdf_ragnar_duckdb"</span></span>
+<span id="cb5-6">      store <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ragnar_store_create</span>(</span>
+<span id="cb5-7">        store_location,</span>
+<span id="cb5-8">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">embed =</span> \(x) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">embed_ollama</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nomic-embed-text:latest"</span>),</span>
+<span id="cb5-9">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">overwrite =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb5-10">      )</span>
+<span id="cb5-11">      chunks <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> file_path <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">read_as_markdown</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">markdown_chunk</span>()</span>
+<span id="cb5-12">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ragnar_store_insert</span>(store, chunks)</span>
+<span id="cb5-13">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ragnar_store_build_index</span>(store)</span>
+<span id="cb5-14">      client <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">chat_ollama</span>(</span>
+<span id="cb5-15">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gpt-oss:20b-cloud"</span>,</span>
+<span id="cb5-16">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">system_prompt =</span> system_prompt,</span>
+<span id="cb5-17">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">params =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">temperature =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1</span>)</span>
+<span id="cb5-18">      )</span>
+<span id="cb5-19">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ragnar_register_tool_retrieve</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">chat =</span> client, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">store =</span> store)</span>
+<span id="cb5-20">      user_prompt <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glue</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Please summarize the policy: {file_path}"</span>)</span>
+<span id="cb5-21">      res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> client<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">chat</span>(user_prompt, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">echo =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"all"</span>)</span>
+<span id="cb5-22">      rec <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> obj <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">llm_resp =</span> res)</span>
+<span id="cb5-23">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">return</span>(rec)</span>
+<span id="cb5-24">    }</span>
+<span id="cb5-25">  )</span></code></pre></div>
+<p><strong>Key Concepts Explained:</strong></p>
+<ul>
+<li><code>embed = \(x) embed_ollama(x, model = "nomic-embed-text:latest")</code>:<br>
+<em>Anonymous function (R 4.1+), tells ragnar to use Ollama for embeddings.</em></li>
+<li><code>read_as_markdown()</code> and <code>markdown_chunk()</code>:<br>
+<em>Convert documents to markdown and split into manageable chunks for retrieval.</em></li>
+<li><code>ragnar_store_create()</code>, <code>ragnar_store_insert()</code>, <code>ragnar_store_build_index()</code>:<br>
+<em>Set up and populate the vector database for semantic search.</em></li>
+<li><code>chat_ollama()</code>:<br>
+<em>Creates a chat client using a local LLM model via Ollama.</em></li>
+<li><code>ragnar_register_tool_retrieve()</code>:<br>
+<em>Connects the retrieval tool to the LLM, enabling RAG.</em></li>
+<li><code>client$chat()</code>:<br>
+<em>Sends the user prompt and gets a grounded summary.</em></li>
+</ul>
+</section>
+<section id="format-output-for-email" class="level2">
+<h2 class="anchored" data-anchor-id="format-output-for-email">6. Format Output for Email</h2>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">output_tbl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list_rbind</span>(llm_resp_list) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb6-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(</span>
+<span id="cb6-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">email_body =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">md</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glue</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb6-4"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Please see summary for below:</span></span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Name: {file_name}</span></span>
+<span id="cb6-7"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      </span></span>
+<span id="cb6-8"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Extension: {file_extension}</span></span>
+<span id="cb6-9"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      </span></span>
+<span id="cb6-10"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Size: {file_size} bytes</span></span>
+<span id="cb6-11"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      </span></span>
+<span id="cb6-12"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Date: {file_date}</span></span>
+<span id="cb6-13"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      </span></span>
+<span id="cb6-14"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      Summary Response: </span></span>
+<span id="cb6-15"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      </span></span>
+<span id="cb6-16"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">      {llm_resp}</span></span>
+<span id="cb6-17"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">    "</span>))</span>
+<span id="cb6-18">  )</span></code></pre></div>
+<p><em>Prepares a markdown-formatted summary for each file.</em></p>
+</section>
+<section id="automate-email-sending-optional" class="level2">
+<h2 class="anchored" data-anchor-id="automate-email-sending-optional">7. Automate Email Sending (Optional)</h2>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">walk</span>(</span>
+<span id="cb7-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">.x =</span> output_tbl<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>email_body,</span>
+<span id="cb7-3">  <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> {</span>
+<span id="cb7-4">    Outlook <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">COMCreate</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Outlook.Application"</span>)</span>
+<span id="cb7-5">    Email <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> Outlook<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">CreateItem</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb7-6">    Email[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"subject"</span>]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Payer Policy Summary"</span></span>
+<span id="cb7-7">    Email[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"htmlbody"</span>]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> markdown<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">markdownToHTML</span>(.x)</span>
+<span id="cb7-8">    attachment <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_replace_all</span>(</span>
+<span id="cb7-9">      output_tbl<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>file_path[output_tbl<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>email_body <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> .x],</span>
+<span id="cb7-10">      <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/"</span>,</span>
+<span id="cb7-11">      <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\\\\</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb7-12">    )</span>
+<span id="cb7-13">    Email[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"to"</span>]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"who gets the summarized files?"</span></span>
+<span id="cb7-14">    Email[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"attachments"</span>]]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Add</span>(attachment)</span>
+<span id="cb7-15">    Email<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Send</span>()</span>
+<span id="cb7-16">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(Outlook)</span>
+<span id="cb7-17">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(Email)</span>
+<span id="cb7-18">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Sys.sleep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb7-19">  }</span>
+<span id="cb7-20">)</span></code></pre></div>
+<p><em>Uses Windows COM automation to send emails with summaries and attachments.</em></p>
+</section>
+<section id="export-results-to-markdown" class="level2">
+<h2 class="anchored" data-anchor-id="export-results-to-markdown">8. Export Results to Markdown</h2>
+<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">markdown_sections <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map_chr</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(output_tbl), <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(i) {</span>
+<span id="cb8-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">row_to_md</span>(output_tbl[i, ])</span>
+<span id="cb8-3">})</span>
+<span id="cb8-4">markdown_doc <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(markdown_sections, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">collapse =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">---</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">write_file</span>(markdown_doc, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste0</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getwd</span>(), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/test_policy_output.md"</span>))</span></code></pre></div>
+<p><em>Creates a markdown report with all summaries for documentation or review.</em></p>
+</section>
+</section>
+<section id="key-functions-reference" class="level1">
+<h1>Key Functions Reference</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 38%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Purpose</th>
+<th>Key Parameters / Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ragnar_store_create()</code></td>
+<td>Create vector store with embedding function</td>
+<td><code>location</code>, <code>embed</code>, <code>overwrite</code></td>
+</tr>
+<tr class="even">
+<td><code>read_as_markdown()</code></td>
+<td>Convert file to markdown</td>
+<td><code>file_path</code></td>
+</tr>
+<tr class="odd">
+<td><code>markdown_chunk()</code></td>
+<td>Split markdown into chunks</td>
+<td>Default chunking parameters</td>
+</tr>
+<tr class="even">
+<td><code>ragnar_store_insert()</code></td>
+<td>Insert chunks and generate embeddings</td>
+<td><code>store</code>, <code>chunks</code></td>
+</tr>
+<tr class="odd">
+<td><code>ragnar_store_build_index()</code></td>
+<td>Build search indices</td>
+<td><code>store</code></td>
+</tr>
+<tr class="even">
+<td><code>chat_ollama()</code></td>
+<td>Create chat client with Ollama model</td>
+<td><code>model</code>, <code>system_prompt</code>, <code>params</code></td>
+</tr>
+<tr class="odd">
+<td><code>ragnar_register_tool_retrieve()</code></td>
+<td>Register retrieval tool for LLM</td>
+<td><code>chat</code>, <code>store</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="best-practices-tips" class="level1">
+<h1>Best Practices &amp; Tips</h1>
+<ul>
+<li><strong>Keep it Local:</strong> All processing and LLM inference happen on your machine—no sensitive data leaves your environment.</li>
+<li><strong>Use Clear Prompts:</strong> A detailed system prompt ensures consistent, compliance-ready summaries.</li>
+<li><strong>Chunk Wisely:</strong> Proper chunking improves retrieval accuracy and LLM grounding.</li>
+<li><strong>Monitor Memory:</strong> Large PDFs and embeddings can be memory-intensive; process in batches if needed.</li>
+<li><strong>Automate Output:</strong> Use email or markdown export to integrate with business workflows.</li>
+</ul>
+</section>
+<section id="faq-rag-with-ollama-and-ragnar-in-r" class="level1">
+<h1>FAQ: RAG with Ollama and ragnar in R</h1>
+<p><strong>Q1: What is Retrieval-Augmented Generation (RAG)?</strong><br>
+A: RAG combines LLMs with document retrieval, ensuring responses are grounded in your actual data.</p>
+<p><strong>Q2: Why use Ollama with R?</strong><br>
+A: Ollama lets you run LLMs and embedding models locally, keeping data private and reducing latency.</p>
+<p><strong>Q3: What file types are supported?</strong><br>
+A: <code>ragnar</code> supports PDF, DOCX, HTML, and more—anything convertible to markdown.</p>
+<p><strong>Q4: Can I use other LLMs or embedding models?</strong><br>
+A: Yes! <code>ragnar</code> and <code>ellmer</code> support multiple providers (OpenAI, Google, etc.), but Ollama is ideal for local workflows.</p>
+<p><strong>Q5: How do I troubleshoot model or memory issues?</strong><br>
+A: Ensure Ollama is running, models are pulled, and process large files in smaller batches if you hit memory limits.</p>
+</section>
+<section id="quick-takeaways" class="level1">
+<h1>Quick Takeaways</h1>
+<ul>
+<li><strong>RAG in R</strong> is now practical and private with <code>ragnar</code>, <code>ellmer</code>, and Ollama.</li>
+<li><strong>Chunking and embedding</strong> are key to accurate, document-grounded LLM responses.</li>
+<li><strong>Automated summarization</strong> can be integrated into business workflows via email or markdown.</li>
+<li><strong>All code is modular</strong>—customize prompts, models, and output as needed.</li>
+<li><strong>Ideal for sensitive data</strong>—no cloud required.</li>
+</ul>
+</section>
+<section id="conclusion-next-steps" class="level1">
+<h1>Conclusion &amp; Next Steps</h1>
+<p>Building a RAG pipeline in R with Ollama and ragnar empowers you to automate document summarization, Q&amp;A, and compliance reporting—entirely on your own infrastructure. This approach is especially valuable for healthcare, legal, and enterprise settings where privacy and accuracy are paramount.</p>
+<blockquote class="blockquote">
+<p><strong>Ready to try it?</strong><br>
+Install the packages, set up Ollama, and adapt the code to your own document collections. Explore advanced features like hybrid retrieval, custom chunking, or integrating with Shiny dashboards for interactive Q&amp;A.</p>
+</blockquote>
+</section>
+<section id="further-reading-resources" class="level1">
+<h1>Further Reading &amp; Resources</h1>
+<ul>
+<li><a href="https://ragnar.tidyverse.org/">ragnar documentation</a></li>
+<li><a href="https://ellmer.tidyverse.org/">ellmer documentation</a></li>
+<li><a href="https://ollama.com/">Ollama official site</a></li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Share your feedback!</strong><br>
+Did you find this guide helpful? Share your experience or questions in the comments, and connect with the document summarizing!**</p>
+</blockquote>
+<hr>
+<p>Happy Coding! 🚀</p>
+<section id="rag-with-r" class="level2">
+<h2 class="anchored" data-anchor-id="rag-with-r"><img src="https://www.spsanderson.com/steveondata/posts/2025-10-29/todays_post.jpg" class="img-fluid" alt="RAG with R!"></h2>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/<span class="citation" data-cites="stevensanderson">@stevensanderson</span></a></p>
+<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/<span class="citation" data-cites="spsanderson">@spsanderson</span></a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson">https://github.com/spsanderson</a></p>
+<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com">https://bsky.app/profile/spsanderson.com</a></p>
+<p><em>My Book: <em>Extending Excel with Python and R</em> here</em>: <a href="https://packt.link/oTyZJ">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2025-10-29/</guid>
+  <pubDate>Wed, 29 Oct 2025 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>How to Master Data Cleaning in R: Three Methods for Removing Empty Rows</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -22007,644 +22864,6 @@ font-style: inherit;">print</span>(df4)</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-06-09/</guid>
   <pubDate>Mon, 09 Jun 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Create a Matrix with Random Numbers in R: A Complete Guide</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-06-02/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Creating matrices with random numbers is a fundamental skill for R programmers working in data analysis, machine learning, and statistical modeling. Whether you’re simulating data, initializing algorithms, or testing code, understanding how to <strong>create a matrix with random numbers in R</strong> efficiently will enhance your programming toolkit .</p>
-<p>In this guide, we’ll explore the essential functions, syntax, and best practices for generating random matrices in R. You’ll learn how to use different random number distributions, avoid common pitfalls, and apply these techniques in real-world scenarios.</p>
-<hr>
-</section>
-<section id="understanding-the-basics-the-matrix-function" class="level1">
-<h1>Understanding the Basics: The matrix() Function</h1>
-<p>The foundation of matrix creation in R is the <code>matrix()</code> function. Here’s its basic syntax :</p>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(data, nrow, ncol, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">byrow =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">dimnames =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>)</span></code></pre></div>
-<section id="key-parameters" class="level2">
-<h2 class="anchored" data-anchor-id="key-parameters">Key Parameters:</h2>
-<ul>
-<li><strong>data</strong>: Vector of elements to fill the matrix</li>
-<li><strong>nrow</strong>: Number of rows</li>
-<li><strong>ncol</strong>: Number of columns<br>
-</li>
-<li><strong>byrow</strong>: Fill by rows (TRUE) or columns (FALSE, default)</li>
-<li><strong>dimnames</strong>: Optional row and column names</li>
-</ul>
-<hr>
-</section>
-</section>
-<section id="random-number-generation-functions-in-r" class="level1">
-<h1>Random Number Generation Functions in R</h1>
-<p>Before creating random matrices, let’s understand the key functions for generating random numbers :</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Function</th>
-<th>Distribution</th>
-<th>Example Usage</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>runif()</code></td>
-<td>Uniform (continuous)</td>
-<td><code>runif(10, min=0, max=1)</code></td>
-</tr>
-<tr class="even">
-<td><code>rnorm()</code></td>
-<td>Normal (Gaussian)</td>
-<td><code>rnorm(10, mean=0, sd=1)</code></td>
-</tr>
-<tr class="odd">
-<td><code>sample()</code></td>
-<td>Random sampling</td>
-<td><code>sample(1:10, 5, replace=TRUE)</code></td>
-</tr>
-<tr class="even">
-<td><code>rbinom()</code></td>
-<td>Binomial</td>
-<td><code>rbinom(10, size=1, prob=0.5)</code></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="working-example-1-uniform-random-matrix" class="level1">
-<h1>Working Example 1: Uniform Random Matrix</h1>
-<p>Let’s start with creating a matrix filled with uniformly distributed random numbers between 0 and 1:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set seed for reproducibility</span></span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)</span>
-<span id="cb2-3"></span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a 3x4 matrix with uniform random numbers</span></span>
-<span id="cb2-5">uniform_matrix <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span>
-<span id="cb2-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(uniform_matrix)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>          [,1]      [,2]      [,3]      [,4]
-[1,] 0.9148060 0.8304476 0.7365883 0.7050648
-[2,] 0.9370754 0.6417455 0.1346666 0.4577418
-[3,] 0.2861395 0.5190959 0.6569923 0.7191123</code></pre>
-</div>
-</div>
-<blockquote class="blockquote">
-<p><strong>Key Insight:</strong> The <code>runif()</code> function generates 12 random numbers, which are then arranged into a 3×4 matrix .</p>
-</blockquote>
-</section>
-<section id="working-example-2-normal-distribution-matrix" class="level1">
-<h1>Working Example 2: Normal Distribution Matrix</h1>
-<p>Creating a matrix with normally distributed random numbers is essential for statistical simulations:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a 5x3 matrix with normal distribution (mean=0, sd=1)</span></span>
-<span id="cb4-2">normal_matrix <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(normal_matrix)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>            [,1]       [,2]       [,3]
-[1,]  1.51152200  2.2866454 -0.2842529
-[2,] -0.09465904 -1.3888607 -2.6564554
-[3,]  2.01842371 -0.2787888 -2.4404669
-[4,] -0.06271410 -0.1333213  1.3201133
-[5,]  1.30486965  0.6359504 -0.3066386</code></pre>
-</div>
-</div>
-<section id="understanding-the-parameters" class="level2">
-<h2 class="anchored" data-anchor-id="understanding-the-parameters">Understanding the Parameters:</h2>
-<ul>
-<li><strong>n</strong>: Number of random values (15 in this case)</li>
-<li><strong>mean</strong>: Center of the distribution (default: 0)</li>
-<li><strong>sd</strong>: Standard deviation (default: 1)</li>
-</ul>
-</section>
-</section>
-<section id="working-example-3-random-integer-matrix" class="level1">
-<h1>Working Example 3: Random Integer Matrix</h1>
-<p>For discrete data simulations, you might need matrices with random integers:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a 4x5 matrix with random integers between 1 and 100</span></span>
-<span id="cb6-2">integer_matrix <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace=</span><span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb6-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(integer_matrix)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     [,1] [,2] [,3] [,4] [,5]
-[1,]   22   68   69   99   26
-[2,]   58   86    4   88    6
-[3,]    8   18   98   87    6
-[4,]   36   92   50   49    2</code></pre>
-</div>
-</div>
-</section>
-<section id="working-example-4-custom-probability-matrix" class="level1">
-<h1>Working Example 4: Custom Probability Matrix</h1>
-<p>Create a binary matrix where each entry has a specific probability of being 1:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a 5x5 matrix where each entry is 1 with probability 0.2</span></span>
-<span id="cb8-2">binary_matrix <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rbinom</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">prob=</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.2</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)</span>
-<span id="cb8-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(binary_matrix)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     [,1] [,2] [,3] [,4] [,5]
-[1,]    0    0    0    0    0
-[2,]    1    0    0    0    0
-[3,]    0    0    0    0    0
-[4,]    0    0    0    0    0
-[5,]    0    0    0    0    0</code></pre>
-</div>
-</div>
-</section>
-<section id="best-practices-for-random-matrix-creation" class="level1">
-<h1>Best Practices for Random Matrix Creation</h1>
-<section id="always-set-a-random-seed" class="level2">
-<h2 class="anchored" data-anchor-id="always-set-a-random-seed">1. <strong>Always Set a Random Seed</strong></h2>
-<div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Ensures reproducible results</span></span></code></pre></div>
-</section>
-<section id="verify-matrix-dimensions" class="level2">
-<h2 class="anchored" data-anchor-id="verify-matrix-dimensions">2. <strong>Verify Matrix Dimensions</strong></h2>
-<div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dim</span>(your_matrix)     <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Returns c(nrow, ncol)</span></span>
-<span id="cb11-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">nrow</span>(your_matrix)    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Number of rows</span></span>
-<span id="cb11-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ncol</span>(your_matrix)    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Number of columns</span></span></code></pre></div>
-</section>
-<section id="check-data-length" class="level2">
-<h2 class="anchored" data-anchor-id="check-data-length">3. <strong>Check Data Length</strong></h2>
-<p>Ensure your data length matches the matrix size to avoid recycling:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Good: 12 elements for 3x4 matrix</span></span>
-<span id="cb12-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>             [,1]      [,2]      [,3]      [,4]
-[1,] 0.0002388966 0.9256447 0.5150633 0.6262453
-[2,] 0.2085699569 0.7340943 0.7439746 0.2171577
-[3,] 0.9330341273 0.3330720 0.6191592 0.2165673</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Avoid: 10 elements for 3x4 matrix (will recycle)</span></span>
-<span id="cb14-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in matrix(runif(10), nrow = 3, ncol = 4): data length [10] is not a
-sub-multiple or multiple of the number of rows [3]</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>          [,1]      [,2]        [,3]      [,4]
-[1,] 0.3889450 0.7398553 0.002272966 0.7515226
-[2,] 0.9424557 0.7332459 0.608937453 0.3889450
-[3,] 0.9626080 0.5357613 0.836801559 0.9424557</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="common-pitfalls-and-solutions" class="level1">
-<h1>Common Pitfalls and Solutions</h1>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 32%">
-<col style="width: 32%">
-<col style="width: 35%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Problem</th>
-<th>Example</th>
-<th>Solution</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Dimension mismatch</strong></td>
-<td><code>matrix(1:5, nrow=2, ncol=3)</code></td>
-<td>Ensure data length = nrow × ncol</td>
-</tr>
-<tr class="even">
-<td><strong>Mixed data types</strong></td>
-<td><code>matrix(c(1, "a", 3), nrow=1)</code></td>
-<td>Use consistent data types</td>
-</tr>
-<tr class="odd">
-<td><strong>Missing dimensions</strong></td>
-<td><code>matrix(1:6)</code></td>
-<td>Always specify both nrow and ncol</td>
-</tr>
-<tr class="even">
-<td><strong>Memory issues</strong></td>
-<td>Large matrices</td>
-<td>Check with <code>object.size()</code> first</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="your-turn" class="level1">
-<h1>Your Turn!</h1>
-<p><strong>Challenge:</strong> Create a 6×6 matrix where:</p>
-<ul>
-<li>The upper triangle contains random numbers from a normal distribution (mean=10, sd=2)</li>
-<li>The lower triangle contains random integers between 1 and 50</li>
-<li>The diagonal contains zeros</li>
-</ul>
-<p>Try to solve this before looking at the solution!</p>
-<details>
-<summary>
-Click here for Solution!
-</summary>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set seed for reproducibility</span></span>
-<span id="cb17-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)</span>
-<span id="cb17-3"></span>
-<span id="cb17-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create empty 6x6 matrix</span></span>
-<span id="cb17-5">result_matrix <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nrow=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>)</span>
-<span id="cb17-6"></span>
-<span id="cb17-7"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fill upper triangle with normal distribution</span></span>
-<span id="cb17-8">upper_values <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mean=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sd=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># 15 values for upper triangle</span></span>
-<span id="cb17-9">upper_index <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb17-10"></span>
-<span id="cb17-11"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) {</span>
-<span id="cb17-12">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span>(j <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> (i<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>) {</span>
-<span id="cb17-13">    result_matrix[i, j] <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> upper_values[upper_index]</span>
-<span id="cb17-14">    upper_index <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> upper_index <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb17-15">  }</span>
-<span id="cb17-16">}</span>
-<span id="cb17-17"></span>
-<span id="cb17-18"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Fill lower triangle with random integers</span></span>
-<span id="cb17-19"><span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>) {</span>
-<span id="cb17-20">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span>(j <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span>(i<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">-1</span>)) {</span>
-<span id="cb17-21">    result_matrix[i, j] <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb17-22">  }</span>
-<span id="cb17-23">}</span>
-<span id="cb17-24"></span>
-<span id="cb17-25"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">round</span>(result_matrix, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     [,1] [,2]  [,3]  [,4]  [,5]  [,6]
-[1,]    0    9 10.26  9.84 11.77 10.23
-[2,]    2    0 10.64  8.84 11.43  8.35
-[3,]    4    4  0.00  9.28 10.18 10.19
-[4,]   48   32 21.00  0.00  9.60 11.48
-[5,]   27   39 16.00 11.00  0.00 10.25
-[6,]    2    6 29.00 45.00 30.00  0.00</code></pre>
-</div>
-</div>
-</details>
-</section>
-<section id="quick-takeaways" class="level1">
-<h1>Quick Takeaways</h1>
-<p>• <strong>Essential Functions</strong>: <code>matrix()</code> for structure, <code>runif()</code>, <code>rnorm()</code>, <code>sample()</code> for random data • <strong>Always set seed</strong>: Use <code>set.seed()</code> for reproducible results • <strong>Check dimensions</strong>: Verify with <code>dim()</code>, <code>nrow()</code>, and <code>ncol()</code> • <strong>Data length matters</strong>: Ensure data length equals nrow × ncol • <strong>One type per matrix</strong>: All elements must be the same data type • <strong>Memory awareness</strong>: Large matrices can exceed system memory</p>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>Creating matrices with random numbers in R is a powerful technique that opens doors to simulation, testing, and advanced statistical modeling. By mastering the <code>matrix()</code> function combined with random number generators like <code>runif()</code>, <code>rnorm()</code>, and <code>sample()</code>, you can efficiently generate the data structures needed for your R programming projects.</p>
-<p>Remember to always set a seed for reproducibility, verify your matrix dimensions, and choose the appropriate random distribution for your specific use case. With these tools and best practices, you’re ready to <strong>create a matrix with random numbers in R</strong> for any application!</p>
-<p><strong>Ready to level up your R skills?</strong> Try creating different types of random matrices for your next data science project and experiment with various distributions to see how they affect your analyses!</p>
-</section>
-<section id="faqs" class="level1">
-<h1>FAQs</h1>
-<p><strong>Q1: How do I create a matrix with random numbers from a specific range?</strong> A: Use <code>runif()</code> with min and max parameters: <code>matrix(runif(12, min=5, max=10), nrow=3, ncol=4)</code></p>
-<p><strong>Q2: Can I create a matrix with both positive and negative random numbers?</strong> A: Yes! Use <code>rnorm()</code> for normal distribution or <code>runif()</code> with negative min: <code>matrix(runif(9, min=-5, max=5), nrow=3, ncol=3)</code></p>
-<p><strong>Q3: How do I create a sparse matrix with mostly zeros?</strong> A: Use <code>rbinom()</code> with low probability: <code>matrix(rbinom(100, size=1, prob=0.1), nrow=10, ncol=10)</code></p>
-<p><strong>Q4: What’s the difference between sample() and runif() for matrices?</strong> A: <code>sample()</code> gives discrete values (integers), while <code>runif()</code> gives continuous decimal values</p>
-<p><strong>Q5: How can I name the rows and columns of my random matrix?</strong> A: Use the dimnames parameter: <code>matrix(runif(6), nrow=2, ncol=3, dimnames=list(c("row1", "row2"), c("col1", "col2", "col3")))</code></p>
-</section>
-<section id="share-your-experience" class="level1">
-<h1>Share Your Experience!</h1>
-<p>Did this guide help you master creating random matrices in R? We’d love to hear about your projects and how you’re using these techniques! Share your creative applications in the comments below or tag us on social media with #RMatrixMastery. Your insights might inspire other R programmers in our community!</p>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<ol type="1">
-<li><p><a href="https://bookdown.org/rdpeng/rprogdatascience/matrices.html">Introduction to Programming with R: Matrices</a></p></li>
-<li><p><a href="https://www.datacamp.com/tutorial/random-number-generator-r">Random Number Generation in R: A How-To Guide</a></p></li>
-<li><p><a href="https://www.datanovia.com/en/lessons/create-a-matrix-with-random-values-in-r/">Create a Matrix with Random Values in R</a></p></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-06-02/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>Random Matrix in R</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-06-02/</guid>
-  <pubDate>Mon, 02 Jun 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
