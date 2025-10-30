@@ -1,32 +1,69 @@
-create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(), 
-                            categories = c("code", "rtip"), 
-                            keywords = c("Programming")) {
+create_qmd_file <- function(
+  filename = "index.qmd",
+  title = "",
+  date = Sys.Date(),
+  categories = c("code", "rtip"),
+  keywords = c("Programming")
+) {
   # Define the base path
-  base_path <- paste0(getwd(),"/posts")
-  
+  base_path <- paste0(getwd(), "/posts")
+
   # Convert date to string and create the full directory path
   date_str <- as.character(date)
   full_path <- file.path(base_path, date_str)
-  
+
   # Create the directory if it doesn't exist
   if (!dir.exists(full_path)) {
     dir.create(full_path, recursive = TRUE)
     message("Directory created: ", full_path)
   }
-  
-  # Define the full file path
+
+  # Define the full file paths
   file_path <- file.path(full_path, filename)
-  
+  bib_path <- file.path(full_path, "references.bib")
+
+  # Generate a clean, unique citation key
+  clean_key <- gsub("[^a-zA-Z0-9]+", "_", tolower(title))
+  clean_key <- gsub("^_|_$", "", clean_key) # remove leading/trailing underscores
+  bib_key <- paste0(clean_key, "_", gsub("-", "", date_str))
+
+  # Construct the BibTeX entry dynamically
+  bibtex_entry <- paste0(
+    "@online{",
+    bib_key,
+    ",\n",
+    "  author = {Sanderson II MPH, Steven P.},\n",
+    "  title = {",
+    title,
+    "},\n",
+    "  date = {",
+    date_str,
+    "},\n",
+    "  url = {https://www.spsanderson.com/steveondata/posts/",
+    date_str,
+    "/},\n",
+    "  langid = {en}\n",
+    "}\n\n"
+  )
+
   # Create the content to be written in the file
   content <- paste0(
     "---\n",
-    'title: "', title, '"\n',
+    'title: "',
+    title,
+    '"\n',
     'author: "Steven P. Sanderson II, MPH"\n',
-    'date: "', date_str, '"\n',
-    "categories: [", paste(categories, collapse = ", "), "]\n",
+    'date: "',
+    date_str,
+    '"\n',
+    "categories: [",
+    paste(categories, collapse = ", "),
+    "]\n",
     "toc: TRUE\n",
     "description: ''\n",
-    "keywords: [", paste(keywords, collapse = ", "), "]\n",
+    "keywords: [",
+    paste(keywords, collapse = ", "),
+    "]\n",
     "---\n\n",
     '---\n\n',
     'Happy Coding! 🚀\n\n',
@@ -41,6 +78,7 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     '*My Book: _Extending Excel with Python and R_ here*: [https://packt.link/oTyZJ](https://packt.link/oTyZJ)\n\n',
     '*You.com Referral Link*: [https://you.com/join/EHSLDTL6](https://you.com/join/EHSLDTL6)\n\n',
     '---\n\n',
+    bibtex_entry,
     '<script src="https://giscus.app/client.js"\n',
     '        data-repo="spsanderson/steveondata"\n',
     '        data-repo-id="R_kgDOIIxnLw"\n',
@@ -58,9 +96,16 @@ create_qmd_file <- function(filename = "index.qmd", title = "", date = Sys.Date(
     '        async>\n',
     '</script>\n'
   )
-  
+
   # Write the content to the file
   writeLines(content, file_path)
+
+  # Write the .bib file
+  writeLines(bibtex_entry, bib_path)
+
   message("QMD file created: ", file_path, " - Opening File.")
+  message("BibTex file created: ", bib_path)
+
+  # Open the new file for editing
   file.edit(file_path)
 }
