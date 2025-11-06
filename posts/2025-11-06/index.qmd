@@ -1,0 +1,301 @@
+---
+title: "Sending Email and Text Messages with Python: A Beginner’s Complete Guide"
+author: "Steven P. Sanderson II, MPH"
+date: "2025-11-06"
+categories: [code, python]
+toc: TRUE
+description: "Send emails & SMS with Python easily! Beginner tutorial covering smtplib, Twilio, security best practices. Start your automation journey!"
+keywords: [Programming, Python send email, Gmail SMTP Python, Python email automation, Python SMTP server, Send email with Python script, Python smtplib tutorial, Gmail SMTP setup Python, Python email code example, Python email attachment, Python automate Gmail,    How to send emails using Python and Gmail SMTP server, Step-by-step guide to automate email sending with Python, Securely send emails from Python script via Gmail, Python script for sending HTML emails with Gmail SMTP, Best practices for sending emails in Python with attachments]
+---
+
+> **Key Takeaway:**  
+> This guide will teach you how to send emails and text messages using Python, with step-by-step instructions, practical code examples, and troubleshooting tips—perfect for beginners!
+
+*Author’s Note: I’m learning as I write this series! That means you might spot mistakes or see things done in a way that could be improved. If you have suggestions or spot errors, please let me know.**
+
+# Why Use Python for Email and SMS?
+
+Python is one of the most popular programming languages for automating tasks—including sending emails and text messages. With just a few lines of code, you can:
+
+- Send notifications automatically
+- Alert yourself about important events
+- Build contact forms or customer support tools
+- Save time by automating repetitive communication
+
+# What You Need to Get Started
+
+- **Python 3.x** installed on your computer
+- A code editor (like VS Code, PyCharm, or even Notepad++)
+- Internet access
+- For emails: a Gmail (or other SMTP) account
+- For SMS: a Twilio account (free trial available)
+
+**Required Libraries:**
+- `smtplib` (built-in for emails)
+- `email` (built-in for formatting emails)
+- `twilio` (install with `pip install twilio` for SMS)
+
+# Sending Emails with Python (Step-by-Step)
+
+## Understanding smtplib
+
+`smtplib` is Python’s built-in library for sending emails using the Simple Mail Transfer Protocol (SMTP). It lets you connect to email servers (like Gmail) and send messages programmatically.
+
+## Setting Up Gmail SMTP
+
+To send emails through Gmail:
+
+1. **Enable 2-Step Verification** on your Google account.
+2. **Create an App Password** (not your regular password) for your Python script.
+3. Use these SMTP settings:
+   - Server: `smtp.gmail.com`
+   - Port: `587` (TLS)
+
+## Your First Email Script
+
+Here’s a simple script to send an email using Python and Gmail:
+
+```python
+import smtplib
+from email.message import EmailMessage
+
+# Set up your email details
+EMAIL_ADDRESS = 'your_email@gmail.com'
+EMAIL_PASSWORD = 'your_app_password'
+
+msg = EmailMessage()
+msg['Subject'] = 'Hello from Python!'
+msg['From'] = EMAIL_ADDRESS
+msg['To'] = 'recipient@example.com'
+msg.set_content('This is a test email sent from Python!')
+
+# Connect to Gmail SMTP server and send email
+with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+    smtp.starttls()  # Secure the connection
+    smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+    smtp.send_message(msg)
+
+print("Email sent successfully!")
+```
+
+> **Tip:** Never use your regular Gmail password in scripts. Always use an App Password for security.
+
+## Sending HTML Emails and Attachments
+
+Want to send a fancy HTML email or attach a file? Here’s how:
+
+```python
+import smtplib
+from email.message import EmailMessage
+
+EMAIL_ADDRESS = 'your_email@gmail.com'
+EMAIL_PASSWORD = 'your_app_password'
+
+msg = EmailMessage()
+msg['Subject'] = 'HTML Email with Attachment'
+msg['From'] = EMAIL_ADDRESS
+msg['To'] = 'recipient@example.com'
+msg.set_content('This is a plain text fallback.')
+
+# Add HTML content
+msg.add_alternative("""
+<html>
+  <body>
+    <h1 style="color:blue;">Hello from Python!</h1>
+    <p>This is an <b>HTML email</b> with an attachment.</p>
+  </body>
+</html>
+""", subtype='html')
+
+# Attach a file
+with open('example.pdf', 'rb') as f:
+    file_data = f.read()
+    file_name = f.name
+msg.add_attachment(file_data, maintype='application', subtype='pdf', filename=file_name)
+
+with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+    smtp.starttls()
+    smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+    smtp.send_message(msg)
+
+print("HTML email with attachment sent!")
+```
+
+## Validating Email Addresses
+
+Before sending, it’s smart to check if the email address looks valid:
+
+```python
+import re
+
+def is_valid_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email) is not None
+
+print(is_valid_email('test@example.com'))  # True
+print(is_valid_email('not-an-email'))      # False
+```
+
+# Sending SMS with Python (Twilio)
+
+## Getting Started with Twilio
+
+1. **Sign up for a free Twilio account** at [twilio.com](https://www.twilio.com/).
+2. **Get your Account SID and Auth Token** from the Twilio Console.
+3. **Buy a Twilio phone number** (free credits available for trial accounts).
+
+## Twilio Python Integration
+
+Install the Twilio library:
+
+```bash
+pip install twilio
+```
+
+## SMS Example Code
+
+Here’s how to send a text message with Python and Twilio:
+
+```python
+from twilio.rest import Client
+
+# Your Twilio credentials
+account_sid = 'your_account_sid'
+auth_token = 'your_auth_token'
+client = Client(account_sid, auth_token)
+
+message = client.messages.create(
+    body='Hello from Python SMS!',
+    from_='+1234567890',  # Your Twilio number
+    to='+0987654321'      # Recipient's phone number
+)
+
+print("SMS sent! Message SID:", message.sid)
+```
+
+## Automating Text Messages
+
+You can use Python to send SMS alerts automatically—for example, when a script finishes running or an error occurs. Just wrap the SMS code in a function and call it when needed!
+
+# Error Handling & Troubleshooting
+
+- **SMTP Connection Refused:** Double-check your SMTP server, port, and internet connection. Make sure your firewall isn’t blocking port 587.
+- **Authentication Errors:** Use App Passwords for Gmail. For Twilio, make sure your Account SID and Auth Token are correct.
+- **SMS Not Sending:** Check if your Twilio trial number is verified and you have enough credits.
+
+# Security Best Practices
+
+- **Never hard-code passwords or API keys** in your scripts. Use environment variables or a `.env` file.
+- **Use App Passwords** for Gmail, not your main password.
+- **Keep your credentials private**—never share them or upload them to public repositories.
+
+# Practical Examples & Use Cases
+
+- **Automated Email Alerts:** Get notified when a script finishes or an error occurs.
+- **Order Confirmations:** Send customers a confirmation email or SMS after a purchase.
+- **Contact Forms:** Automatically email or text yourself when someone fills out a form on your website.
+
+# Your Turn!
+
+Try sending an email and an SMS using the code above. As a challenge, modify the email script to send a message to multiple recipients at once.
+
+<details>
+<summary>Click here for Solution!</summary>
+
+```python
+# Sending to multiple recipients
+msg['To'] = ', '.join(['person1@example.com', 'person2@example.com'])
+```
+</details>
+
+# Quick Takeaways
+
+- Python makes sending emails and SMS easy with `smtplib` and Twilio.
+- Always use secure methods for storing credentials.
+- Validate email addresses before sending.
+- Automate notifications to save time and reduce manual work.
+- Troubleshoot common errors by checking settings and credentials.
+
+# Conclusion & Next Steps
+
+You’ve just learned how to send emails and text messages with Python! With these skills, you can automate notifications, build smarter apps, and save tons of time. Keep experimenting, try new features, and don’t hesitate to ask for help or share your progress.
+
+**Ready to level up?** Try building a simple notification system for your next project, or explore more advanced email and SMS features!
+
+# FAQs
+
+**1. Do I need to pay to send emails with Python?**  
+No! Sending emails with Python’s `smtplib` is free. SMS via Twilio is free with trial credits, but paid after that.
+
+**2. Is it safe to use my Gmail password in Python scripts?**  
+Never use your regular password. Always use an App Password for scripts.
+
+**3. Why do I get 'connection refused' errors?**  
+Check your SMTP server, port, and firewall settings. For Gmail, use `smtp.gmail.com:587` with TLS.
+
+**4. Can I send SMS without Twilio?**  
+Yes! Alternatives include TextBelt, MessageBird, and Nexmo.
+
+**5. How many emails can I send per day with Python?**  
+Gmail allows 500/day for regular accounts. Other providers have different limits.
+
+# Engage!
+
+**Did this guide help you?**  
+Share your experience, ask questions, or suggest improvements in the comments below! If you found this useful, share it with friends or on social media to help more beginners discover Python automation.
+
+**You’re now ready to automate your communications with Python. Happy coding!**
+
+# References
+
+- [How to Send Emails Using Python and Gmail SMTP Server](https://realpython.com/python-send-email/)
+- [Gmail SMTP Server Settings for Sending Emails](https://support.google.com/mail/answer/7126229?hl=en)
+- [Python smtplib — SMTP protocol client](https://docs.python.org/3/library/smtplib.html)
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+![Email and Text Messages with Python](todays_post.jpg)
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*Mastadon Social here*: [https://mstdn.social/\@stevensanderson](https://mstdn.social/@stevensanderson)
+
+*RStats Network here*: [https://rstats.me/\@spsanderson](https://rstats.me/@spsanderson)
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*Bluesky Network here*: <https://bsky.app/profile/spsanderson.com>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+@online{sending_email_and_text_messages_with_python_a_beginner_s_complete_guide_20251106, author = {Sanderson II MPH, Steven P.}, title = {Sending Email and Text Messages with Python: A Beginner’s Complete Guide}, date = {2025-11-06}, url = {https://www.spsanderson.com/steveondata/posts/2025-11-06/}, langid = {en} }
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
