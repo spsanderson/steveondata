@@ -1,0 +1,499 @@
+---
+title: "Sampling 837i Claims for Testing with Weights in R"
+author: "Steven P. Sanderson II, MPH"
+date: "2026-08-02"
+categories: [code, rtip, sample, revenue cycle, 837i]
+toc: TRUE
+description: 'Improve hospital billing validation with our R script for weighted sampling. Ensure every 837i claim type is represented for accurate revenue cycle testing.'
+keywords: [Programming, 837i claims testing in R, Weighted sampling R programming, Revenue cycle data testing, Hospital billing system validation, R script for claims sampling, Healthcare EDI 837i testing, Case mix sampling algorithms, Automated claims selection R, Revenue cycle analyst tools, Institutional claims data analysis, Binary search allocation logic, Diagnosis-Related Group (DRG) distribution, Discharge percentage weights, Healthcare data science scripts, Medicare and Medicaid billing files]
+---
+
+# Sampling 837i Claims for Testing with Weights in R
+
+## A Practical Guide for R Programmers and Revenue Cycle Analysts
+
+---
+
+## Introduction — Why Sampling 837i Claims the Right Way Matters
+
+If you've ever been handed a spreadsheet with tens of thousands of institutional claims and told *"pull a sample for testing,"* you know the temptation: grab a random slice and call it a day. But in revenue cycle auditing and claims testing, a naive random sample can badly misrepresent your case mix. A hospital that sees 60% inpatient DRG claims and 5% skilled nursing facility (SNF) claims needs those proportions reflected in the test sample, otherwise your findings won't hold up.
+
+This guide walks you through a **weighted, stratified sampling approach for 837i institutional claims using R**. I'll break down every section of a production-ready R script, explain the logic behind the binary search allocation algorithm, and show you how to validate and export your results. Whether you're an R programmer building a reusable sampling pipeline or a revenue cycle analyst trying to understand what the code is actually doing, this post is for you.
+
+---
+
+## What Is an 837i Claim?
+
+The **837i** is the HIPAA-standard electronic transaction format for **institutional claims** — think hospitals, skilled nursing facilities, inpatient rehabilitation centers, and home health agencies. The "i" stands for *institutional*, distinguishing it from the 837p (professional) and 837d (dental) formats.
+
+In a claims testing context, 837i data typically contains:
+
+- **Claim type indicators** (inpatient, outpatient, SNF, rehab, etc.)
+- **Discharge information** (used to calculate case mix weights)
+- **Billing codes** (DRGs, revenue codes, procedure codes)
+- **Payer and provider identifiers**
+
+When sampling for audit or testing purposes, the **claim type** is the natural stratification variable — and **discharge volume by type** is the natural weighting variable.
+
+---
+
+## Why Use Weighted Sampling for Claims Testing?
+
+Standard random sampling treats every claim equally. Weighted sampling respects the **real-world distribution** of your claim population.
+
+Here's why that matters:
+
+- **Proportional representation:** If inpatient DRG claims make up 55% of discharges, they should make up roughly 55% of your sample.
+- **Audit defensibility:** Regulators and payers expect samples to reflect the case mix. A weighted sample is far easier to defend.
+- **Efficiency:** You avoid over-sampling rare claim types while under-sampling high-volume ones.
+- **Minimum coverage:** A well-designed allocation ensures every claim type gets *at least one* sampled record, even low-volume groups.
+
+The script we're working with uses **discharge percent as the weight**, which is a standard approach in healthcare revenue cycle sampling.
+
+---
+
+## Setting Up Your R Environment
+
+The script relies on three packages :
+
+```r
+library(readxl)   # Read Excel input files
+library(dplyr)    # Data manipulation
+library(writexl)  # Export results to Excel
+```
+
+Install them if needed:
+
+```r
+install.packages(c("readxl", "dplyr", "writexl"))
+```
+
+**Reproducibility** is critical in audit work. The script sets a seed immediately :
+
+```r
+set.seed(20260715)
+```
+
+This ensures that anyone re-running the script on the same data gets the **identical sample** — essential for documentation and peer review.
+
+---
+
+## Defining Your Target Sample Size
+
+```r
+target_sample_size <- 3000L
+```
+
+The `L` suffix declares this as an **integer**, not a double. This is a small but intentional detail — sample sizes are counts, not decimals .
+
+Your target sample size should be determined by your audit methodology, statistical confidence requirements, or contractual obligations. Common drivers include:
+
+- **RAC audit protocols** requiring statistically valid samples
+- **Internal audit charters** specifying minimum sample sizes by claim type
+- **Payer contracts** with defined review populations
+
+---
+
+## Loading Your Claims and Weights Data
+
+The script I used reads two Excel files :
+
+```r
+claims_tbl <- read_excel(
+  path = "case_mix_selection_data_06262026.xlsx",
+  sheet = "Case_Mix_Selection_Data_6262026"
+) |>
+  rename("group_key" = "UNIQUE_CLAIM_TYPE_IND")
+
+sample_weights_tbl <- read_excel(
+  path = "claims_testing_sample_weights.xlsx"
+) |>
+  transmute(
+    group_key,
+    discharge_percent
+  )
+```
+
+**Key design decisions here:**
+
+- The `UNIQUE_CLAIM_TYPE_IND` column is renamed to `group_key` — a generic name that makes the allocation function reusable across different datasets.
+- `transmute()` is used instead of `select()` to keep *only* the columns needed, reducing the risk of accidentally joining on extra columns later.
+- The weights file contains `discharge_percent` — the proportion of total discharges each claim type represents.
+
+---
+
+## Validating Your Weights Table for Duplicate Group Keys
+
+Before any sampling happens, the script checks for a common data quality issue: **duplicate group keys in the weights table** .
+
+```r
+duplicate_weights <- sample_weights_tbl |>
+  count(group_key) |>
+  filter(n > 1)
+
+if (nrow(duplicate_weights) > 0) {
+  stop("One or more group keys appear more than once in the weights table.")
+} else {
+  print("No duplicate group keys found. Good to go.")
+}
+```
+
+Why does this matter? If a claim type appears twice in the weights table with different `discharge_percent` values, a join will **silently duplicate rows** in your claims data — inflating your sample and producing incorrect allocations. This guard catches that before it causes problems.
+
+---
+
+## Building the Group Counts Table
+
+```r
+group_counts_tbl <- claims_tbl |>
+  count(group_key, name = "available_n") |>
+  left_join(sample_weights_tbl, by = "group_key") |>
+  mutate(
+    discharge_percent = if_else(
+      is.na(discharge_percent),
+      0,
+      discharge_percent
+    )
+  )
+```
+
+This table is the **input to the allocation function**. For each claim type group, it contains :
+
+| Column | Description |
+|---|---|
+| `group_key` | Claim type identifier |
+| `available_n` | Total claims available to sample |
+| `discharge_percent` | Weight for proportional allocation |
+
+The `if_else()` call handles claim types that exist in the claims data but have **no corresponding weight** — they default to zero, meaning they won't receive proportional allocation (though the feasibility checks will still ensure they get at least one record if the target allows).
+
+---
+
+## How the Weighted Allocation Function Works
+
+The `allocate_weighted_sample()` function is the heart of the script . It takes the group counts table and a target sample size, then returns how many records to sample from each group.
+
+### Feasibility Checks
+
+Before any math happens, the function validates four conditions :
+
+1. **Target ≥ number of groups** — You need at least one record per group
+2. **Target ≤ available records** — You can't sample more than exists
+3. **No missing weights** — Every group needs a weight
+4. **Not all weights are zero** — At least one group must be eligible for proportional allocation
+
+These checks produce **informative error messages** rather than cryptic failures — a hallmark of production-quality R code.
+
+### The Allocation Logic
+
+The core idea: multiply each group's `discharge_percent` weight by a scalar, then floor the result to get integer sample sizes. The challenge is finding the right scalar so that the **total allocated equals exactly your target** .
+
+```r
+allocation_total <- function(multiplier) {
+  sum(
+    pmin(
+      group_tbl$available_n,
+      pmax(1, multiplier * group_tbl$weight)
+    )
+  )
+}
+```
+
+The `pmax(1, ...)` enforces the **minimum of one record per group**. The `pmin(..., available_n)` enforces the **maximum of all available records** — you can't sample more than exists.
+
+---
+
+## The Binary Search: Finding the Right Multiplier
+
+Finding the exact multiplier is a classic **root-finding problem**. The script solves it with a binary search over 200 iterations :
+
+```r
+lower_multiplier <- 0
+upper_multiplier <- 1
+
+while (allocation_total(upper_multiplier) < target_n) {
+  upper_multiplier <- upper_multiplier * 2
+}
+
+for (iteration in seq_len(200)) {
+  middle_multiplier <- (lower_multiplier + upper_multiplier) / 2
+
+  if (allocation_total(middle_multiplier) < target_n) {
+    lower_multiplier <- middle_multiplier
+  } else {
+    upper_multiplier <- middle_multiplier
+  }
+}
+```
+
+**How it works:**
+
+1. Start with a bracket `[0, 1]` and double the upper bound until it's large enough
+2. Repeatedly test the midpoint — if the allocation is too small, raise the lower bound; if too large, lower the upper bound
+3. After 200 iterations, the bounds have converged to machine precision
+
+This is elegant because it works regardless of how many groups you have or how skewed the weights are.
+
+### Handling the Remainder
+
+After flooring, some slots may be unassigned. The script distributes them to the groups with the **largest decimal remainders** — a standard technique called the *largest remainder method* :
+
+```r
+rows_to_increment <- allocation_tbl |>
+  filter(sample_n < available_n) |>
+  arrange(desc(decimal_remainder), desc(weight), group_key) |>
+  slice_head(n = slots_remaining) |>
+  pull(group_key)
+```
+
+The tiebreaker chain (`decimal_remainder` → `weight` → `group_key`) ensures **deterministic results** even when remainders are equal.
+
+---
+
+## Performing the Actual Random Sampling
+
+With allocations in hand, the script samples within each group :
+
+```r
+claims_sampled_tbl <- claims_tbl |>
+  mutate(
+    original_row_number = row_number(),
+    random_value = runif(n())
+  ) |>
+  left_join(allocation_tbl, by = "group_key") |>
+  group_by(group_key) |>
+  arrange(random_value, .by_group = TRUE) |>
+  mutate(
+    sample_status = if_else(
+      row_number() <= first(sample_n),
+      "sampled",
+      "not_sampled"
+    )
+  ) |>
+  ungroup() |>
+  arrange(original_row_number)
+```
+
+**The key insight:** Rather than using `sample()` directly, the script assigns a `runif()` random value to every row, sorts by it within each group, and labels the top `sample_n` rows as sampled. This approach is:
+
+- **Reproducible** (controlled by `set.seed`)
+- **Vectorized** (no loops)
+- **Transparent** (the random value is visible in the output)
+
+---
+
+## Validating Your Sample with a QC Summary
+
+```r
+sampling_validation_tbl <- claims_sampled_tbl |>
+  group_by(group_key, available_n, discharge_percent, ideal_sample_n, sample_n) |>
+  summarise(
+    actual_sampled_n = sum(sample_status == "sampled"),
+    .groups = "drop"
+  ) |>
+  mutate(
+    allocation_matches = sample_n == actual_sampled_n,
+    group_has_sample = actual_sampled_n >= 1
+  )
+```
+
+The validation summary checks :
+
+- `allocation_matches` — Did we actually sample the right number from each group?
+- `group_has_sample` — Does every group have at least one sampled record?
+
+The final summary printout gives you a quick health check:
+
+```r
+sampling_validation_tbl |>
+  summarise(
+    groups_present = n(),
+    total_allocated = sum(sample_n),
+    total_sampled = sum(actual_sampled_n),
+    groups_without_sample = sum(!group_has_sample),
+    allocation_errors = sum(!allocation_matches)
+  )
+```
+
+You want `allocation_errors = 0` and `groups_without_sample = 0` before exporting.
+
+---
+
+## Exporting Results to Excel
+
+```r
+write_xlsx(
+  list(
+    all_records_with_indicator = claims_sampled_tbl,
+    sample_records = sample_only_tbl,
+    sampling_validation = sampling_validation_tbl
+  ),
+  path = "claims_testing_sample.xlsx"
+)
+```
+
+The output workbook contains three sheets :
+
+| Sheet | Contents |
+|---|---|
+| `all_records_with_indicator` | Every claim with a `sample_status` flag |
+| `sample_records` | Only the sampled claims |
+| `sampling_validation` | QC summary by group |
+
+This structure is ideal for sharing with non-R users — analysts can open the Excel file directly without needing to run any code.
+
+---
+
+## 🧪 Your Turn!
+
+**The Problem:**
+
+You have the following simplified group counts table:
+
+```r
+library(dplyr)
+
+group_counts_tbl <- tibble(
+  group_key        = c("INP", "OBV", "SNF", "RHB", "HHA"),
+  available_n      = c(1200,   800,   300,   150,    50),
+  discharge_percent = c(0.50,  0.25,  0.12,  0.08,  0.05)
+)
+```
+
+**Your task:** Use the `allocate_weighted_sample()` function from the script to allocate a target sample of **200 records** across these five groups. Then answer:
+
+1. How many records are allocated to `INP`?
+2. Does every group receive at least one record?
+3. What happens if you change `target_sample_size` to `4`?
+
+Try it yourself before looking at the solution!
+
+<details>
+<summary>✅ Click to reveal the solution</summary>
+
+```r
+library(dplyr)
+
+# Paste the allocate_weighted_sample() function from the script here first
+
+group_counts_tbl <- tibble(
+  group_key         = c("INP", "OBV", "SNF", "RHB", "HHA"),
+  available_n       = c(1200,   800,   300,   150,    50),
+  discharge_percent = c(0.50,  0.25,  0.12,  0.08,  0.05)
+)
+
+result <- allocate_weighted_sample(
+  group_tbl = group_counts_tbl,
+  target_n  = 200L
+)
+
+print(result)
+```
+
+**Expected output (approximate):**
+
+| group_key | available_n | discharge_percent | ideal_sample_n | sample_n |
+|---|---|---|---|---|
+| INP | 1200 | 0.50 | 100.0 | 100 |
+| OBV | 800 | 0.25 | 50.0 | 50 |
+| SNF | 300 | 0.12 | 24.0 | 24 |
+| RHB | 150 | 0.08 | 16.0 | 16 |
+| HHA | 50 | 0.05 | 10.0 | 10 |
+
+**Answers:**
+1. `INP` receives **100 records** (50% of 200)
+2. Yes — every group receives at least 1 record
+3. Setting `target_n = 4` triggers the feasibility error: *"The target sample size is 4, but there are 5 groups. At least 5 records are needed to sample every group."*
+
+</details>
+
+---
+
+## ⚡ Quick Takeaways
+
+- **Set your seed** with `set.seed()` for reproducible, auditable samples
+- **Weighted sampling** using `discharge_percent` ensures your sample reflects the true case mix
+- The **binary search multiplier** elegantly solves the proportional allocation problem without loops over individual records
+- **Feasibility checks** catch data quality issues before they silently corrupt your sample
+- The **largest remainder method** distributes leftover slots fairly after flooring
+- **Duplicate weight validation** prevents silent row multiplication during joins
+- The **three-sheet Excel export** makes results accessible to non-R stakeholders
+- `runif()` + `arrange()` is a clean, vectorized alternative to `sample()` for grouped sampling
+
+---
+
+## Conclusion
+
+Weighted stratified sampling of 837i claims isn't just a technical nicety — it's a **methodological requirement** for defensible revenue cycle testing. The R script we've walked through combines proportional allocation, binary search optimization, and robust data validation into a pipeline that's both rigorous and readable.
+
+The approach scales from small targeted audits to enterprise-wide claims reviews. And because it's built in R with reproducible seeds and Excel-friendly outputs, it fits naturally into both technical and non-technical workflows.
+
+**Ready to put this into practice?** Copy the script, point it at your claims data, and run your first weighted sample. Then share this post with your revenue cycle team — because better sampling leads to better audits, and better audits lead to better outcomes for everyone.
+
+Here is a link to the script: [https://github.com/spsanderson/Echo/blob/master/R_Code/claims_testing.R](https://github.com/spsanderson/Echo/blob/master/R_Code/claims_testing.R)
+
+---
+
+## ❓ Frequently Asked Questions
+
+**1. Can I use this script with 837p (professional) claims instead of 837i?**
+Absolutely. The script is claim-type agnostic. As long as you have a `group_key` column and a corresponding weights table with `discharge_percent`, the allocation function works the same way. You'd just redefine what "group" means — specialty, place of service, or procedure category, for example.
+
+**2. What if I don't have discharge percent weights? Can I use equal weights?**
+Yes. Set `discharge_percent = 1` for every group in your weights table. The binary search will allocate proportionally to group size (i.e., proportional to `available_n`), which is equivalent to simple proportional stratified sampling.
+
+**3. Why use a binary search instead of directly solving for the multiplier algebraically?**
+The `pmin()` and `pmax()` constraints (minimum 1, maximum `available_n`) make the allocation function non-linear and non-differentiable. There's no closed-form algebraic solution. Binary search is fast (200 iterations converges to machine precision), simple to implement, and guaranteed to work.
+
+**4. How do I handle claim types that appear in my claims data but not in my weights file?**
+The script defaults their `discharge_percent` to 0 via the `if_else()` in `group_counts_tbl`. This means they won't receive proportional allocation. However, the feasibility check will still require at least one record per group if your target is large enough. Consider explicitly assigning a small weight to these groups rather than defaulting to zero.
+
+**5. Is 3,000 the right sample size for my audit?**
+That depends on your audit methodology. Common frameworks like RAC audits, OIG work plans, and internal audit standards have different requirements. Consult your compliance team or a statistician to determine the appropriate sample size for your specific confidence level, margin of error, and population size.
+
+---
+
+## 💬 Share away!
+
+If you found this useful, **share it with your team** on LinkedIn or forward it to a colleague who's wrestling with claims sampling. The more we share practical, code-first approaches to revenue cycle analytics, the better the whole field gets. 🚀
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+@online{sampling_837i_claims_for_testing_with_weights_in_r_20260802, author = {Sanderson II MPH, Steven P.}, title = {Sampling 837i Claims for Testing with Weights in R}, date = {2026-08-02}, url = {https://www.spsanderson.com/steveondata/posts/2026-08-02/}, langid = {en} }
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```

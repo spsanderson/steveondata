@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Steven P. Sanderson II, MPH">
+<meta name="dcterms.date" content="2026-08-02">
+<meta name="keywords" content="Programming, 837i claims testing in R, Weighted sampling R programming, Revenue cycle data testing, Hospital billing system validation, R script for claims sampling, Healthcare EDI 837i testing, Case mix sampling algorithms, Automated claims selection R, Revenue cycle analyst tools, Institutional claims data analysis, Binary search allocation logic, Diagnosis-Related Group (DRG) distribution, Discharge percentage weights, Healthcare data science scripts, Medicare and Medicaid billing files">
+<meta name="description" content="Improve hospital billing validation with our R script for weighted sampling. Ensure every 837i claim type is represented for accurate revenue cycle testing.">
+
+<title>Sampling 837i Claims for Testing with Weights in R – Steve’s Data Tips and Tricks</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ece42c8223ec2bf36298a08f122c9a68.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-e8964db687007ca8dd88d9d9ce58e3ef.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ece42c8223ec2bf36298a08f122c9a68.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-JSJCM62KQJ"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-JSJCM62KQJ', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Sampling 837i Claims for Testing with Weights in R – Steve’s Data Tips and Tricks">
+<meta property="og:description" content="Improve hospital billing validation with our R script for weighted sampling. Ensure every 837i claim type is represented for accurate revenue cycle testing.">
+<meta property="og:site_name" content="Steve’s Data Tips and Tricks">
+<meta name="twitter:title" content="Sampling 837i Claims for Testing with Weights in R – Steve’s Data Tips and Tricks">
+<meta name="twitter:description" content="Improve hospital billing validation with our R script for weighted sampling. Ensure every 837i claim type is represented for accurate revenue cycle testing.">
+<meta name="twitter:creator" content="@steveondata">
+<meta name="twitter:site" content="@steveondata">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed quarto-dark"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = true;
+    const darkModeDefault = authorPrefersDark;
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Steve’s Data Tips and Tricks</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/spsanderson"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://t.me/steveondata"> <i class="bi bi-telegram" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="http://feeds.feedburner.com/RBloggers"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-bloggers.com/"> <i class="bi bi-book" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.r-users.com/"> <i class="bi bi-briefcase" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Sampling 837i Claims for Testing with Weights in R</h1>
+                  <div>
+        <div class="description">
+          Improve hospital billing validation with our R script for weighted sampling. Ensure every 837i claim type is represented for accurate revenue cycle testing.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">rtip</div>
+                <div class="quarto-category">sample</div>
+                <div class="quarto-category">revenue cycle</div>
+                <div class="quarto-category">837i</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Steven P. Sanderson II, MPH </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 2, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>Programming, 837i claims testing in R, Weighted sampling R programming, Revenue cycle data testing, Hospital billing system validation, R script for claims sampling, Healthcare EDI 837i testing, Case mix sampling algorithms, Automated claims selection R, Revenue cycle analyst tools, Institutional claims data analysis, Binary search allocation logic, Diagnosis-Related Group (DRG) distribution, Discharge percentage weights, Healthcare data science scripts, Medicare and Medicaid billing files</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#sampling-837i-claims-for-testing-with-weights-in-r" id="toc-sampling-837i-claims-for-testing-with-weights-in-r" class="nav-link active" data-scroll-target="#sampling-837i-claims-for-testing-with-weights-in-r">Sampling 837i Claims for Testing with Weights in R</a>
+  <ul class="collapse">
+  <li><a href="#a-practical-guide-for-r-programmers-and-revenue-cycle-analysts" id="toc-a-practical-guide-for-r-programmers-and-revenue-cycle-analysts" class="nav-link" data-scroll-target="#a-practical-guide-for-r-programmers-and-revenue-cycle-analysts">A Practical Guide for R Programmers and Revenue Cycle Analysts</a></li>
+  <li><a href="#introduction-why-sampling-837i-claims-the-right-way-matters" id="toc-introduction-why-sampling-837i-claims-the-right-way-matters" class="nav-link" data-scroll-target="#introduction-why-sampling-837i-claims-the-right-way-matters">Introduction — Why Sampling 837i Claims the Right Way Matters</a></li>
+  <li><a href="#what-is-an-837i-claim" id="toc-what-is-an-837i-claim" class="nav-link" data-scroll-target="#what-is-an-837i-claim">What Is an 837i Claim?</a></li>
+  <li><a href="#why-use-weighted-sampling-for-claims-testing" id="toc-why-use-weighted-sampling-for-claims-testing" class="nav-link" data-scroll-target="#why-use-weighted-sampling-for-claims-testing">Why Use Weighted Sampling for Claims Testing?</a></li>
+  <li><a href="#setting-up-your-r-environment" id="toc-setting-up-your-r-environment" class="nav-link" data-scroll-target="#setting-up-your-r-environment">Setting Up Your R Environment</a></li>
+  <li><a href="#defining-your-target-sample-size" id="toc-defining-your-target-sample-size" class="nav-link" data-scroll-target="#defining-your-target-sample-size">Defining Your Target Sample Size</a></li>
+  <li><a href="#loading-your-claims-and-weights-data" id="toc-loading-your-claims-and-weights-data" class="nav-link" data-scroll-target="#loading-your-claims-and-weights-data">Loading Your Claims and Weights Data</a></li>
+  <li><a href="#validating-your-weights-table-for-duplicate-group-keys" id="toc-validating-your-weights-table-for-duplicate-group-keys" class="nav-link" data-scroll-target="#validating-your-weights-table-for-duplicate-group-keys">Validating Your Weights Table for Duplicate Group Keys</a></li>
+  <li><a href="#building-the-group-counts-table" id="toc-building-the-group-counts-table" class="nav-link" data-scroll-target="#building-the-group-counts-table">Building the Group Counts Table</a></li>
+  <li><a href="#how-the-weighted-allocation-function-works" id="toc-how-the-weighted-allocation-function-works" class="nav-link" data-scroll-target="#how-the-weighted-allocation-function-works">How the Weighted Allocation Function Works</a>
+  <ul class="collapse">
+  <li><a href="#feasibility-checks" id="toc-feasibility-checks" class="nav-link" data-scroll-target="#feasibility-checks">Feasibility Checks</a></li>
+  <li><a href="#the-allocation-logic" id="toc-the-allocation-logic" class="nav-link" data-scroll-target="#the-allocation-logic">The Allocation Logic</a></li>
+  </ul></li>
+  <li><a href="#the-binary-search-finding-the-right-multiplier" id="toc-the-binary-search-finding-the-right-multiplier" class="nav-link" data-scroll-target="#the-binary-search-finding-the-right-multiplier">The Binary Search: Finding the Right Multiplier</a>
+  <ul class="collapse">
+  <li><a href="#handling-the-remainder" id="toc-handling-the-remainder" class="nav-link" data-scroll-target="#handling-the-remainder">Handling the Remainder</a></li>
+  </ul></li>
+  <li><a href="#performing-the-actual-random-sampling" id="toc-performing-the-actual-random-sampling" class="nav-link" data-scroll-target="#performing-the-actual-random-sampling">Performing the Actual Random Sampling</a></li>
+  <li><a href="#validating-your-sample-with-a-qc-summary" id="toc-validating-your-sample-with-a-qc-summary" class="nav-link" data-scroll-target="#validating-your-sample-with-a-qc-summary">Validating Your Sample with a QC Summary</a></li>
+  <li><a href="#exporting-results-to-excel" id="toc-exporting-results-to-excel" class="nav-link" data-scroll-target="#exporting-results-to-excel">Exporting Results to Excel</a></li>
+  <li><a href="#your-turn" id="toc-your-turn" class="nav-link" data-scroll-target="#your-turn">🧪 Your Turn!</a></li>
+  <li><a href="#quick-takeaways" id="toc-quick-takeaways" class="nav-link" data-scroll-target="#quick-takeaways">⚡ Quick Takeaways</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#frequently-asked-questions" id="toc-frequently-asked-questions" class="nav-link" data-scroll-target="#frequently-asked-questions">❓ Frequently Asked Questions</a></li>
+  <li><a href="#share-away" id="toc-share-away" class="nav-link" data-scroll-target="#share-away">💬 Share away!</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+
+<section id="sampling-837i-claims-for-testing-with-weights-in-r" class="level1">
+<h1>Sampling 837i Claims for Testing with Weights in R</h1>
+<section id="a-practical-guide-for-r-programmers-and-revenue-cycle-analysts" class="level2">
+<h2 class="anchored" data-anchor-id="a-practical-guide-for-r-programmers-and-revenue-cycle-analysts">A Practical Guide for R Programmers and Revenue Cycle Analysts</h2>
+<hr>
+</section>
+<section id="introduction-why-sampling-837i-claims-the-right-way-matters" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-why-sampling-837i-claims-the-right-way-matters">Introduction — Why Sampling 837i Claims the Right Way Matters</h2>
+<p>If you’ve ever been handed a spreadsheet with tens of thousands of institutional claims and told <em>“pull a sample for testing,”</em> you know the temptation: grab a random slice and call it a day. But in revenue cycle auditing and claims testing, a naive random sample can badly misrepresent your case mix. A hospital that sees 60% inpatient DRG claims and 5% skilled nursing facility (SNF) claims needs those proportions reflected in the test sample, otherwise your findings won’t hold up.</p>
+<p>This guide walks you through a <strong>weighted, stratified sampling approach for 837i institutional claims using R</strong>. I’ll break down every section of a production-ready R script, explain the logic behind the binary search allocation algorithm, and show you how to validate and export your results. Whether you’re an R programmer building a reusable sampling pipeline or a revenue cycle analyst trying to understand what the code is actually doing, this post is for you.</p>
+<hr>
+</section>
+<section id="what-is-an-837i-claim" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-an-837i-claim">What Is an 837i Claim?</h2>
+<p>The <strong>837i</strong> is the HIPAA-standard electronic transaction format for <strong>institutional claims</strong> — think hospitals, skilled nursing facilities, inpatient rehabilitation centers, and home health agencies. The “i” stands for <em>institutional</em>, distinguishing it from the 837p (professional) and 837d (dental) formats.</p>
+<p>In a claims testing context, 837i data typically contains:</p>
+<ul>
+<li><strong>Claim type indicators</strong> (inpatient, outpatient, SNF, rehab, etc.)</li>
+<li><strong>Discharge information</strong> (used to calculate case mix weights)</li>
+<li><strong>Billing codes</strong> (DRGs, revenue codes, procedure codes)</li>
+<li><strong>Payer and provider identifiers</strong></li>
+</ul>
+<p>When sampling for audit or testing purposes, the <strong>claim type</strong> is the natural stratification variable — and <strong>discharge volume by type</strong> is the natural weighting variable.</p>
+<hr>
+</section>
+<section id="why-use-weighted-sampling-for-claims-testing" class="level2">
+<h2 class="anchored" data-anchor-id="why-use-weighted-sampling-for-claims-testing">Why Use Weighted Sampling for Claims Testing?</h2>
+<p>Standard random sampling treats every claim equally. Weighted sampling respects the <strong>real-world distribution</strong> of your claim population.</p>
+<p>Here’s why that matters:</p>
+<ul>
+<li><strong>Proportional representation:</strong> If inpatient DRG claims make up 55% of discharges, they should make up roughly 55% of your sample.</li>
+<li><strong>Audit defensibility:</strong> Regulators and payers expect samples to reflect the case mix. A weighted sample is far easier to defend.</li>
+<li><strong>Efficiency:</strong> You avoid over-sampling rare claim types while under-sampling high-volume ones.</li>
+<li><strong>Minimum coverage:</strong> A well-designed allocation ensures every claim type gets <em>at least one</em> sampled record, even low-volume groups.</li>
+</ul>
+<p>The script we’re working with uses <strong>discharge percent as the weight</strong>, which is a standard approach in healthcare revenue cycle sampling.</p>
+<hr>
+</section>
+<section id="setting-up-your-r-environment" class="level2">
+<h2 class="anchored" data-anchor-id="setting-up-your-r-environment">Setting Up Your R Environment</h2>
+<p>The script relies on three packages :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)   <span class="co"># Read Excel input files</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)    <span class="co"># Data manipulation</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(writexl)  <span class="co"># Export results to Excel</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Install them if needed:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"readxl"</span>, <span class="st">"dplyr"</span>, <span class="st">"writexl"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Reproducibility</strong> is critical in audit work. The script sets a seed immediately :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20260715</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This ensures that anyone re-running the script on the same data gets the <strong>identical sample</strong> — essential for documentation and peer review.</p>
+<hr>
+</section>
+<section id="defining-your-target-sample-size" class="level2">
+<h2 class="anchored" data-anchor-id="defining-your-target-sample-size">Defining Your Target Sample Size</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>target_sample_size <span class="ot">&lt;-</span> <span class="dv">3000</span>L</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>L</code> suffix declares this as an <strong>integer</strong>, not a double. This is a small but intentional detail — sample sizes are counts, not decimals .</p>
+<p>Your target sample size should be determined by your audit methodology, statistical confidence requirements, or contractual obligations. Common drivers include:</p>
+<ul>
+<li><strong>RAC audit protocols</strong> requiring statistically valid samples</li>
+<li><strong>Internal audit charters</strong> specifying minimum sample sizes by claim type</li>
+<li><strong>Payer contracts</strong> with defined review populations</li>
+</ul>
+<hr>
+</section>
+<section id="loading-your-claims-and-weights-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-your-claims-and-weights-data">Loading Your Claims and Weights Data</h2>
+<p>The script I used reads two Excel files :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>claims_tbl <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="st">"case_mix_selection_data_06262026.xlsx"</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">sheet =</span> <span class="st">"Case_Mix_Selection_Data_6262026"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"group_key"</span> <span class="ot">=</span> <span class="st">"UNIQUE_CLAIM_TYPE_IND"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>sample_weights_tbl <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="st">"claims_testing_sample_weights.xlsx"</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    group_key,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    discharge_percent</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Key design decisions here:</strong></p>
+<ul>
+<li>The <code>UNIQUE_CLAIM_TYPE_IND</code> column is renamed to <code>group_key</code> — a generic name that makes the allocation function reusable across different datasets.</li>
+<li><code>transmute()</code> is used instead of <code>select()</code> to keep <em>only</em> the columns needed, reducing the risk of accidentally joining on extra columns later.</li>
+<li>The weights file contains <code>discharge_percent</code> — the proportion of total discharges each claim type represents.</li>
+</ul>
+<hr>
+</section>
+<section id="validating-your-weights-table-for-duplicate-group-keys" class="level2">
+<h2 class="anchored" data-anchor-id="validating-your-weights-table-for-duplicate-group-keys">Validating Your Weights Table for Duplicate Group Keys</h2>
+<p>Before any sampling happens, the script checks for a common data quality issue: <strong>duplicate group keys in the weights table</strong> .</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>duplicate_weights <span class="ot">&lt;-</span> sample_weights_tbl <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(group_key) <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(duplicate_weights) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">"One or more group keys appear more than once in the weights table."</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">"No duplicate group keys found. Good to go."</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Why does this matter? If a claim type appears twice in the weights table with different <code>discharge_percent</code> values, a join will <strong>silently duplicate rows</strong> in your claims data — inflating your sample and producing incorrect allocations. This guard catches that before it causes problems.</p>
+<hr>
+</section>
+<section id="building-the-group-counts-table" class="level2">
+<h2 class="anchored" data-anchor-id="building-the-group-counts-table">Building the Group Counts Table</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>group_counts_tbl <span class="ot">&lt;-</span> claims_tbl <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(group_key, <span class="at">name =</span> <span class="st">"available_n"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(sample_weights_tbl, <span class="at">by =</span> <span class="st">"group_key"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">discharge_percent =</span> <span class="fu">if_else</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">is.na</span>(discharge_percent),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      <span class="dv">0</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      discharge_percent</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This table is the <strong>input to the allocation function</strong>. For each claim type group, it contains :</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>group_key</code></td>
+<td>Claim type identifier</td>
+</tr>
+<tr class="even">
+<td><code>available_n</code></td>
+<td>Total claims available to sample</td>
+</tr>
+<tr class="odd">
+<td><code>discharge_percent</code></td>
+<td>Weight for proportional allocation</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>if_else()</code> call handles claim types that exist in the claims data but have <strong>no corresponding weight</strong> — they default to zero, meaning they won’t receive proportional allocation (though the feasibility checks will still ensure they get at least one record if the target allows).</p>
+<hr>
+</section>
+<section id="how-the-weighted-allocation-function-works" class="level2">
+<h2 class="anchored" data-anchor-id="how-the-weighted-allocation-function-works">How the Weighted Allocation Function Works</h2>
+<p>The <code>allocate_weighted_sample()</code> function is the heart of the script . It takes the group counts table and a target sample size, then returns how many records to sample from each group.</p>
+<section id="feasibility-checks" class="level3">
+<h3 class="anchored" data-anchor-id="feasibility-checks">Feasibility Checks</h3>
+<p>Before any math happens, the function validates four conditions :</p>
+<ol type="1">
+<li><strong>Target ≥ number of groups</strong> — You need at least one record per group</li>
+<li><strong>Target ≤ available records</strong> — You can’t sample more than exists</li>
+<li><strong>No missing weights</strong> — Every group needs a weight</li>
+<li><strong>Not all weights are zero</strong> — At least one group must be eligible for proportional allocation</li>
+</ol>
+<p>These checks produce <strong>informative error messages</strong> rather than cryptic failures — a hallmark of production-quality R code.</p>
+</section>
+<section id="the-allocation-logic" class="level3">
+<h3 class="anchored" data-anchor-id="the-allocation-logic">The Allocation Logic</h3>
+<p>The core idea: multiply each group’s <code>discharge_percent</code> weight by a scalar, then floor the result to get integer sample sizes. The challenge is finding the right scalar so that the <strong>total allocated equals exactly your target</strong> .</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>allocation_total <span class="ot">&lt;-</span> <span class="cf">function</span>(multiplier) {</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pmin</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      group_tbl<span class="sc">$</span>available_n,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pmax</span>(<span class="dv">1</span>, multiplier <span class="sc">*</span> group_tbl<span class="sc">$</span>weight)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>pmax(1, ...)</code> enforces the <strong>minimum of one record per group</strong>. The <code>pmin(..., available_n)</code> enforces the <strong>maximum of all available records</strong> — you can’t sample more than exists.</p>
+<hr>
+</section>
+</section>
+<section id="the-binary-search-finding-the-right-multiplier" class="level2">
+<h2 class="anchored" data-anchor-id="the-binary-search-finding-the-right-multiplier">The Binary Search: Finding the Right Multiplier</h2>
+<p>Finding the exact multiplier is a classic <strong>root-finding problem</strong>. The script solves it with a binary search over 200 iterations :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>lower_multiplier <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>upper_multiplier <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (<span class="fu">allocation_total</span>(upper_multiplier) <span class="sc">&lt;</span> target_n) {</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  upper_multiplier <span class="ot">&lt;-</span> upper_multiplier <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (iteration <span class="cf">in</span> <span class="fu">seq_len</span>(<span class="dv">200</span>)) {</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  middle_multiplier <span class="ot">&lt;-</span> (lower_multiplier <span class="sc">+</span> upper_multiplier) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">allocation_total</span>(middle_multiplier) <span class="sc">&lt;</span> target_n) {</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    lower_multiplier <span class="ot">&lt;-</span> middle_multiplier</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    upper_multiplier <span class="ot">&lt;-</span> middle_multiplier</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>How it works:</strong></p>
+<ol type="1">
+<li>Start with a bracket <code>[0, 1]</code> and double the upper bound until it’s large enough</li>
+<li>Repeatedly test the midpoint — if the allocation is too small, raise the lower bound; if too large, lower the upper bound</li>
+<li>After 200 iterations, the bounds have converged to machine precision</li>
+</ol>
+<p>This is elegant because it works regardless of how many groups you have or how skewed the weights are.</p>
+<section id="handling-the-remainder" class="level3">
+<h3 class="anchored" data-anchor-id="handling-the-remainder">Handling the Remainder</h3>
+<p>After flooring, some slots may be unassigned. The script distributes them to the groups with the <strong>largest decimal remainders</strong> — a standard technique called the <em>largest remainder method</em> :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rows_to_increment <span class="ot">&lt;-</span> allocation_tbl <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sample_n <span class="sc">&lt;</span> available_n) <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(decimal_remainder), <span class="fu">desc</span>(weight), group_key) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> slots_remaining) <span class="sc">|&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(group_key)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The tiebreaker chain (<code>decimal_remainder</code> → <code>weight</code> → <code>group_key</code>) ensures <strong>deterministic results</strong> even when remainders are equal.</p>
+<hr>
+</section>
+</section>
+<section id="performing-the-actual-random-sampling" class="level2">
+<h2 class="anchored" data-anchor-id="performing-the-actual-random-sampling">Performing the Actual Random Sampling</h2>
+<p>With allocations in hand, the script samples within each group :</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>claims_sampled_tbl <span class="ot">&lt;-</span> claims_tbl <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">original_row_number =</span> <span class="fu">row_number</span>(),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">random_value =</span> <span class="fu">runif</span>(<span class="fu">n</span>())</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(allocation_tbl, <span class="at">by =</span> <span class="st">"group_key"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(group_key) <span class="sc">|&gt;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(random_value, <span class="at">.by_group =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">sample_status =</span> <span class="fu">if_else</span>(</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">row_number</span>() <span class="sc">&lt;=</span> <span class="fu">first</span>(sample_n),</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>      <span class="st">"sampled"</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>      <span class="st">"not_sampled"</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(original_row_number)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>The key insight:</strong> Rather than using <code>sample()</code> directly, the script assigns a <code>runif()</code> random value to every row, sorts by it within each group, and labels the top <code>sample_n</code> rows as sampled. This approach is:</p>
+<ul>
+<li><strong>Reproducible</strong> (controlled by <code>set.seed</code>)</li>
+<li><strong>Vectorized</strong> (no loops)</li>
+<li><strong>Transparent</strong> (the random value is visible in the output)</li>
+</ul>
+<hr>
+</section>
+<section id="validating-your-sample-with-a-qc-summary" class="level2">
+<h2 class="anchored" data-anchor-id="validating-your-sample-with-a-qc-summary">Validating Your Sample with a QC Summary</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sampling_validation_tbl <span class="ot">&lt;-</span> claims_sampled_tbl <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(group_key, available_n, discharge_percent, ideal_sample_n, sample_n) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">actual_sampled_n =</span> <span class="fu">sum</span>(sample_status <span class="sc">==</span> <span class="st">"sampled"</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">allocation_matches =</span> sample_n <span class="sc">==</span> actual_sampled_n,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">group_has_sample =</span> actual_sampled_n <span class="sc">&gt;=</span> <span class="dv">1</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The validation summary checks :</p>
+<ul>
+<li><code>allocation_matches</code> — Did we actually sample the right number from each group?</li>
+<li><code>group_has_sample</code> — Does every group have at least one sampled record?</li>
+</ul>
+<p>The final summary printout gives you a quick health check:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sampling_validation_tbl <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">groups_present =</span> <span class="fu">n</span>(),</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_allocated =</span> <span class="fu">sum</span>(sample_n),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_sampled =</span> <span class="fu">sum</span>(actual_sampled_n),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">groups_without_sample =</span> <span class="fu">sum</span>(<span class="sc">!</span>group_has_sample),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">allocation_errors =</span> <span class="fu">sum</span>(<span class="sc">!</span>allocation_matches)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>You want <code>allocation_errors = 0</code> and <code>groups_without_sample = 0</code> before exporting.</p>
+<hr>
+</section>
+<section id="exporting-results-to-excel" class="level2">
+<h2 class="anchored" data-anchor-id="exporting-results-to-excel">Exporting Results to Excel</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">all_records_with_indicator =</span> claims_sampled_tbl,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">sample_records =</span> sample_only_tbl,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sampling_validation =</span> sampling_validation_tbl</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="st">"claims_testing_sample.xlsx"</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The output workbook contains three sheets :</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Sheet</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>all_records_with_indicator</code></td>
+<td>Every claim with a <code>sample_status</code> flag</td>
+</tr>
+<tr class="even">
+<td><code>sample_records</code></td>
+<td>Only the sampled claims</td>
+</tr>
+<tr class="odd">
+<td><code>sampling_validation</code></td>
+<td>QC summary by group</td>
+</tr>
+</tbody>
+</table>
+<p>This structure is ideal for sharing with non-R users — analysts can open the Excel file directly without needing to run any code.</p>
+<hr>
+</section>
+<section id="your-turn" class="level2">
+<h2 class="anchored" data-anchor-id="your-turn">🧪 Your Turn!</h2>
+<p><strong>The Problem:</strong></p>
+<p>You have the following simplified group counts table:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>group_counts_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group_key        =</span> <span class="fu">c</span>(<span class="st">"INP"</span>, <span class="st">"OBV"</span>, <span class="st">"SNF"</span>, <span class="st">"RHB"</span>, <span class="st">"HHA"</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">available_n      =</span> <span class="fu">c</span>(<span class="dv">1200</span>,   <span class="dv">800</span>,   <span class="dv">300</span>,   <span class="dv">150</span>,    <span class="dv">50</span>),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">discharge_percent =</span> <span class="fu">c</span>(<span class="fl">0.50</span>,  <span class="fl">0.25</span>,  <span class="fl">0.12</span>,  <span class="fl">0.08</span>,  <span class="fl">0.05</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Your task:</strong> Use the <code>allocate_weighted_sample()</code> function from the script to allocate a target sample of <strong>200 records</strong> across these five groups. Then answer:</p>
+<ol type="1">
+<li>How many records are allocated to <code>INP</code>?</li>
+<li>Does every group receive at least one record?</li>
+<li>What happens if you change <code>target_sample_size</code> to <code>4</code>?</li>
+</ol>
+<p>Try it yourself before looking at the solution!</p>
+<details>
+<summary>
+✅ Click to reveal the solution
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Paste the allocate_weighted_sample() function from the script here first</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>group_counts_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">group_key         =</span> <span class="fu">c</span>(<span class="st">"INP"</span>, <span class="st">"OBV"</span>, <span class="st">"SNF"</span>, <span class="st">"RHB"</span>, <span class="st">"HHA"</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">available_n       =</span> <span class="fu">c</span>(<span class="dv">1200</span>,   <span class="dv">800</span>,   <span class="dv">300</span>,   <span class="dv">150</span>,    <span class="dv">50</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">discharge_percent =</span> <span class="fu">c</span>(<span class="fl">0.50</span>,  <span class="fl">0.25</span>,  <span class="fl">0.12</span>,  <span class="fl">0.08</span>,  <span class="fl">0.05</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">allocate_weighted_sample</span>(</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">group_tbl =</span> group_counts_tbl,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_n  =</span> <span class="dv">200</span>L</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Expected output (approximate):</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>group_key</th>
+<th>available_n</th>
+<th>discharge_percent</th>
+<th>ideal_sample_n</th>
+<th>sample_n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>INP</td>
+<td>1200</td>
+<td>0.50</td>
+<td>100.0</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td>OBV</td>
+<td>800</td>
+<td>0.25</td>
+<td>50.0</td>
+<td>50</td>
+</tr>
+<tr class="odd">
+<td>SNF</td>
+<td>300</td>
+<td>0.12</td>
+<td>24.0</td>
+<td>24</td>
+</tr>
+<tr class="even">
+<td>RHB</td>
+<td>150</td>
+<td>0.08</td>
+<td>16.0</td>
+<td>16</td>
+</tr>
+<tr class="odd">
+<td>HHA</td>
+<td>50</td>
+<td>0.05</td>
+<td>10.0</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Answers:</strong> 1. <code>INP</code> receives <strong>100 records</strong> (50% of 200) 2. Yes — every group receives at least 1 record 3. Setting <code>target_n = 4</code> triggers the feasibility error: <em>“The target sample size is 4, but there are 5 groups. At least 5 records are needed to sample every group.”</em></p>
+</details>
+<hr>
+</section>
+<section id="quick-takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="quick-takeaways">⚡ Quick Takeaways</h2>
+<ul>
+<li><strong>Set your seed</strong> with <code>set.seed()</code> for reproducible, auditable samples</li>
+<li><strong>Weighted sampling</strong> using <code>discharge_percent</code> ensures your sample reflects the true case mix</li>
+<li>The <strong>binary search multiplier</strong> elegantly solves the proportional allocation problem without loops over individual records</li>
+<li><strong>Feasibility checks</strong> catch data quality issues before they silently corrupt your sample</li>
+<li>The <strong>largest remainder method</strong> distributes leftover slots fairly after flooring</li>
+<li><strong>Duplicate weight validation</strong> prevents silent row multiplication during joins</li>
+<li>The <strong>three-sheet Excel export</strong> makes results accessible to non-R stakeholders</li>
+<li><code>runif()</code> + <code>arrange()</code> is a clean, vectorized alternative to <code>sample()</code> for grouped sampling</li>
+</ul>
+<hr>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Weighted stratified sampling of 837i claims isn’t just a technical nicety — it’s a <strong>methodological requirement</strong> for defensible revenue cycle testing. The R script we’ve walked through combines proportional allocation, binary search optimization, and robust data validation into a pipeline that’s both rigorous and readable.</p>
+<p>The approach scales from small targeted audits to enterprise-wide claims reviews. And because it’s built in R with reproducible seeds and Excel-friendly outputs, it fits naturally into both technical and non-technical workflows.</p>
+<p><strong>Ready to put this into practice?</strong> Copy the script, point it at your claims data, and run your first weighted sample. Then share this post with your revenue cycle team — because better sampling leads to better audits, and better audits lead to better outcomes for everyone.</p>
+<p>Here is a link to the script: <a href="https://github.com/spsanderson/Echo/blob/master/R_Code/claims_testing.R">https://github.com/spsanderson/Echo/blob/master/R_Code/claims_testing.R</a></p>
+<hr>
+</section>
+<section id="frequently-asked-questions" class="level2">
+<h2 class="anchored" data-anchor-id="frequently-asked-questions">❓ Frequently Asked Questions</h2>
+<p><strong>1. Can I use this script with 837p (professional) claims instead of 837i?</strong> Absolutely. The script is claim-type agnostic. As long as you have a <code>group_key</code> column and a corresponding weights table with <code>discharge_percent</code>, the allocation function works the same way. You’d just redefine what “group” means — specialty, place of service, or procedure category, for example.</p>
+<p><strong>2. What if I don’t have discharge percent weights? Can I use equal weights?</strong> Yes. Set <code>discharge_percent = 1</code> for every group in your weights table. The binary search will allocate proportionally to group size (i.e., proportional to <code>available_n</code>), which is equivalent to simple proportional stratified sampling.</p>
+<p><strong>3. Why use a binary search instead of directly solving for the multiplier algebraically?</strong> The <code>pmin()</code> and <code>pmax()</code> constraints (minimum 1, maximum <code>available_n</code>) make the allocation function non-linear and non-differentiable. There’s no closed-form algebraic solution. Binary search is fast (200 iterations converges to machine precision), simple to implement, and guaranteed to work.</p>
+<p><strong>4. How do I handle claim types that appear in my claims data but not in my weights file?</strong> The script defaults their <code>discharge_percent</code> to 0 via the <code>if_else()</code> in <code>group_counts_tbl</code>. This means they won’t receive proportional allocation. However, the feasibility check will still require at least one record per group if your target is large enough. Consider explicitly assigning a small weight to these groups rather than defaulting to zero.</p>
+<p><strong>5. Is 3,000 the right sample size for my audit?</strong> That depends on your audit methodology. Common frameworks like RAC audits, OIG work plans, and internal audit standards have different requirements. Consult your compliance team or a statistician to determine the appropriate sample size for your specific confidence level, margin of error, and population size.</p>
+<hr>
+</section>
+<section id="share-away" class="level2">
+<h2 class="anchored" data-anchor-id="share-away">💬 Share away!</h2>
+<p>If you found this useful, <strong>share it with your team</strong> on LinkedIn or forward it to a colleague who’s wrestling with claims sampling. The more we share practical, code-first approaches to revenue cycle analytics, the better the whole field gets. 🚀</p>
+<hr>
+<p>Happy Coding! 🚀</p>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<p><span class="citation" data-cites="online">@online</span>{sampling_837i_claims_for_testing_with_weights_in_r_20260802, author = {Sanderson II MPH, Steven P.}, title = {Sampling 837i Claims for Testing with Weights in R}, date = {2026-08-02}, url = {https://www.spsanderson.com/steveondata/posts/2026-08-02/}, langid = {en} }</p>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/www\.spsanderson\.com\/steveondata\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
