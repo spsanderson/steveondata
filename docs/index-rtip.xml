@@ -10,7 +10,1109 @@
 <atom:link href="https://www.spsanderson.com/steveondata/index-rtip.xml" rel="self" type="application/rss+xml"/>
 <description>Steve&#39;s Data Tips and Tricks in R, C, SQL and Linux</description>
 <generator>quarto-1.9.38</generator>
-<lastBuildDate>Sun, 02 Aug 2026 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 05 Aug 2026 04:00:00 GMT</lastBuildDate>
+<item>
+  <title>ARIMA Simulation in R: The Complete Guide for R Programmers and Forecasters</title>
+  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
+  <link>https://www.spsanderson.com/steveondata/posts/2026-08-05/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>If you’ve ever needed to test a forecasting algorithm, validate a model, or simply teach time series concepts, <strong>ARIMA simulation in R</strong> is your secret weapon. Rather than waiting for real-world data, you can generate synthetic time series with known properties giving you full control over your experiments.</p>
+<p>In this guide, I’m hoping you’ll learn everything from basic <code>arima.sim()</code> syntax to seasonal ARIMA simulation, custom error distributions, and model validation workflows. Let’s get started!</p>
+<section id="what-is-an-arima-model" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-an-arima-model">What Is an ARIMA Model?</h2>
+<p><strong>ARIMA</strong> stands for <strong>AutoRegressive Integrated Moving Average</strong>. A non-seasonal ARIMA model can be written as:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A(1-%5Cphi_1B%20-%20%5Ccdots%20-%20%5Cphi_p%20B%5Ep)(1-B)%5Ed%20y_t%20=%20c%20+%20(1%20+%20%5Ctheta_1%20B%20+%20%5Ccdots%20+%20%5Ctheta_q%20B%5Eq)%5Cvarepsilon_t%0A"></p>
+<p>Where: - <strong>p</strong> = autoregressive order - <strong>d</strong> = degree of differencing - <strong>q</strong> = moving average order - <strong>B</strong> = backshift operator - <strong>ε_t</strong> = white noise innovations</p>
+</section>
+<section id="why-simulate-arima-data-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="why-simulate-arima-data-in-r">Why Simulate ARIMA Data in R?</h2>
+<p>Simulating ARIMA data is valuable for:</p>
+<ul>
+<li>✅ <strong>Model validation</strong> — fit a model to simulated data and check if recovered parameters match true values</li>
+<li>✅ <strong>Forecasting benchmarks</strong> — test forecasting methods under controlled conditions</li>
+<li>✅ <strong>Teaching</strong> — demonstrate time series concepts with reproducible examples</li>
+<li>✅ <strong>Monte Carlo analysis</strong> — assess forecast uncertainty across many simulations</li>
+</ul>
+</section>
+<section id="prerequisites-packages-and-setup" class="level2">
+<h2 class="anchored" data-anchor-id="prerequisites-packages-and-setup">Prerequisites: Packages and Setup</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Load libraries</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(forecast)</span></code></pre></div></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'forecast' was built under R version 4.5.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(astsa)</span></code></pre></div></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'astsa' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'astsa'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:forecast':
+
+    gas</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span></code></pre></div></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggplot2' was built under R version 4.5.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Always set a seed for reproducibility!</span></span>
+<span id="cb9-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span></code></pre></div></div>
+</div>
+</section>
+<section id="understanding-the-arima.sim-function" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-the-arima.sim-function">Understanding the arima.sim() Function</h2>
+<p>The <code>arima.sim()</code> function from R’s built-in <code>stats</code> package is the primary tool for ARIMA simulation. Its syntax is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(model, n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rand.gen =</span> rnorm, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">innov =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rand.gen</span>(n, ...), </span>
+<span id="cb10-2">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n.start =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">start.innov =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rand.gen</span>(n.start, ...), ...)</span></code></pre></div></div>
+<p>The <code>model</code> argument takes <strong>a list with component <code>ar</code> and/or <code>ma</code> giving the AR and MA coefficients respectively</strong> .</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>model</code></td>
+<td>List specifying AR/MA coefficients and order</td>
+</tr>
+<tr class="even">
+<td><code>n</code></td>
+<td>Number of observations to generate</td>
+</tr>
+<tr class="odd">
+<td><code>rand.gen</code></td>
+<td>Innovation generator function (default: <code>rnorm</code>)</td>
+</tr>
+<tr class="even">
+<td><code>n.start</code></td>
+<td>Burn-in period length</td>
+</tr>
+<tr class="odd">
+<td><code>sd</code></td>
+<td>Standard deviation of innovations</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="simulating-ar-ma-and-arima-models" class="level1">
+<h1>Simulating AR, MA, and ARIMA Models</h1>
+<section id="ar1-model" class="level2">
+<h2 class="anchored" data-anchor-id="ar1-model">AR(1) Model</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb11-2">sim_ar1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.7</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">200</span>)</span>
+<span id="cb11-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_ar1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated AR(1) Process"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ma1-model" class="level2">
+<h2 class="anchored" data-anchor-id="ma1-model">MA(1) Model</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb12-2">sim_ma1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">200</span>)</span>
+<span id="cb12-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_ma1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated MA(1) Process"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="full-arima211-model" class="level2">
+<h2 class="anchored" data-anchor-id="full-arima211-model">Full ARIMA(2,1,1) Model</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb13-2">sim_arima <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(</span>
+<span id="cb13-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.5</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.3</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.3</span>), </span>
+<span id="cb13-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">200</span></span>
+<span id="cb13-5">)</span>
+<span id="cb13-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_arima, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated ARIMA(2,1,1) Process"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="arima110-random-walk-with-drift" class="level2">
+<h2 class="anchored" data-anchor-id="arima110-random-walk-with-drift">ARIMA(1,1,0) — Random Walk with Drift</h2>
+<p>A classic ARIMA simulation example from R’s official documentation :</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">ts.sim <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.7</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">200</span>)</span>
+<span id="cb14-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(ts.sim)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="custom-error-distributions" class="level2">
+<h2 class="anchored" data-anchor-id="custom-error-distributions">Custom Error Distributions</h2>
+<p>Beyond standard normal errors, <code>arima.sim()</code> supports custom innovation distributions via <code>rand.gen</code>. For <strong>mildly long-tailed distributions</strong> using a t-distribution :</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Standard normal innovations</span></span>
+<span id="cb15-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">63</span>, </span>
+<span id="cb15-3">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8897</span>, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.4858</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2279</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2488</span>)),</span>
+<span id="cb15-4">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1796</span>))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 1 
+End = 63 
+Frequency = 1 
+ [1] -0.175345978 -0.026254327  0.596535803  0.499738147  0.585246248
+ [6]  0.551939570  0.594359659  0.011017254  0.562451648  0.115922664
+[11] -0.006601847  0.502885912  0.852287477  0.075104761 -0.475499873
+[16] -1.065686774 -0.600968055 -0.107870799  0.353539847  0.583161997
+[21]  0.077075389 -0.519496588 -0.031985260  0.338263848 -0.287356993
+[26] -0.235362537 -0.599436184 -1.220047435 -0.625120792 -0.229878251
+[31]  0.081375692  0.276730712  0.549513956  0.379157969 -0.117668210
+[36] -0.519071795 -0.454540106 -0.085603498 -0.339793860 -0.205734357
+[41]  0.300128060  0.208227076 -0.144081791 -0.290251686  0.237147848
+[46]  0.448348320  0.872186419  0.555680667  0.361512546 -0.209940645
+[51] -0.008659229 -0.237646788 -0.696519699 -0.366188433  0.675062742
+[56]  0.943479831  1.133109595  0.673770642 -0.120708124 -0.423806503
+[61] -0.478854221 -0.413716064  0.179421883</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Long-tailed t-distribution innovations</span></span>
+<span id="cb17-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">63</span>, </span>
+<span id="cb17-3">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8897</span>, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.4858</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2279</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2488</span>)),</span>
+<span id="cb17-4">          <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rand.gen =</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(n, ...) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1796</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rt</span>(n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">df =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Time Series:
+Start = 1 
+End = 63 
+Frequency = 1 
+ [1]  0.99262979  0.65832726 -0.19318849  1.04802294  0.90919905  1.33227669
+ [7]  0.99370867  0.72297244 -0.15210738 -0.19223528 -0.51059302 -0.15848348
+[13] -0.35276471 -0.06872399 -0.13569667 -0.48548552 -0.02162522  0.03006846
+[19]  0.21648495 -0.13785930  0.06517400  0.05131122  0.43977712  0.28133157
+[25] -0.23073498 -0.21771300  0.05175838  0.22663166 -0.17925628  0.12442639
+[31]  0.19422913  0.92866638  0.29786370 -0.03817137 -0.28003993 -1.21341284
+[37] -0.24720089  1.05190524  1.02680279  1.18425014  0.10577238 -0.36159255
+[43] -0.55795920 -0.22636577 -0.21803450 -0.44377070  0.23739304  1.54220984
+[49]  0.53896188  0.48935919  1.14391370  0.15084695 -0.87820003 -1.30689840
+[55] -0.94918029 -0.19981440  0.18218150  0.40631216  1.34847205 -0.26121147
+[61] -1.48894801 -1.91122644 -0.77671345</code></pre>
+</div>
+</div>
+<p>This is particularly useful when modeling real-world financial or economic data that exhibits heavier tails.</p>
+</section>
+<section id="seasonal-arima-simulation-with-sarima.sim" class="level2">
+<h2 class="anchored" data-anchor-id="seasonal-arima-simulation-with-sarima.sim">Seasonal ARIMA Simulation with sarima.sim()</h2>
+<p>For seasonal models, the <code>astsa</code> package provides <code>sarima.sim()</code>. You can simulate a <strong>SARIMA(0,1,1)×(0,1,1)₁₂</strong> model — the classic airline model — like this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Seasonal AR(1) with period 12</span></span>
+<span id="cb19-2">sim_seasonal <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sarima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sar =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.9</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">S =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">120</span>)</span>
+<span id="cb19-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_seasonal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated Seasonal AR(1)"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Full airline model SARIMA(0,1,1)x(0,1,1)_12</span></span>
+<span id="cb20-2">sim_airline <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sarima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.4</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sma =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">S =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, </span>
+<span id="cb20-3">                           <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">d =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">D =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">144</span>)</span>
+<span id="cb20-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_airline, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated Airline Model"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="fitting-a-model-to-simulated-data" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-a-model-to-simulated-data">Fitting a Model to Simulated Data</h2>
+<p>A key workflow is simulating data, then fitting a model to verify parameter recovery:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb21-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Simulate ARMA(1,1)</span></span>
+<span id="cb21-3">z <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">200</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.3</span>))</span>
+<span id="cb21-4"></span>
+<span id="cb21-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit ARMA(1,1) model</span></span>
+<span id="cb21-6">arma11 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima</span>(z, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">include.mean =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb21-7"></span>
+<span id="cb21-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Check residuals for serial correlation</span></span>
+<span id="cb21-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">checkresiduals</span>(arma11)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Ljung-Box test
+
+data:  Residuals from ARIMA(1,0,1) with zero mean
+Q* = 2.5684, df = 8, p-value = 0.9585
+
+Model df: 2.   Total lags used: 10</code></pre>
+</div>
+</div>
+<p>If the model fits well, residuals should resemble white noise with no significant autocorrelation.</p>
+</section>
+<section id="using-simulate-from-the-forecast-package" class="level2">
+<h2 class="anchored" data-anchor-id="using-simulate-from-the-forecast-package">Using simulate() from the forecast Package</h2>
+<p>The <code>forecast</code> package offers an alternative <code>simulate()</code> method for <code>Arima</code> objects :</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fit model to real data</span></span>
+<span id="cb23-2">fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Arima</span>(USAccDeaths, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), </span>
+<span id="cb23-3">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seasonal =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">period =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>))</span>
+<span id="cb23-4"></span>
+<span id="cb23-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Simulate future paths</span></span>
+<span id="cb23-6">sim_future <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">simulate</span>(fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nsim =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">36</span>)</span>
+<span id="cb23-7"></span>
+<span id="cb23-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Simulate model fit (future = FALSE for in-sample)</span></span>
+<span id="cb23-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">simulate</span>(fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">future =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'red'</span>)</span>
+<span id="cb23-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lines</span>(USAccDeaths)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Setting <code>future = FALSE</code> is useful for <strong>examining how well the model fits your existing data</strong> .</p>
+</section>
+</section>
+<section id="visualizing-simulated-time-series" class="level1">
+<h1>Visualizing Simulated Time Series</h1>
+<section id="base-r" class="level2">
+<h2 class="anchored" data-anchor-id="base-r">Base R</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ts.plot</span>(sim_ar1, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AR(1) Simulation"</span>, </span>
+<span id="cb24-2">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Value"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ggplot2" class="level2">
+<h2 class="anchored" data-anchor-id="ggplot2">ggplot2</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb25-2">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">time =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">time</span>(sim_ar1)), </span>
+<span id="cb25-3">                 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(sim_ar1))</span>
+<span id="cb25-4"></span>
+<span id="cb25-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(df, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> time, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> value)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated AR(1) Time Series"</span>,</span>
+<span id="cb25-8">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Time"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Value"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="common-mistakes-and-how-to-avoid-them" class="level1">
+<h1>Common Mistakes and How to Avoid Them</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 57%">
+<col style="width: 42%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>❌ Mistake</th>
+<th>✅ Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Forgetting <code>set.seed()</code></td>
+<td>Always set seed before simulation</td>
+</tr>
+<tr class="even">
+<td>Invalid AR/MA coefficients</td>
+<td>Ensure stationarity/invertibility conditions are met</td>
+</tr>
+<tr class="odd">
+<td>Ignoring burn-in period</td>
+<td>Use <code>n.start</code> for stable initial conditions</td>
+</tr>
+<tr class="even">
+<td>Plotting raw vectors</td>
+<td>Convert to <code>ts</code> object before plotting</td>
+</tr>
+<tr class="odd">
+<td>Misspecifying <code>order</code></td>
+<td>Double-check <code>c(p, d, q)</code> matches your coefficients</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="your-turn-practical-exercise" class="level1">
+<h1>🎯 Your Turn! Practical Exercise</h1>
+<p><strong>Challenge:</strong> Simulate 150 observations from an <strong>ARIMA(1,0,1)</strong> process with AR coefficient <code>0.6</code> and MA coefficient <code>0.4</code>. Plot the result using <code>ggplot2</code> and fit an ARIMA model to recover the parameters.</p>
+<p><em>Try it yourself before peeking at the solution!</em></p>
+<details>
+<summary>
+💡 See Solution
+</summary>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">99</span>)</span>
+<span id="cb26-2"></span>
+<span id="cb26-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Step 1: Simulate ARIMA(1,0,1)</span></span>
+<span id="cb26-4">sim_101 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima.sim</span>(</span>
+<span id="cb26-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">model =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ar =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ma =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.4</span>), </span>
+<span id="cb26-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">150</span></span>
+<span id="cb26-7">)</span>
+<span id="cb26-8"></span>
+<span id="cb26-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Step 2: Visualize with ggplot2</span></span>
+<span id="cb26-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb26-11">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb26-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">time =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">time</span>(sim_101)),</span>
+<span id="cb26-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(sim_101)</span>
+<span id="cb26-14">)</span>
+<span id="cb26-15"></span>
+<span id="cb26-16"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(df, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> time, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> value)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb26-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb26-18">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Simulated ARIMA(1,0,1) Time Series"</span>,</span>
+<span id="cb26-19">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Time"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Value"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb26-20">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>()</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Step 3: Fit model and check parameter recovery</span></span>
+<span id="cb27-2">fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">arima</span>(sim_101, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">order =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>))</span>
+<span id="cb27-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(fit)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+arima(x = sim_101, order = c(1, 0, 1))
+
+Coefficients:
+         ar1     ma1  intercept
+      0.6462  0.5491    -0.3098
+s.e.  0.0712  0.0694     0.3334
+
+sigma^2 estimated as 0.8932:  log likelihood = -205.12,  aic = 418.24</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># ar1 should be close to 0.6, ma1 close to 0.4</span></span></code></pre></div></div>
+</div>
+</details>
+</section>
+<section id="quick-takeaways" class="level1">
+<h1>⚡ Quick Takeaways</h1>
+<ul>
+<li><strong><code>arima.sim()</code></strong> from the <code>stats</code> package is the primary tool for ARIMA simulation in R</li>
+<li>Always use <strong><code>set.seed()</code></strong> for reproducible results</li>
+<li>Specify the <code>model</code> argument as a list with <code>ar</code>, <code>ma</code>, and <code>order</code> components</li>
+<li>Use <strong><code>sarima.sim()</code></strong> from the <code>astsa</code> package for seasonal ARIMA simulation</li>
+<li>Custom error distributions are supported via the <strong><code>rand.gen</code></strong> argument</li>
+<li>The <strong><code>simulate()</code></strong> function from <code>forecast</code> works on fitted <code>Arima</code> objects</li>
+<li>Fitting models to simulated data is a powerful <strong>validation technique</strong> Conclusion</li>
+</ul>
+<p><strong>ARIMA simulation in R</strong> is an indispensable skill for any serious R programmer or forecaster. From simple AR and MA processes to complex seasonal ARIMA models, R provides a rich toolkit — <code>arima.sim()</code>, <code>sarima.sim()</code>, and <code>simulate()</code> — to generate synthetic time series with precision and flexibility.</p>
+<p>By mastering these tools, you can validate models rigorously, benchmark forecasting algorithms, and build deeper intuition about time series dynamics. Start with the simple examples in this guide, then progressively explore more complex specifications.</p>
+<blockquote class="blockquote">
+<p><strong>Ready to simulate? Fire up RStudio, run the code examples, and experiment with your own ARIMA parameters. Share your results or questions in the comments below!</strong></p>
+</blockquote>
+</section>
+<section id="faqs" class="level1">
+<h1>❓ FAQs</h1>
+<p><strong>1. What is the minimum R version required for arima.sim()?</strong> <code>arima.sim()</code> is part of R’s built-in <code>stats</code> package and has been available since R 1.0.0, so any modern R installation will include it.</p>
+<p><strong>2. Can arima.sim() simulate seasonal ARIMA models?</strong> No — <code>arima.sim()</code> does not support seasonal components. Use <code>sarima.sim()</code> from the <code>astsa</code> package for seasonal ARIMA simulation.</p>
+<p><strong>3. How do I ensure my AR coefficients are valid?</strong> For stationarity, the roots of the AR characteristic polynomial must lie outside the unit circle. For AR(1), this simply means <code>|ar| &lt; 1</code>.</p>
+<p><strong>4. What’s the difference between arima.sim() and simulate() from forecast?</strong> <code>arima.sim()</code> generates data from scratch using specified parameters, while <code>simulate()</code> generates new observations from an already-fitted <code>Arima</code> model object .</p>
+<p><strong>5. How many observations should I simulate for reliable parameter recovery?</strong> Generally, <strong>n ≥ 200</strong> observations provides stable parameter estimates. Shorter series may yield noisy coefficient estimates when fitting models.</p>
+</section>
+<section id="engage" class="level1">
+<h1>💬 Engage!</h1>
+<p><strong>Found this guide helpful?</strong> Drop a comment below! If this saved you time, please share it with your R community on LinkedIn, Twitter/X, or your favorite R forum. Your feedback helps us create better content for R programmers and forecasters like you!</p>
+</section>
+<section id="some-visual-guides" class="level1">
+<h1>Some Visual Guides</h1>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/ar_v_ma_v_arima.png" class="img-fluid figure-img"></p>
+<figcaption>AR vs MA vs ARIMA</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/arima_sim_validation_workflow.png" class="img-fluid figure-img"></p>
+<figcaption>ARIMA Simulation Validation Workflow</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.spsanderson.com/steveondata/posts/2026-08-05/r_simulation_functions_for_ts.png" class="img-fluid figure-img"></p>
+<figcaption>R Simulation Functions for Time Series</figcaption>
+</figure>
+</div>
+<hr>
+<p>Happy Coding! 🚀</p>
+<hr>
+<p><em>You can connect with me at any one of the below</em>:</p>
+<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
+<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
+<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
+<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
+<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
+<hr>
+<p><span class="citation" data-cites="online">@online</span>{arima_simulation_in_r_the_complete_guide_for_r_programmers_and_forecasters_20260805, author = {Sanderson II MPH, Steven P.}, title = {ARIMA Simulation in R: The Complete Guide for R Programmers and Forecasters}, date = {2026-08-05}, url = {https://www.spsanderson.com/steveondata/posts/2026-08-05/}, langid = {en} }</p>
+<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
+</script>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>rtip</category>
+  <category>arima</category>
+  <category>simulation</category>
+  <category>timeseries</category>
+  <guid>https://www.spsanderson.com/steveondata/posts/2026-08-05/</guid>
+  <pubDate>Wed, 05 Aug 2026 04:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Sampling 837i Claims for Testing with Weights in R</title>
   <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
@@ -20132,1383 +21234,6 @@ font-style: inherit;">print</span>(students)</span></code></pre></div>
   <category>rtip</category>
   <guid>https://www.spsanderson.com/steveondata/posts/2025-07-14/</guid>
   <pubDate>Mon, 14 Jul 2025 04:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>How to Calculate Difference Between Rows in R Using diff()</title>
-  <dc:creator>Steven P. Sanderson II, MPH</dc:creator>
-  <link>https://www.spsanderson.com/steveondata/posts/2025-07-07/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<blockquote class="blockquote">
-<p>This tutorial explains how to use R’s diff() function to calculate differences between consecutive values in your data. You’ll learn the basic syntax, see practical examples with vectors and data frames, and understand common applications and pitfalls. All visualizations use base R graphics with code samples.</p>
-</blockquote>
-<section id="what-is-diff-and-what-does-it-do" class="level1">
-<h1>What is diff() and What Does It Do?</h1>
-<p>The <code>diff()</code> function in R calculates the differences between consecutive elements in a vector, data frame, or time series. It subtracts each element from the next one, giving you a result that shows how values change from one position to the next.</p>
-</section>
-<section id="basic-syntax-and-parameters" class="level1">
-<h1>Basic Syntax and Parameters</h1>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lag =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">differences =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, ...)</span></code></pre></div>
-<p>Here’s what each parameter means:</p>
-<ul>
-<li><strong>x</strong>: The input data (vector, data frame, time series)</li>
-<li><strong>lag</strong>: How many positions to look back when calculating differences (default is 1)</li>
-<li><strong>differences</strong>: How many times to apply the differencing operation (default is 1)</li>
-<li><strong>…</strong>: Additional arguments for specific methods</li>
-</ul>
-</section>
-<section id="simple-vector-examples" class="level1">
-<h1>Simple Vector Examples</h1>
-<p>Let’s start with a basic example using a numeric vector:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a vector</span></span>
-<span id="cb2-2">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">18</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)</span>
-<span id="cb2-3"></span>
-<span id="cb2-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate differences</span></span>
-<span id="cb2-5">dx <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(x)</span>
-<span id="cb2-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(dx)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  5  5 -2  7</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: 5 5 -2 7</span></span>
-<span id="cb4-2"></span>
-<span id="cb4-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb4-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot the differences using base R</span></span>
-<span id="cb4-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(x, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">16</span>,</span>
-<span id="cb4-6">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb4-7">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original Vector"</span>)</span>
-<span id="cb4-8"></span>
-<span id="cb4-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(dx, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">16</span>,</span>
-<span id="cb4-10">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"First Difference"</span>,</span>
-<span id="cb4-11">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Plot of First Differences using diff()"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>The function calculates: - 15 - 10 = 5 - 20 - 15 = 5 - 18 - 20 = -2 - 25 - 18 = 7</p>
-</section>
-<section id="working-with-data-frames" class="level1">
-<h1>Working with Data Frames</h1>
-<p>When you apply <code>diff()</code> to a data frame, it calculates differences for each column separately:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a data frame</span></span>
-<span id="cb6-2">df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">a =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">b =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>))</span>
-<span id="cb6-3"></span>
-<span id="cb6-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate differences</span></span>
-<span id="cb6-5">diff_df <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.matrix</span>(df)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">as.data.frame</span>()</span>
-<span id="cb6-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(diff_df)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  a  b
-1 2 -2
-2 3  5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot differences for each column</span></span>
-<span id="cb8-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Set up 2 plots stacked vertically</span></span>
-<span id="cb8-3"></span>
-<span id="cb8-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot column 'a' differences</span></span>
-<span id="cb8-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff_df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>a, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"b"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb8-6">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Diff of a"</span>,</span>
-<span id="cb8-7">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Column 'a' Differences"</span>)</span>
-<span id="cb8-8"></span>
-<span id="cb8-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot column 'b' differences</span></span>
-<span id="cb8-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff_df<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>b, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"b"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkred"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb8-11">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Diff of b"</span>,</span>
-<span id="cb8-12">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Column 'b' Differences"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reset the plotting layout</span></span>
-<span id="cb9-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>This code would produce two plots showing: - Column a: (4 - 2 = 2, 7 - 4 = 3) - Column b: (3 - 5 = -2, 8 - 3 = 5)</p>
-</section>
-<section id="time-series-applications" class="level1">
-<h1>Time Series Applications</h1>
-<p>The <code>diff()</code> function is very useful for time series analysis to:</p>
-<ol type="1">
-<li><strong>Remove trends</strong>: Taking the first difference can make a trending series more stationary</li>
-<li><strong>Calculate returns</strong>: In finance, to compute price changes or returns</li>
-<li><strong>Identify patterns</strong>: See how values change over time</li>
-</ol>
-<p>Example with a trending time series:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a time series</span></span>
-<span id="cb10-2">ts_data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ts</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">105</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">110</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">120</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">130</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">start =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2000</span>)</span>
-<span id="cb10-3"></span>
-<span id="cb10-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate differences</span></span>
-<span id="cb10-5">diff_ts <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(ts_data)</span>
-<span id="cb10-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(diff_ts)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Time Series:
-Start = 2001 
-End = 2004 
-Frequency = 1 
-[1]  5  5 10 10</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: 5 5 10 10</span></span>
-<span id="cb12-2"></span>
-<span id="cb12-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot the time series and its differences</span></span>
-<span id="cb12-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb12-5"></span>
-<span id="cb12-6"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Original time series</span></span>
-<span id="cb12-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(ts_data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkgreen"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>,</span>
-<span id="cb12-8">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Year"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb12-9">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original Time Series"</span>)</span>
-<span id="cb12-10"></span>
-<span id="cb12-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Differenced time series</span></span>
-<span id="cb12-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff_ts, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkgreen"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>,</span>
-<span id="cb12-13">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Year"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"First Difference"</span>,</span>
-<span id="cb12-14">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"First Differences of Time Series"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reset plotting layout</span></span>
-<span id="cb13-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-</section>
-<section id="using-the-lag-parameter" class="level1">
-<h1>Using the lag Parameter</h1>
-<p>The <code>lag</code> parameter controls how many positions apart the values should be when calculating differences. This is useful for seasonal data or when you want to compare values at specific intervals.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create seasonal data</span></span>
-<span id="cb14-2">seasonal_data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span>)</span>
-<span id="cb14-3"></span>
-<span id="cb14-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate differences with lag=1 and lag=2</span></span>
-<span id="cb14-5">diff1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(seasonal_data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lag =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb14-6">diff2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(seasonal_data, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lag =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb14-7"></span>
-<span id="cb14-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot differences with different lags</span></span>
-<span id="cb14-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb14-10"></span>
-<span id="cb14-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Lag 1 differences</span></span>
-<span id="cb14-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"b"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb14-13">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Difference"</span>,</span>
-<span id="cb14-14">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Differences with lag = 1"</span>)</span>
-<span id="cb14-15"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gray"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add a reference line at y=0</span></span>
-<span id="cb14-16"></span>
-<span id="cb14-17"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Lag 2 differences</span></span>
-<span id="cb14-18"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"b"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb14-19">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Difference"</span>,</span>
-<span id="cb14-20">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Differences with lag = 2"</span>)</span>
-<span id="cb14-21"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gray"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add a reference line at y=0</span></span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reset plotting layout</span></span>
-<span id="cb15-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>With <code>lag = 2</code>, each value is compared to the value from two positions earlier: - For lag=1: 20-10, 15-20, 25-15, 20-25, 30-20 - For lag=2: 15-10, 25-20, 20-15, 30-25</p>
-</section>
-<section id="multiple-differences" class="level1">
-<h1>Multiple Differences</h1>
-<p>You can apply differencing multiple times by setting the <code>differences</code> parameter. This is useful for achieving stationarity in time series with strong trends.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create a vector with quadratic growth</span></span>
-<span id="cb16-2">vec <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">12</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">33</span>)</span>
-<span id="cb16-3"></span>
-<span id="cb16-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate first and second differences</span></span>
-<span id="cb16-5">diff1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(vec, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">differences =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># First difference</span></span>
-<span id="cb16-6">diff2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(vec, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">differences =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Second difference</span></span>
-<span id="cb16-7"></span>
-<span id="cb16-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(diff1)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: 4 5 8 13</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  4  5  8 13</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(diff2)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: 1 3 5</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1 3 5</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot original data and differences</span></span>
-<span id="cb20-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb20-3"></span>
-<span id="cb20-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Original data</span></span>
-<span id="cb20-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(vec, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb20-6">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Value"</span>,</span>
-<span id="cb20-7">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original Data"</span>)</span>
-<span id="cb20-8"></span>
-<span id="cb20-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># First difference</span></span>
-<span id="cb20-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb20-11">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"First Diff"</span>,</span>
-<span id="cb20-12">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"First Differences"</span>)</span>
-<span id="cb20-13"></span>
-<span id="cb20-14"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Second difference</span></span>
-<span id="cb20-15"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb20-16">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Second Diff"</span>,</span>
-<span id="cb20-17">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Second Differences"</span>)</span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reset plotting layout</span></span>
-<span id="cb21-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-<p>The second difference calculates the differences of the differences: - First differences: 4, 5, 8, 13 - Second differences (differences of differences): 1, 3, 5</p>
-</section>
-<section id="financial-applications" class="level1">
-<h1>Financial Applications</h1>
-<p>In finance, <code>diff()</code> is commonly used to calculate returns from price data:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create price data</span></span>
-<span id="cb22-2">prices <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">102</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">101</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">105</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">110</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">108</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">112</span>)</span>
-<span id="cb22-3"></span>
-<span id="cb22-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Calculate price changes</span></span>
-<span id="cb22-5">returns <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(prices)</span>
-<span id="cb22-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(returns)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: 2 -1 4 5 -2 4</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1]  2 -1  4  5 -2  4</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot prices and returns</span></span>
-<span id="cb24-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb24-3"></span>
-<span id="cb24-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot prices</span></span>
-<span id="cb24-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(prices, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"b"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkblue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb24-6">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Day"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Price"</span>,</span>
-<span id="cb24-7">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Stock Price"</span>)</span>
-<span id="cb24-8"></span>
-<span id="cb24-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot returns</span></span>
-<span id="cb24-10"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(returns, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"h"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"darkred"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>,</span>
-<span id="cb24-11">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Day"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Price Change"</span>,</span>
-<span id="cb24-12">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Daily Price Changes"</span>)</span>
-<span id="cb24-13"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">h =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gray"</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reference line at y=0</span></span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Reset plotting layout</span></span>
-<span id="cb25-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-</div>
-</section>
-<section id="common-pitfalls-and-edge-cases" class="level1">
-<h1>Common Pitfalls and Edge Cases</h1>
-<section id="output-length-is-shorter" class="level2">
-<h2 class="anchored" data-anchor-id="output-length-is-shorter">1. Output Length Is Shorter</h2>
-<p>The <code>diff()</code> function always returns a vector that is shorter than the input. For a vector of length n, applying <code>diff()</code> once gives a result of length n-1.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1">x <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">20</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">18</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)</span>
-<span id="cb26-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Original vector length:"</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(x), <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Original vector length: 5 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Differenced vector length:"</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">length</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(x)), <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Differenced vector length: 4 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output:</span></span>
-<span id="cb30-2"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Original vector length: 5</span></span>
-<span id="cb30-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Differenced vector length: 4</span></span></code></pre></div>
-</div>
-</section>
-<section id="handling-missing-values-na" class="level2">
-<h2 class="anchored" data-anchor-id="handling-missing-values-na">2. Handling Missing Values (NA)</h2>
-<p>The <code>diff()</code> function propagates <code>NA</code> values. If any element in a pair contains <code>NA</code>, the result for that position will be <code>NA</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Create vector with NA values</span></span>
-<span id="cb31-2">x_na <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)</span>
-<span id="cb31-3">diff_na <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(x_na)</span>
-<span id="cb31-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(diff_na)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Output: NA NA 4</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] NA NA  4</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Plot to visualize NA handling</span></span>
-<span id="cb33-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(diff_na, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"o"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"purple"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>, </span>
-<span id="cb33-3">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Index"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Difference"</span>,</span>
-<span id="cb33-4">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"diff() with NA Values"</span>)</span>
-<span id="cb33-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">grid</span>()  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Add grid lines for better readability</span></span></code></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Here’s how NA values affect the results: - diff(c(1, NA)) = NA - diff(c(NA, 3)) = NA - diff(c(3, 7)) = 4</p>
-</section>
-<section id="empty-results" class="level2">
-<h2 class="anchored" data-anchor-id="empty-results">3. Empty Results</h2>
-<p>If your input is too short compared to the <code>lag</code> parameter, you might get an empty result:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1">short_vec <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>)</span>
-<span id="cb34-2">result <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diff</span>(short_vec, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lag =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb34-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">print</span>(result)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># Returns an empty vector</span></span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>numeric(0)</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="best-practices" class="level1">
-<h1>Best Practices</h1>
-<ol type="1">
-<li><strong>Check output length</strong>: Remember that the output will be shorter than input</li>
-<li><strong>Handle NA values</strong>: Clean your data before using <code>diff()</code> or handle NAs in the results</li>
-<li><strong>Align with original data</strong>: If you need to plot or compare with original data, you might need to add NA values to maintain alignment</li>
-<li><strong>Verify lag value</strong>: Make sure your lag parameter makes sense for your data’s pattern</li>
-</ol>
-</section>
-<section id="quick-summary" class="level1">
-<h1>Quick Summary</h1>
-<ul>
-<li><code>diff()</code> calculates the differences between consecutive elements</li>
-<li>Basic syntax: <code>diff(x, lag = 1, differences = 1)</code></li>
-<li>Works with vectors, data frames, and time series</li>
-<li>Output is always shorter than input by <code>lag × differences</code></li>
-<li>Useful for trend removal, calculating returns, and finding patterns in data</li>
-<li>Base R plotting functions like <code>plot()</code> with appropriate parameters provide clear visualization of differences</li>
-</ul>
-<p>With the <code>diff()</code> function and base R plotting, you can easily track and visualize changes in your data, remove trends, and prepare data for further analysis.</p>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<p>The following references provide additional information about using the diff() function in R and time series analysis:</p>
-<ol type="1">
-<li><p>R Cookbook, 2nd Edition. (n.d.). <a href="https://rc2e.com/timeseriesanalysis">Time Series Analysis</a>. RC2E.</p></li>
-<li><p>R-Bloggers. (2023, June). <a href="https://www.r-bloggers.com/2023/06/mastering-the-power-of-rs-diff-function-a-programmers-guide/">Mastering the Power of R’s diff() Function: A Programmer’s Guide</a>. R-Bloggers.</p></li>
-<li><p>Coghlan, A. (n.d.). <a href="https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html">A Little Book of R for Time Series</a>. ReadTheDocs.</p></li>
-</ol>
-<hr>
-<p>Happy Coding! 🚀</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://www.spsanderson.com/steveondata/posts/2025-07-07/todays_post.png" class="img-fluid figure-img"></p>
-<figcaption>See the diff()Rence with R</figcaption>
-</figure>
-</div>
-<hr>
-<p><em>You can connect with me at any one of the below</em>:</p>
-<p><em>Telegram Channel here</em>: <a href="https://t.me/steveondata" class="uri">https://t.me/steveondata</a></p>
-<p><em>LinkedIn Network here</em>: <a href="https://www.linkedin.com/in/spsanderson/" class="uri">https://www.linkedin.com/in/spsanderson/</a></p>
-<p><em>Mastadon Social here</em>: <a href="https://mstdn.social/@stevensanderson">https://mstdn.social/@stevensanderson</a></p>
-<p><em>RStats Network here</em>: <a href="https://rstats.me/@spsanderson">https://rstats.me/@spsanderson</a></p>
-<p><em>GitHub Network here</em>: <a href="https://github.com/spsanderson" class="uri">https://github.com/spsanderson</a></p>
-<p><em>Bluesky Network here</em>: <a href="https://bsky.app/profile/spsanderson.com" class="uri">https://bsky.app/profile/spsanderson.com</a></p>
-<p><em>My Book: Extending Excel with Python and R</em> here: <a href="https://packt.link/oTyZJ" class="uri">https://packt.link/oTyZJ</a></p>
-<p><em>You.com Referral Link</em>: <a href="https://you.com/join/EHSLDTL6" class="uri">https://you.com/join/EHSLDTL6</a></p>
-<hr>
-<script src="https://giscus.app/client.js" data-repo="spsanderson/steveondata" data-repo-id="R_kgDOIIxnLw" data-category="Comments" data-category-id="DIC_kwDOIIxnL84ChTk8" data-mapping="url" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async="">
-</script>
-
-
-</section>
-
- ]]></description>
-  <category>code</category>
-  <category>rtip</category>
-  <guid>https://www.spsanderson.com/steveondata/posts/2025-07-07/</guid>
-  <pubDate>Mon, 07 Jul 2025 04:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
