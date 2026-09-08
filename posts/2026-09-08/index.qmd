@@ -1,0 +1,542 @@
+---
+title: "RandomWalker: Custom Walks and Double Pendulum Chaos"
+author: "Steven P. Sanderson II, MPH"
+date: "2026-09-08"
+categories: [code, rtip, randomwalker]
+toc: TRUE
+description: 'Learn how to create custom random walk simulations in R and explore chaotic systems with double pendulum simulations, plots, and animations using RandomWalker.'
+keywords: [Programming, random walk in R, RandomWalker R Package, random walk simulation R, simulatin in R, chaotic systems in R, double pendulum R, custom random walk R, random walk visualization R, Monety Carlo simulation R, how to create a random walk in R, how to simulate a double pendulum in R, create custom random walk simulations in R, visualize a double pendulum in R with gganimate, visualize a double pendulum with ggplot2]
+---
+
+The latest release of **RandomWalker** is now available on CRAN!
+
+This release adds a couple of new tools that expand what you can simulate and visualize with the package. The two main areas are p**custom random walks** and **double pendulum simulations**.
+
+With `custom_walk()`, you can define your own step-generating function and let RandomWalker build the walks around it. The new double pendulum tools take things in a different direction, allowing us to simulate and visualize a classic chaotic physical system.
+
+In this post, we'll look at four functions:
+
+* `custom_walk()`
+* `double_pendulum_walk()`
+* `plot_double_pendulum()`
+* `animate_double_pendulum()`
+
+Let's take a look.
+
+## Getting Started
+
+First, install the latest release of RandomWalker from CRAN:
+
+```r
+install.packages("RandomWalker")
+```
+
+Then load it:
+
+```{r load_randomwalker}
+library(RandomWalker)
+```
+
+Some of the double pendulum functionality uses optional packages, so you may also want:
+
+```r
+install.packages(c(
+  "deSolve",
+  "ggplot2",
+  "gganimate",
+  "gifski"
+))
+```
+
+# Creating Your Own Random Walk with `custom_walk()`
+
+One thing I've wanted RandomWalker to support is an easy way to say:
+
+> "I have my own rule for generating steps. Just build the random walks for me."
+
+That is what `custom_walk()` does.
+
+Instead of choosing one of the distributions already built into RandomWalker, you provide a function that generates a single numeric step.
+
+The basic syntax is:
+
+```r
+custom_walk(
+  .n = 100,
+  .num_walks = 25,
+  .initial_value = 0,
+  .dimensions = 1,
+  .custom_fns
+)
+```
+
+The `.custom_fns` argument takes a function with no parameters that returns one numeric value.
+
+For example, let's create a random walk that has a small positive bias:
+
+```{r custom_fns}
+biased_displacement <- function() {
+  rnorm(1, mean = 0.1, sd = 1)
+}
+
+set.seed(123)
+
+walks <- custom_walk(
+  .n = 100,
+  .num_walks = 5,
+  .custom_fns = biased_displacement,
+  .initial_value = 100
+)
+
+walks |> head()
+visualize_walks(walks)
+```
+
+Every step is drawn from a normal distribution with a mean of `0.1`.
+
+That small positive mean gives our walks a tendency to move upward over time, although randomness can still send individual walks in very different directions.
+
+## Going Beyond One Dimension
+
+`custom_walk()` supports one, two, or three dimensions.
+
+For example:
+
+```{r two_dim_custom_walk}
+set.seed(123)
+
+walks_2d <- custom_walk(
+  .n = 100,
+  .num_walks = 5,
+  .dimensions = 2,
+  .custom_fns = biased_displacement,
+  .initial_value = 100
+)
+
+walks_2d |> head()
+visualize_walks(walks_2d)
+```
+
+For two dimensions, RandomWalker returns `x` and `y` coordinates. With three dimensions, you'll get `x`, `y`, and `z`.
+
+The resulting tibble also includes cumulative statistics such as cumulative sums, products, minimums, maximums, and means.
+
+That means you can focus on defining **how a step behaves**, while RandomWalker handles the structure of the simulation.
+
+See the full [custom_walk() documentation](https://www.spsanderson.com/RandomWalker/reference/custom_walk.html?utm_source=chatgpt.com).
+
+# From Random Walks to Chaos: The Double Pendulum
+
+The other major addition in this release is something a little different.
+
+A **double pendulum** consists of one pendulum attached to another pendulum.
+
+It sounds simple.
+
+Its behavior isn't.
+
+Double pendulums are well-known examples of **chaotic systems**. Very small changes in their starting conditions can eventually produce dramatically different trajectories.
+
+RandomWalker now lets us simulate this directly.
+
+# Simulating with `double_pendulum_walk()`
+
+The new `double_pendulum_walk()` function simulates a planar, frictionless double pendulum.
+
+A simple simulation looks like this:
+
+```{r double_pendulum_walk}
+set.seed(287)
+
+pendulum <- double_pendulum_walk(
+  .num_walks = 5,
+  .n = 401
+)
+
+pendulum |> head()
+```
+
+The default simulation samples the system every `0.05` seconds for 401 observations, giving us 20 seconds of motion.
+
+The returned tibble contains quite a bit of information:
+
+```text
+walk_number
+step_number
+time
+theta1
+theta2
+omega1
+omega2
+x1
+y1
+x
+y
+```
+
+Here:
+
+* `theta1` and `theta2` are the pendulum angles.
+* `omega1` and `omega2` are their angular velocities.
+* `x1` and `y1` describe the position of the first bob.
+* `x` and `y` describe the position of the second bob.
+
+## Where Does the Randomness Come From?
+
+There is an important distinction here. The double pendulum isn't receiving random forces throughout the simulation. Instead, RandomWalker slightly perturbs the **initial angles**.
+
+The default is:
+
+```r
+.angle_sd = 0.01
+```
+
+Once those initial conditions are created, the motion follows the deterministic equations of the double pendulum. This gives us a nice way to explore a fundamental idea behind chaos:
+
+> Nearly identical starting conditions do not necessarily produce nearly identical long-term behavior.
+
+Try increasing the variation:
+
+```{r double_pendlum_walk2}
+set.seed(123)
+
+pendulum <- double_pendulum_walk(
+  .num_walks = 10,
+  .n = 401,
+  .angle_sd = 0.05
+)
+
+pendulum |> head()
+```
+
+Now we're creating ten slightly different initial conditions and watching how their trajectories evolve.
+
+You can also experiment with the masses, rod lengths, gravity, initial angles, and initial angular velocities.
+
+See the full [double_pendulum_walk() documentation](https://www.spsanderson.com/RandomWalker/reference/double_pendulum_walk.html?utm_source=chatgpt.com).
+
+# Plotting the Double Pendulum
+
+Generating the data is useful, but this simulation becomes much easier to understand when we visualize it.
+
+That's where `plot_double_pendulum()` comes in.
+
+```{r plot_double_pendulum}
+set.seed(123)
+
+pendulum <- double_pendulum_walk(
+  .num_walks = 3,
+  .n = 401
+)
+
+plot_double_pendulum(
+  pendulum,
+  .walk = 1
+)
+```
+
+The function creates a `ggplot2` visualization of the spatial trajectory followed by the **second bob**. The trajectory is colored according to elapsed time, making it easier to see how the system moves through space. Because the result is a ggplot object, you can also customize it using normal ggplot2 tools.
+
+For example:
+
+```{r custom_double_pendulum_plt}
+library(ggplot2)
+
+plot_double_pendulum(
+  pendulum,
+  .walk = 1
+) +
+  labs(
+    title = "Double Pendulum Trajectory",
+    subtitle = "Spatial path of the second pendulum bob"
+  ) +
+  theme_minimal()
+```
+
+You can also compare individual trajectories:
+
+```{r plt_individual_trajectories}
+plot_double_pendulum(pendulum, .walk = 1)
+
+plot_double_pendulum(pendulum, .walk = 2)
+
+plot_double_pendulum(pendulum, .walk = 3)
+```
+
+Remember that these walks began with only small differences in their starting angles. Seeing their paths diverge is where the simulation becomes especially interesting. See the full [plot_double_pendulum() documentation](https://www.spsanderson.com/RandomWalker/reference/plot_double_pendulum.html?utm_source=chatgpt.com).
+
+# Bringing the Simulation to Life
+
+A static trajectory shows us where the pendulum traveled. An animation shows us **how it got there**. The `animate_double_pendulum()` function creates a `gganimate` object from the simulation data.
+
+```{r animate_plt}
+animation <- animate_double_pendulum(
+  pendulum,
+  .walk = 1
+)
+
+animation
+```
+
+You can control how much of the recent path remains visible using `.trail_length`:
+
+```r
+animation <- animate_double_pendulum(
+  pendulum,
+  .walk = 1,
+  .trail_length = 50
+)
+```
+
+Setting:
+
+```r
+.trail_length = 0
+```
+
+turns the trail off completely.
+
+To render the animation as a GIF:
+
+```r
+library(gganimate)
+
+gif <- animate(
+  animation,
+  nframes = attr(pendulum, "n"),
+  fps = 1 / attr(pendulum, "delta_time"),
+  renderer = gifski_renderer()
+)
+
+anim_save(
+  "double-pendulum.gif",
+  animation = gif
+)
+```
+
+Using the simulation's `delta_time` to calculate the frame rate lets the animation correspond to simulated time. This is probably my favorite way to explore the new double pendulum functionality because you can actually watch the chaotic motion develop. See the full [animate_double_pendulum() documentation](https://www.spsanderson.com/RandomWalker/reference/animate_double_pendulum.html?utm_source=chatgpt.com).
+
+# Why Add a Double Pendulum to RandomWalker?
+
+You might reasonably ask:
+
+**Is a double pendulum really a random walk?**
+
+Not in the traditional sense.
+
+A traditional random walk introduces randomness as the process evolves. The double pendulum simulation instead introduces randomness into the **initial conditions**, after which the equations governing the system are deterministic.
+
+I think that makes it an interesting addition to RandomWalker. It gives us another way to explore the relationship between:
+
+**randomness → simulation → trajectories → uncertainty**
+
+A traditional random walk asks what happens when individual steps are random. The double pendulum asks what happens when the starting point is slightly uncertain but the system itself follows deterministic rules. Those are different ideas, but putting them next to each other can help us build intuition about simulation and uncertainty.
+
+# Your Turn!
+
+Now it's your turn.
+
+Let's combine the ideas from this release into two small challenges.
+
+## Challenge 1: Build Your Own Random Walk
+
+Create a custom step function using a Student's t-distribution:
+
+```r
+my_step <- function() {
+  # Your code here
+}
+```
+
+Then generate:
+
+* 10 random walks
+* 250 steps each
+* 2 dimensions
+* an initial value of 0
+
+Think about what you expect the walks to look like compared with steps generated from a normal distribution.
+
+<details>
+
+<summary> 💡 See Solution </summary>
+
+```r
+my_step <- function() {
+  rt(1, df = 3)
+}
+
+set.seed(123)
+
+my_walks <- custom_walk(
+  .n = 250,
+  .num_walks = 10,
+  .initial_value = 0,
+  .dimensions = 2,
+  .custom_fns = my_step
+)
+
+my_walks
+```
+
+Now change:
+
+```r
+df = 3
+```
+
+to:
+
+```r
+df = 30
+```
+
+How does the behavior change?
+
+What happens to the frequency of unusually large steps?
+
+## Challenge 2: Create Some Chaos
+
+Create five double pendulum trajectories:
+
+```r
+set.seed(123)
+
+chaos <- double_pendulum_walk(
+  .num_walks = 5,
+  .n = 401,
+  .angle_sd = 0.001
+)
+```
+
+Start with a very small perturbation of:
+
+```r
+.angle_sd = 0.001
+```
+
+Plot the first trajectory:
+
+```r
+plot_double_pendulum(
+  chaos,
+  .walk = 1
+)
+```
+
+Then compare it with:
+
+```r
+plot_double_pendulum(
+  chaos,
+  .walk = 2
+)
+```
+
+Finally, animate one:
+
+```r
+animation <- animate_double_pendulum(
+  chaos,
+  .walk = 1,
+  .trail_length = 40
+)
+```
+
+Now repeat the experiment with:
+
+```r
+.angle_sd = 0.01
+```
+
+and then:
+
+```r
+.angle_sd = 0.1
+```
+
+What do you notice?
+
+How quickly do the trajectories begin to look different as you increase the uncertainty in the initial conditions?
+</details>
+
+# Quick Takeaways
+
+This RandomWalker release adds some interesting new possibilities.
+
+`custom_walk()` gives you much more control over how random steps are generated. Instead of being limited to distributions already included in the package, you can supply your own function and create one-, two-, or three-dimensional simulations.
+
+`double_pendulum_walk()` adds a different type of simulation: deterministic dynamics beginning from randomized initial conditions.
+
+`plot_double_pendulum()` makes those trajectories easy to inspect using ggplot2.
+
+And `animate_double_pendulum()` lets you watch the system evolve over time.
+
+Together, these functions expand RandomWalker beyond predefined random-walk generators and give you more room to experiment with randomness, simulation, trajectories, and chaotic behavior.
+
+# Conclusion
+
+One of the main ideas behind RandomWalker has always been making simulation approachable.
+
+You shouldn't need a large amount of setup code just to experiment with a random process.
+
+With `custom_walk()`, the package becomes more flexible because **you define the step-generating rule**.
+
+With the new double pendulum functions, we can also explore what happens when tiny amounts of uncertainty are introduced into the starting conditions of a deterministic system.
+
+If you've installed the new release, give these functions a try.
+
+More importantly, change the parameters.
+
+Change the distribution.
+
+Change the starting angles.
+
+Change the amount of perturbation.
+
+Increase the number of simulations.
+
+And see what happens.
+
+That's often where simulation becomes the most useful.
+
+------------------------------------------------------------------------
+
+Happy Coding! 🚀
+
+------------------------------------------------------------------------
+
+*You can connect with me at any one of the below*:
+
+*Telegram Channel here*: <https://t.me/steveondata>
+
+*LinkedIn Network here*: <https://www.linkedin.com/in/spsanderson/>
+
+*GitHub Network here*: <https://github.com/spsanderson>
+
+*My Book: Extending Excel with Python and R* here: <https://packt.link/oTyZJ>
+
+*You.com Referral Link*: <https://you.com/join/EHSLDTL6>
+
+------------------------------------------------------------------------
+
+@online{randomwalker_custom_random_walks_and_double_pendulum_simulations_20260908, author = {Sanderson II MPH, Steven P.}, title = {RandomWalker: Custom Random Walks and Double Pendulum Simulations}, date = {2026-09-08}, url = {https://www.spsanderson.com/steveondata/posts/2026-09-08/}, langid = {en} }
+
+```{=html}
+<script src="https://giscus.app/client.js"
+        data-repo="spsanderson/steveondata"
+        data-repo-id="R_kgDOIIxnLw"
+        data-category="Comments"
+        data-category-id="DIC_kwDOIIxnL84ChTk8"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="dark"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async>
+</script>
+```
